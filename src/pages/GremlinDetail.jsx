@@ -7,30 +7,16 @@ const ROLE_COLORS = {
   secretary: '#d4a017',
   chef: '#ff7043',
 }
-
 const ROLE_ICONS = {
-  accountant: '🧮',
-  trainer: '🏋️',
-  secretary: '📋',
-  chef: '🍽️',
+  accountant: '🧮', trainer: '🏋️', secretary: '📋', chef: '🍽️',
 }
-
 const ROLE_LABELS = {
-  accountant: 'Бухгалтер',
-  trainer: 'Тренер',
-  secretary: 'Секретарь',
-  chef: 'Шеф-повар',
+  accountant: 'Бухгалтер', trainer: 'Тренер', secretary: 'Секретарь', chef: 'Шеф-повар',
 }
-
 const STAT_LABELS = {
-  today_total: 'сегодня',
-  week_total: 'неделя',
-  last_calories: 'ккал',
-  last_workout: 'тренировка',
-  last_water: 'вода',
-  pending_tasks: 'задачи',
-  last_task: 'последнее',
-  last_updated: 'обновлено',
+  today_total: 'сегодня', week_total: 'неделя', last_calories: 'ккал',
+  last_workout: 'тренировка', last_water: 'вода', pending_tasks: 'задачи',
+  last_task: 'последнее', last_updated: 'обновлено',
 }
 
 export default function GremlinDetail({ gremlin, userId, onBack }) {
@@ -38,7 +24,9 @@ export default function GremlinDetail({ gremlin, userId, onBack }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
+  const [fileLoading, setFileLoading] = useState(false)
   const bottomRef = useRef(null)
+  const fileRef = useRef(null)
 
   const accentColor = ROLE_COLORS[gremlin.role] || '#d4a017'
 
@@ -52,10 +40,10 @@ export default function GremlinDetail({ gremlin, userId, onBack }) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const send = async () => {
-    if (!input.trim() || sending) return
-    const text = input.trim()
-    setInput('')
+  const send = async (textOverride) => {
+    const text = textOverride || input.trim()
+    if (!text || sending) return
+    if (!textOverride) setInput('')
     setMessages(m => [...m, { role: 'user', text }])
     setSending(true)
     try {
@@ -76,6 +64,38 @@ export default function GremlinDetail({ gremlin, userId, onBack }) {
     }
   }
 
+  const handleFile = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setFileLoading(true)
+
+    try {
+      const text = await file.text()
+      const ext = file.name.split('.').pop().toLowerCase()
+
+      let content = ''
+      if (ext === 'csv') {
+        const lines = text.split('\n').slice(0, 50)
+        content = `Файл: ${file.name}\n\nДанные (CSV):\n${lines.join('\n')}`
+      } else {
+        content = `Файл: ${file.name}\n\n${text.slice(0, 2000)}`
+      }
+
+      setMessages(m => [...m, {
+        role: 'user',
+        text: `📎 ${file.name}`,
+        isFile: true
+      }])
+
+      await send(content)
+    } catch {
+      setMessages(m => [...m, { role: 'gremlin', text: 'Не смог прочитать файл.' }])
+    } finally {
+      setFileLoading(false)
+      e.target.value = ''
+    }
+  }
+
   const stats = gremlin.stats || {}
   const hasStats = Object.keys(stats).length > 0
 
@@ -89,16 +109,15 @@ export default function GremlinDetail({ gremlin, userId, onBack }) {
         padding: '10px 14px',
         display: 'flex', alignItems: 'center', gap: 10
       }}>
-        <button
-          onClick={onBack}
-          style={{ color: accentColor, fontSize: 11, letterSpacing: '0.05em', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
-        >
+        <button onClick={onBack} style={{
+          color: accentColor, fontSize: 11, letterSpacing: '0.05em',
+          background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit'
+        }}>
           ← назад
         </button>
         <div style={{
           width: 36, height: 36, borderRadius: 8,
-          background: 'var(--bg3)',
-          border: `1px solid ${accentColor}60`,
+          background: 'var(--bg3)', border: `1px solid ${accentColor}60`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 18, flexShrink: 0
         }}>
@@ -164,10 +183,8 @@ export default function GremlinDetail({ gremlin, userId, onBack }) {
                   borderRadius: 6, padding: '8px'
                 }}>
                   <div style={{
-                    fontSize: 15, fontWeight: 700,
-                    color: accentColor,
+                    fontSize: 15, fontWeight: 700, color: accentColor,
                     textShadow: `0 0 10px ${accentColor}80`,
-                    letterSpacing: '0.02em'
                   }}>
                     {typeof v === 'number' ? v.toLocaleString() : String(v)}
                   </div>
@@ -210,18 +227,23 @@ export default function GremlinDetail({ gremlin, userId, onBack }) {
               borderRadius: m.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
               padding: '8px 12px', fontSize: 12, lineHeight: 1.5
             }}>
-              {m.text}
+              {m.isFile
+                ? <span style={{ opacity: 0.9 }}>{m.text}</span>
+                : m.text
+              }
             </div>
           </div>
         ))}
 
-        {sending && (
+        {(sending || fileLoading) && (
           <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
             <div style={{
               background: 'var(--bg2)', border: `1px solid ${accentColor}30`,
               borderRadius: '12px 12px 12px 2px', padding: '8px 14px',
               fontSize: 12, color: 'var(--text-muted)'
-            }}>...</div>
+            }}>
+              {fileLoading ? 'читаю файл...' : '...'}
+            </div>
           </div>
         )}
         <div ref={bottomRef} />
@@ -234,6 +256,29 @@ export default function GremlinDetail({ gremlin, userId, onBack }) {
         borderTop: `1px solid ${accentColor}30`,
         display: 'flex', gap: 8, alignItems: 'flex-end'
       }}>
+        {/* File button */}
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".csv,.txt,.json,.xlsx,.xls"
+          onChange={handleFile}
+          style={{ display: 'none' }}
+        />
+        <button
+          onClick={() => fileRef.current?.click()}
+          disabled={sending || fileLoading}
+          style={{
+            background: 'var(--bg3)',
+            border: `1px solid ${accentColor}30`,
+            borderRadius: 8, width: 36, height: 36,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 16, cursor: 'pointer', flexShrink: 0,
+            color: accentColor, opacity: sending ? 0.5 : 1
+          }}
+        >
+          📎
+        </button>
+
         <textarea
           rows={2}
           value={input}
@@ -241,8 +286,7 @@ export default function GremlinDetail({ gremlin, userId, onBack }) {
           onKeyDown={handleKey}
           placeholder={`Напиши ${gremlin.name}...`}
           style={{
-            flex: 1,
-            background: 'var(--bg3)',
+            flex: 1, background: 'var(--bg3)',
             border: `1px solid ${accentColor}30`,
             borderRadius: 6, padding: '8px 10px',
             color: 'var(--text)', fontFamily: 'inherit',
@@ -250,18 +294,15 @@ export default function GremlinDetail({ gremlin, userId, onBack }) {
           }}
         />
         <button
-          onClick={send}
+          onClick={() => send()}
           disabled={sending || !input.trim()}
           style={{
             background: input.trim() ? accentColor : 'var(--bg3)',
             color: input.trim() ? '#000' : 'var(--text-muted)',
             borderRadius: 8, padding: '8px 14px',
             fontSize: 11, fontWeight: 700,
-            letterSpacing: '0.05em',
-            transition: 'all 0.15s',
-            flexShrink: 0,
-            border: 'none', cursor: 'pointer',
-            fontFamily: 'inherit'
+            transition: 'all 0.15s', flexShrink: 0,
+            border: 'none', cursor: 'pointer', fontFamily: 'inherit'
           }}
         >
           ▸
