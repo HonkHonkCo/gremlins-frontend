@@ -72,7 +72,7 @@ export default function App() {
       {(page === 'home' || page === 'report') && (
         <div className="topbar">
           <span style={{ fontSize: 14 }}>◈</span>
-          <span className="topbar-title">GREMLINS BASE</span>
+          <span className="topbar-title">PERSONAL GREMLINS</span>
           <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
             {new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
           </span>
