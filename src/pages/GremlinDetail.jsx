@@ -1,12 +1,46 @@
 import { useState, useEffect, useRef } from 'react'
 import { getEntries, sendChat } from '../services/api'
 
-export default function GremlinDetail({ gremlin, telegramId, onBack }) {
+const ROLE_COLORS = {
+  accountant: '#3ecf70',
+  trainer: '#4a9eff',
+  secretary: '#d4a017',
+  chef: '#ff7043',
+}
+
+const ROLE_ICONS = {
+  accountant: '🧮',
+  trainer: '🏋️',
+  secretary: '📋',
+  chef: '🍽️',
+}
+
+const ROLE_LABELS = {
+  accountant: 'Бухгалтер',
+  trainer: 'Тренер',
+  secretary: 'Секретарь',
+  chef: 'Шеф-повар',
+}
+
+const STAT_LABELS = {
+  today_total: 'сегодня',
+  week_total: 'неделя',
+  last_calories: 'ккал',
+  last_workout: 'тренировка',
+  last_water: 'вода',
+  pending_tasks: 'задачи',
+  last_task: 'последнее',
+  last_updated: 'обновлено',
+}
+
+export default function GremlinDetail({ gremlin, userId, onBack }) {
   const [entries, setEntries] = useState([])
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const bottomRef = useRef(null)
+
+  const accentColor = ROLE_COLORS[gremlin.role] || '#d4a017'
 
   useEffect(() => {
     getEntries(gremlin.id)
@@ -25,7 +59,7 @@ export default function GremlinDetail({ gremlin, telegramId, onBack }) {
     setMessages(m => [...m, { role: 'user', text }])
     setSending(true)
     try {
-      const res = await sendChat(telegramId, gremlin.id, text)
+      const res = await sendChat(userId, gremlin.id, text)
       const reply = res.reply || res.gremlin_reply || '...'
       setMessages(m => [...m, { role: 'gremlin', text: reply }])
     } catch {
@@ -42,33 +76,104 @@ export default function GremlinDetail({ gremlin, telegramId, onBack }) {
     }
   }
 
+  const stats = gremlin.stats || {}
+  const hasStats = Object.keys(stats).length > 0
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg)' }}>
+
       {/* Header */}
       <div style={{
-        background: 'var(--bg2)', borderBottom: '1px solid var(--border)',
-        padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10
+        background: 'var(--bg2)',
+        borderBottom: `1px solid ${accentColor}40`,
+        padding: '10px 14px',
+        display: 'flex', alignItems: 'center', gap: 10
       }}>
-        <button className="topbar-back" onClick={onBack}>← назад</button>
+        <button
+          onClick={onBack}
+          style={{ color: accentColor, fontSize: 11, letterSpacing: '0.05em', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+        >
+          ← назад
+        </button>
+        <div style={{
+          width: 36, height: 36, borderRadius: 8,
+          background: 'var(--bg3)',
+          border: `1px solid ${accentColor}60`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 18, flexShrink: 0
+        }}>
+          {ROLE_ICONS[gremlin.role] || '👾'}
+        </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.08em' }}>{gremlin.name}</div>
-          <div style={{ fontSize: 10, color: 'var(--gold)', marginTop: 1 }}>{gremlin.role}</div>
+          <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text)' }}>
+            {gremlin.name}
+          </div>
+          <div style={{ fontSize: 10, color: accentColor, marginTop: 1 }}>
+            {ROLE_LABELS[gremlin.role] || gremlin.role}
+          </div>
         </div>
       </div>
 
-      {/* Stats */}
-      {gremlin.stats && Object.keys(gremlin.stats).length > 0 && (
-        <div style={{ padding: '10px 12px 0' }}>
+      {/* WHO YOU'RE TALKING TO banner */}
+      <div style={{
+        background: `${accentColor}12`,
+        border: `1px solid ${accentColor}30`,
+        borderLeft: `3px solid ${accentColor}`,
+        margin: '8px 12px 0',
+        borderRadius: '0 6px 6px 0',
+        padding: '6px 10px',
+        display: 'flex', alignItems: 'center', gap: 8
+      }}>
+        <div style={{
+          width: 6, height: 6, borderRadius: '50%',
+          background: accentColor,
+          boxShadow: `0 0 6px ${accentColor}`,
+        }} />
+        <span style={{ fontSize: 10, color: accentColor, letterSpacing: '0.06em' }}>
+          ТЫ ПИШЕШЬ: {gremlin.name.toUpperCase()}
+        </span>
+      </div>
+
+      {/* Glowing stats */}
+      {hasStats && (
+        <div style={{ padding: '8px 12px 0' }}>
           <div style={{
-            background: 'var(--bg2)', border: '1px solid var(--border)',
-            borderRadius: 8, padding: '8px 12px'
+            background: 'var(--bg2)',
+            border: `1px solid ${accentColor}30`,
+            borderRadius: 8, padding: '10px 12px'
           }}>
-            <div style={{ fontSize: 9, color: 'var(--gold-dim)', letterSpacing: '0.1em', marginBottom: 6 }}>▸ СТАТИСТИКА</div>
+            <div style={{
+              fontSize: 9, color: accentColor, letterSpacing: '0.12em',
+              marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6
+            }}>
+              <div style={{
+                width: 5, height: 5, borderRadius: '50%',
+                background: accentColor,
+                boxShadow: `0 0 8px ${accentColor}, 0 0 16px ${accentColor}60`,
+              }} />
+              СТАТУС
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-              {Object.entries(gremlin.stats).slice(0, 4).map(([k, v]) => (
-                <div key={k} style={{ background: 'var(--bg3)', borderRadius: 6, padding: '6px 8px' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--gold)' }}>{String(v)}</div>
-                  <div style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 1 }}>{k}</div>
+              {Object.entries(stats)
+                .filter(([k]) => k !== 'last_updated')
+                .slice(0, 4)
+                .map(([k, v]) => (
+                <div key={k} style={{
+                  background: 'var(--bg3)',
+                  border: `1px solid ${accentColor}20`,
+                  borderRadius: 6, padding: '8px'
+                }}>
+                  <div style={{
+                    fontSize: 15, fontWeight: 700,
+                    color: accentColor,
+                    textShadow: `0 0 10px ${accentColor}80`,
+                    letterSpacing: '0.02em'
+                  }}>
+                    {typeof v === 'number' ? v.toLocaleString() : String(v)}
+                  </div>
+                  <div style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 2 }}>
+                    {STAT_LABELS[k] || k}
+                  </div>
                 </div>
               ))}
             </div>
@@ -76,12 +181,16 @@ export default function GremlinDetail({ gremlin, telegramId, onBack }) {
         </div>
       )}
 
-      {/* Chat history */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {/* Chat */}
+      <div style={{
+        flex: 1, overflowY: 'auto', padding: '10px 12px',
+        display: 'flex', flexDirection: 'column', gap: 8
+      }}>
         {entries.slice(0, 5).map(e => (
           <div key={e.id} style={{
-            background: 'var(--bg3)', borderRadius: 8, padding: '8px 10px',
-            fontSize: 10, color: 'var(--text-dim)', borderLeft: '2px solid var(--border)'
+            background: 'var(--bg3)', borderRadius: 8, padding: '7px 10px',
+            fontSize: 10, color: 'var(--text-dim)',
+            borderLeft: `2px solid ${accentColor}40`
           }}>
             <span style={{ color: 'var(--text-muted)', marginRight: 6 }}>{e.entry_date}</span>
             {e.content}
@@ -95,13 +204,11 @@ export default function GremlinDetail({ gremlin, telegramId, onBack }) {
           }}>
             <div style={{
               maxWidth: '80%',
-              background: m.role === 'user' ? 'var(--gold)' : 'var(--bg2)',
+              background: m.role === 'user' ? accentColor : 'var(--bg2)',
               color: m.role === 'user' ? '#000' : 'var(--text)',
-              border: m.role === 'gremlin' ? '1px solid var(--border)' : 'none',
+              border: m.role === 'gremlin' ? `1px solid ${accentColor}30` : 'none',
               borderRadius: m.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
-              padding: '8px 12px',
-              fontSize: 12,
-              lineHeight: 1.5
+              padding: '8px 12px', fontSize: 12, lineHeight: 1.5
             }}>
               {m.text}
             </div>
@@ -111,7 +218,7 @@ export default function GremlinDetail({ gremlin, telegramId, onBack }) {
         {sending && (
           <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
             <div style={{
-              background: 'var(--bg2)', border: '1px solid var(--border)',
+              background: 'var(--bg2)', border: `1px solid ${accentColor}30`,
               borderRadius: '12px 12px 12px 2px', padding: '8px 14px',
               fontSize: 12, color: 'var(--text-muted)'
             }}>...</div>
@@ -124,7 +231,7 @@ export default function GremlinDetail({ gremlin, telegramId, onBack }) {
       <div style={{
         padding: '10px 12px',
         background: 'var(--bg2)',
-        borderTop: '1px solid var(--border)',
+        borderTop: `1px solid ${accentColor}30`,
         display: 'flex', gap: 8, alignItems: 'flex-end'
       }}>
         <textarea
@@ -132,20 +239,29 @@ export default function GremlinDetail({ gremlin, telegramId, onBack }) {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKey}
-          placeholder="Напиши гремлину..."
-          style={{ flex: 1 }}
+          placeholder={`Напиши ${gremlin.name}...`}
+          style={{
+            flex: 1,
+            background: 'var(--bg3)',
+            border: `1px solid ${accentColor}30`,
+            borderRadius: 6, padding: '8px 10px',
+            color: 'var(--text)', fontFamily: 'inherit',
+            fontSize: 12, resize: 'none', outline: 'none'
+          }}
         />
         <button
           onClick={send}
           disabled={sending || !input.trim()}
           style={{
-            background: input.trim() ? 'var(--gold)' : 'var(--bg3)',
+            background: input.trim() ? accentColor : 'var(--bg3)',
             color: input.trim() ? '#000' : 'var(--text-muted)',
             borderRadius: 8, padding: '8px 14px',
             fontSize: 11, fontWeight: 700,
             letterSpacing: '0.05em',
             transition: 'all 0.15s',
-            flexShrink: 0
+            flexShrink: 0,
+            border: 'none', cursor: 'pointer',
+            fontFamily: 'inherit'
           }}
         >
           ▸
