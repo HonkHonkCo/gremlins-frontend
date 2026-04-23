@@ -6,26 +6,27 @@ import GremlinDetail from './pages/GremlinDetail'
 import AddGremlin from './pages/AddGremlin'
 import WeeklyReport from './pages/WeeklyReport'
 
-const DEV_TELEGRAM_ID = 999999999
-
 export default function App() {
   const [user, setUser] = useState(null)
+  const [notInTelegram, setNotInTelegram] = useState(false)
   const [page, setPage] = useState('home')
   const [selectedGremlin, setSelectedGremlin] = useState(null)
   const [homeKey, setHomeKey] = useState(0)
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp
-    let tgId = DEV_TELEGRAM_ID
-    let username = 'dev'
 
-    if (tg?.initDataUnsafe?.user) {
-      tgId = tg.initDataUnsafe.user.id
-      username = tg.initDataUnsafe.user.username || ''
-      tg.expand()
-      tg.setHeaderColor('#0e0d0b')
-      tg.setBackgroundColor('#0e0d0b')
+    if (!tg?.initDataUnsafe?.user) {
+      setNotInTelegram(true)
+      return
     }
+
+    const tgId = tg.initDataUnsafe.user.id
+    const username = tg.initDataUnsafe.user.username || ''
+
+    tg.expand()
+    tg.setHeaderColor('#0e0d0b')
+    tg.setBackgroundColor('#0e0d0b')
 
     syncUser(tgId, username)
       .then(u => setUser(u))
@@ -37,6 +38,32 @@ export default function App() {
     setSelectedGremlin(null)
     setHomeKey(k => k + 1)
   }
+
+  if (notInTelegram) return (
+    <div style={{
+      height: '100vh', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', gap: 16,
+      background: 'var(--bg)', color: 'var(--text)',
+      fontFamily: "'Courier New', monospace"
+    }}>
+      <div style={{ fontSize: 48 }}>◈</div>
+      <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '0.1em' }}>GREMLINS BASE</div>
+      <div style={{ fontSize: 12, color: 'var(--text-dim)', textAlign: 'center', lineHeight: 1.7 }}>
+        Открой приложение через Telegram
+      </div>
+      <a
+        href="https://t.me/Mygremlins_bot"
+        style={{
+          marginTop: 8, background: 'var(--gold)', color: '#000',
+          padding: '10px 24px', borderRadius: 8,
+          fontSize: 12, fontWeight: 700, letterSpacing: '0.06em',
+          textDecoration: 'none'
+        }}
+      >
+        ОТКРЫТЬ В TELEGRAM
+      </a>
+    </div>
+  )
 
   if (!user) return <div className="loading">GREMLINS BASE...</div>
 
