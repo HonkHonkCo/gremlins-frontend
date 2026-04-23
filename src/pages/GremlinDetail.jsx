@@ -2,10 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { getEntries, sendChat } from '../services/api'
 
 const ROLE_COLORS = {
-  accountant: '#3ecf70',
-  trainer: '#4a9eff',
-  secretary: '#d4a017',
-  chef: '#ff7043',
+  accountant: '#3ecf70', trainer: '#4a9eff', secretary: '#d4a017', chef: '#ff7043',
 }
 const ROLE_ICONS = {
   accountant: '🧮', trainer: '🏋️', secretary: '📋', chef: '🍽️',
@@ -25,6 +22,7 @@ export default function GremlinDetail({ gremlin, userId, onBack }) {
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const [fileLoading, setFileLoading] = useState(false)
+  const [showArchive, setShowArchive] = useState(false)
   const bottomRef = useRef(null)
   const fileRef = useRef(null)
 
@@ -50,6 +48,8 @@ export default function GremlinDetail({ gremlin, userId, onBack }) {
       const res = await sendChat(userId, gremlin.id, text)
       const reply = res.reply || res.gremlin_reply || '...'
       setMessages(m => [...m, { role: 'gremlin', text: reply }])
+      // обновляем entries после отправки
+      getEntries(gremlin.id).then(data => setEntries(Array.isArray(data) ? data : []))
     } catch {
       setMessages(m => [...m, { role: 'gremlin', text: 'Что-то пошло не так...' }])
     } finally {
@@ -68,11 +68,9 @@ export default function GremlinDetail({ gremlin, userId, onBack }) {
     const file = e.target.files[0]
     if (!file) return
     setFileLoading(true)
-
     try {
       const text = await file.text()
       const ext = file.name.split('.').pop().toLowerCase()
-
       let content = ''
       if (ext === 'csv') {
         const lines = text.split('\n').slice(0, 50)
@@ -80,13 +78,7 @@ export default function GremlinDetail({ gremlin, userId, onBack }) {
       } else {
         content = `Файл: ${file.name}\n\n${text.slice(0, 2000)}`
       }
-
-      setMessages(m => [...m, {
-        role: 'user',
-        text: `📎 ${file.name}`,
-        isFile: true
-      }])
-
+      setMessages(m => [...m, { role: 'user', text: `📎 ${file.name}`, isFile: true }])
       await send(content)
     } catch {
       setMessages(m => [...m, { role: 'gremlin', text: 'Не смог прочитать файл.' }])
@@ -99,30 +91,28 @@ export default function GremlinDetail({ gremlin, userId, onBack }) {
   const stats = gremlin.stats || {}
   const hasStats = Object.keys(stats).length > 0
 
+  // последние 5 для чата, остальные в архив
+  const recentEntries = entries.slice(0, 5)
+  const archiveEntries = entries.slice(5)
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg)' }}>
 
       {/* Header */}
       <div style={{
-        background: 'var(--bg2)',
-        borderBottom: `1px solid ${accentColor}40`,
-        padding: '10px 14px',
-        display: 'flex', alignItems: 'center', gap: 10
+        background: 'var(--bg2)', borderBottom: `1px solid ${accentColor}40`,
+        padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10
       }}>
         <button onClick={onBack} style={{
           color: accentColor, fontSize: 11, letterSpacing: '0.05em',
           background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit'
-        }}>
-          ← назад
-        </button>
+        }}>← назад</button>
         <div style={{
           width: 36, height: 36, borderRadius: 8,
           background: 'var(--bg3)', border: `1px solid ${accentColor}60`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 18, flexShrink: 0
-        }}>
-          {ROLE_ICONS[gremlin.role] || '👾'}
-        </div>
+        }}>{ROLE_ICONS[gremlin.role] || '👾'}</div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text)' }}>
             {gremlin.name}
@@ -131,22 +121,32 @@ export default function GremlinDetail({ gremlin, userId, onBack }) {
             {ROLE_LABELS[gremlin.role] || gremlin.role}
           </div>
         </div>
+        {archiveEntries.length > 0 && (
+          <button
+            onClick={() => setShowArchive(v => !v)}
+            style={{
+              background: showArchive ? `${accentColor}20` : 'var(--bg3)',
+              border: `1px solid ${accentColor}40`,
+              borderRadius: 6, padding: '4px 8px',
+              fontSize: 9, color: accentColor, cursor: 'pointer',
+              fontFamily: 'inherit', letterSpacing: '0.06em'
+            }}
+          >
+            {showArchive ? 'СКРЫТЬ' : `АРХИВ (${archiveEntries.length})`}
+          </button>
+        )}
       </div>
 
       {/* WHO YOU'RE TALKING TO banner */}
       <div style={{
-        background: `${accentColor}12`,
-        border: `1px solid ${accentColor}30`,
-        borderLeft: `3px solid ${accentColor}`,
-        margin: '8px 12px 0',
-        borderRadius: '0 6px 6px 0',
-        padding: '6px 10px',
+        background: `${accentColor}12`, border: `1px solid ${accentColor}30`,
+        borderLeft: `3px solid ${accentColor}`, margin: '8px 12px 0',
+        borderRadius: '0 6px 6px 0', padding: '6px 10px',
         display: 'flex', alignItems: 'center', gap: 8
       }}>
         <div style={{
           width: 6, height: 6, borderRadius: '50%',
-          background: accentColor,
-          boxShadow: `0 0 6px ${accentColor}`,
+          background: accentColor, boxShadow: `0 0 6px ${accentColor}`,
         }} />
         <span style={{ fontSize: 10, color: accentColor, letterSpacing: '0.06em' }}>
           ТЫ ПИШЕШЬ: {gremlin.name.toUpperCase()}
@@ -157,8 +157,7 @@ export default function GremlinDetail({ gremlin, userId, onBack }) {
       {hasStats && (
         <div style={{ padding: '8px 12px 0' }}>
           <div style={{
-            background: 'var(--bg2)',
-            border: `1px solid ${accentColor}30`,
+            background: 'var(--bg2)', border: `1px solid ${accentColor}30`,
             borderRadius: 8, padding: '10px 12px'
           }}>
             <div style={{
@@ -166,8 +165,7 @@ export default function GremlinDetail({ gremlin, userId, onBack }) {
               marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6
             }}>
               <div style={{
-                width: 5, height: 5, borderRadius: '50%',
-                background: accentColor,
+                width: 5, height: 5, borderRadius: '50%', background: accentColor,
                 boxShadow: `0 0 8px ${accentColor}, 0 0 16px ${accentColor}60`,
               }} />
               СТАТУС
@@ -178,8 +176,7 @@ export default function GremlinDetail({ gremlin, userId, onBack }) {
                 .slice(0, 4)
                 .map(([k, v]) => (
                 <div key={k} style={{
-                  background: 'var(--bg3)',
-                  border: `1px solid ${accentColor}20`,
+                  background: 'var(--bg3)', border: `1px solid ${accentColor}20`,
                   borderRadius: 6, padding: '8px'
                 }}>
                   <div style={{
@@ -203,7 +200,33 @@ export default function GremlinDetail({ gremlin, userId, onBack }) {
         flex: 1, overflowY: 'auto', padding: '10px 12px',
         display: 'flex', flexDirection: 'column', gap: 8
       }}>
-        {entries.slice(0, 5).map(e => (
+
+        {/* Archive */}
+        {showArchive && archiveEntries.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{
+              fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.1em',
+              textAlign: 'center', padding: '4px 0'
+            }}>— АРХИВ —</div>
+            {archiveEntries.map(e => (
+              <div key={e.id} style={{
+                background: 'var(--bg3)', borderRadius: 8, padding: '7px 10px',
+                fontSize: 10, color: 'var(--text-muted)',
+                borderLeft: `2px solid ${accentColor}20`
+              }}>
+                <span style={{ color: 'var(--text-muted)', marginRight: 6, opacity: 0.6 }}>{e.entry_date}</span>
+                {e.content}
+              </div>
+            ))}
+            <div style={{
+              fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.1em',
+              textAlign: 'center', padding: '4px 0'
+            }}>— ПОСЛЕДНИЕ —</div>
+          </div>
+        )}
+
+        {/* Recent entries */}
+        {recentEntries.map(e => (
           <div key={e.id} style={{
             background: 'var(--bg3)', borderRadius: 8, padding: '7px 10px',
             fontSize: 10, color: 'var(--text-dim)',
@@ -214,6 +237,7 @@ export default function GremlinDetail({ gremlin, userId, onBack }) {
           </div>
         ))}
 
+        {/* Current session messages */}
         {messages.map((m, i) => (
           <div key={i} style={{
             display: 'flex',
@@ -227,10 +251,7 @@ export default function GremlinDetail({ gremlin, userId, onBack }) {
               borderRadius: m.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
               padding: '8px 12px', fontSize: 12, lineHeight: 1.5
             }}>
-              {m.isFile
-                ? <span style={{ opacity: 0.9 }}>{m.text}</span>
-                : m.text
-              }
+              {m.text}
             </div>
           </div>
         ))}
@@ -251,37 +272,26 @@ export default function GremlinDetail({ gremlin, userId, onBack }) {
 
       {/* Input */}
       <div style={{
-        padding: '10px 12px',
-        background: 'var(--bg2)',
+        padding: '10px 12px', background: 'var(--bg2)',
         borderTop: `1px solid ${accentColor}30`,
         display: 'flex', gap: 8, alignItems: 'flex-end'
       }}>
-        {/* File button */}
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".csv,.txt,.json,.xlsx,.xls"
-          onChange={handleFile}
-          style={{ display: 'none' }}
-        />
+        <input ref={fileRef} type="file" accept=".csv,.txt,.json"
+          onChange={handleFile} style={{ display: 'none' }} />
         <button
           onClick={() => fileRef.current?.click()}
           disabled={sending || fileLoading}
           style={{
-            background: 'var(--bg3)',
-            border: `1px solid ${accentColor}30`,
+            background: 'var(--bg3)', border: `1px solid ${accentColor}30`,
             borderRadius: 8, width: 36, height: 36,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 16, cursor: 'pointer', flexShrink: 0,
             color: accentColor, opacity: sending ? 0.5 : 1
           }}
-        >
-          📎
-        </button>
+        >📎</button>
 
         <textarea
-          rows={2}
-          value={input}
+          rows={2} value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKey}
           placeholder={`Напиши ${gremlin.name}...`}
@@ -304,9 +314,7 @@ export default function GremlinDetail({ gremlin, userId, onBack }) {
             transition: 'all 0.15s', flexShrink: 0,
             border: 'none', cursor: 'pointer', fontFamily: 'inherit'
           }}
-        >
-          ▸
-        </button>
+        >▸</button>
       </div>
     </div>
   )
