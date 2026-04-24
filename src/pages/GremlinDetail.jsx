@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { getEntries, sendChat, updateGremlin } from '../services/api'
+import { getEntries, sendChat, updateGremlin, deleteGremlin } from '../services/api'
 
 const ROLE_COLORS = {
   accountant: '#3ecf70', trainer: '#4a9eff', secretary: '#d4a017', chef: '#ff7043',
@@ -13,7 +13,13 @@ const ROLE_LABELS = {
 const STAT_LABELS = {
   today_total: 'сегодня', week_total: 'неделя', last_calories: 'ккал',
   last_workout: 'тренировка', last_water: 'вода', pending_tasks: 'задачи',
-  last_task: 'последнее', last_updated: 'обновлено',
+  last_task: 'последнее', last_updated: 'обновлено', expense_thb: 'расход ฿',
+  expense_rub: 'расход ₽', expense_usd: 'расход $', income_thb: 'доход ฿',
+  income_rub: 'доход ₽', income_usd: 'доход $', balance_thb: 'баланс ฿',
+  balance_rub: 'баланс ₽', balance_usd: 'баланс $',
+  investment_rub: 'инвест ₽', investment_usd: 'инвест $',
+  weight_kg: 'вес кг', steps: 'шаги', next_deadline: 'дедлайн',
+  last_meal: 'блюдо', last_protein: 'белок г',
 }
 
 export default function GremlinDetail({ gremlin: initialGremlin, userId, onBack }) {
@@ -28,6 +34,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, onBack 
   const [editName, setEditName] = useState(initialGremlin.name)
   const [editDesc, setEditDesc] = useState(initialGremlin.description || '')
   const [saving, setSaving] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const bottomRef = useRef(null)
   const fileRef = useRef(null)
 
@@ -47,16 +54,24 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, onBack 
     if (!editName.trim()) return
     setSaving(true)
     try {
-      const updated = await updateGremlin(gremlin.id, {
-        name: editName.trim(),
-        description: editDesc.trim()
-      })
+      const updated = await updateGremlin(gremlin.id, { name: editName.trim(), description: editDesc.trim() })
       setGremlin(g => ({ ...g, name: updated.name || editName.trim(), description: updated.description || editDesc.trim() }))
       setEditing(false)
+      setConfirmDelete(false)
     } catch {
       alert('Ошибка сохранения')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!confirmDelete) { setConfirmDelete(true); return }
+    try {
+      await deleteGremlin(gremlin.id)
+      onBack()
+    } catch {
+      alert('Ошибка удаления')
     }
   }
 
@@ -103,7 +118,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, onBack 
   }
 
   const stats = gremlin.stats || {}
-  const hasStats = Object.keys(stats).length > 0
+  const hasStats = Object.keys(stats).filter(k => k !== 'last_updated').length > 0
   const recentEntries = entries.slice(0, 5)
   const archiveEntries = entries.slice(5)
 
@@ -133,25 +148,19 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, onBack 
           </div>
         </div>
         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-          <button
-            onClick={() => { setEditing(v => !v); setEditName(gremlin.name); setEditDesc(gremlin.description || '') }}
-            style={{
-              background: editing ? `${accentColor}20` : 'var(--bg3)',
+          <button onClick={() => { setEditing(v => !v); setEditName(gremlin.name); setEditDesc(gremlin.description || ''); setConfirmDelete(false) }} style={{
+            background: editing ? `${accentColor}20` : 'var(--bg3)',
+            border: `1px solid ${accentColor}40`, borderRadius: 6,
+            padding: '4px 8px', fontSize: 14, color: accentColor,
+            cursor: 'pointer', fontFamily: 'inherit'
+          }}>✏️</button>
+          {archiveEntries.length > 0 && (
+            <button onClick={() => setShowArchive(v => !v)} style={{
+              background: showArchive ? `${accentColor}20` : 'var(--bg3)',
               border: `1px solid ${accentColor}40`, borderRadius: 6,
               padding: '4px 8px', fontSize: 9, color: accentColor,
               cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.06em'
-            }}
-          >✏️</button>
-          {archiveEntries.length > 0 && (
-            <button
-              onClick={() => setShowArchive(v => !v)}
-              style={{
-                background: showArchive ? `${accentColor}20` : 'var(--bg3)',
-                border: `1px solid ${accentColor}40`, borderRadius: 6,
-                padding: '4px 8px', fontSize: 9, color: accentColor,
-                cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.06em'
-              }}
-            >{showArchive ? 'СКРЫТЬ' : `АРХИВ (${archiveEntries.length})`}</button>
+            }}>{showArchive ? 'СКРЫТЬ' : `АРХИВ (${archiveEntries.length})`}</button>
           )}
         </div>
       </div>
@@ -162,50 +171,32 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, onBack 
           background: 'var(--bg2)', borderBottom: `1px solid ${accentColor}30`,
           padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8
         }}>
-          <div style={{ fontSize: 9, color: accentColor, letterSpacing: '0.1em', marginBottom: 2 }}>
-            РЕДАКТИРОВАТЬ
-          </div>
-          <input
-            value={editName}
-            onChange={e => setEditName(e.target.value)}
-            placeholder="Имя гремлина"
-            style={{
-              background: 'var(--bg3)', border: `1px solid ${accentColor}40`,
-              borderRadius: 6, padding: '7px 10px', color: 'var(--text)',
-              fontFamily: 'inherit', fontSize: 12, outline: 'none'
-            }}
+          <div style={{ fontSize: 9, color: accentColor, letterSpacing: '0.1em' }}>РЕДАКТИРОВАТЬ</div>
+          <input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Имя гремлина"
+            style={{ background: 'var(--bg3)', border: `1px solid ${accentColor}40`, borderRadius: 6, padding: '7px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, outline: 'none' }}
           />
-          <textarea
-            rows={2}
-            value={editDesc}
-            onChange={e => setEditDesc(e.target.value)}
-            placeholder="Описание (необязательно)"
-            style={{
-              background: 'var(--bg3)', border: `1px solid ${accentColor}40`,
-              borderRadius: 6, padding: '7px 10px', color: 'var(--text)',
-              fontFamily: 'inherit', fontSize: 12, outline: 'none', resize: 'none'
-            }}
+          <textarea rows={2} value={editDesc} onChange={e => setEditDesc(e.target.value)} placeholder="Описание (необязательно)"
+            style={{ background: 'var(--bg3)', border: `1px solid ${accentColor}40`, borderRadius: 6, padding: '7px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, outline: 'none', resize: 'none' }}
           />
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              onClick={saveEdit}
-              disabled={saving || !editName.trim()}
-              style={{
-                background: accentColor, color: '#000', border: 'none',
-                borderRadius: 6, padding: '7px 16px', fontSize: 11,
-                fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-                flex: 1, letterSpacing: '0.05em'
-              }}
-            >{saving ? 'СОХРАНЯЕМ...' : 'СОХРАНИТЬ'}</button>
-            <button
-              onClick={() => setEditing(false)}
-              style={{
-                background: 'var(--bg3)', color: 'var(--text-dim)',
-                border: `1px solid var(--border)`, borderRadius: 6,
-                padding: '7px 12px', fontSize: 11, cursor: 'pointer',
-                fontFamily: 'inherit'
-              }}
-            >ОТМЕНА</button>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button onClick={saveEdit} disabled={saving || !editName.trim()} style={{
+              background: accentColor, color: '#000', border: 'none',
+              borderRadius: 6, padding: '7px 0', fontSize: 11, fontWeight: 700,
+              cursor: 'pointer', fontFamily: 'inherit', flex: 1, letterSpacing: '0.05em'
+            }}>{saving ? 'СОХРАНЯЕМ...' : 'СОХРАНИТЬ'}</button>
+            <button onClick={() => { setEditing(false); setConfirmDelete(false) }} style={{
+              background: 'var(--bg3)', color: 'var(--text-dim)',
+              border: '1px solid var(--border)', borderRadius: 6,
+              padding: '7px 10px', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit'
+            }}>ОТМЕНА</button>
+            <button onClick={handleDelete} style={{
+              background: confirmDelete ? '#e24b4a' : 'var(--bg3)',
+              color: confirmDelete ? '#fff' : '#e24b4a',
+              border: '1px solid #e24b4a', borderRadius: 6,
+              padding: '7px 10px', fontSize: confirmDelete ? 10 : 14,
+              cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+              letterSpacing: confirmDelete ? '0.04em' : 0
+            }}>{confirmDelete ? 'ТОЧНО?' : '🗑'}</button>
           </div>
         </div>
       )}
@@ -232,9 +223,9 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, onBack 
               СТАТУС
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-              {Object.entries(stats).filter(([k]) => k !== 'last_updated').slice(0, 4).map(([k, v]) => (
+              {Object.entries(stats).filter(([k]) => k !== 'last_updated' && stats[k] !== 0).slice(0, 6).map(([k, v]) => (
                 <div key={k} style={{ background: 'var(--bg3)', border: `1px solid ${accentColor}20`, borderRadius: 6, padding: '8px' }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: accentColor, textShadow: `0 0 10px ${accentColor}80` }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: accentColor, textShadow: `0 0 10px ${accentColor}80` }}>
                     {typeof v === 'number' ? v.toLocaleString() : String(v)}
                   </div>
                   <div style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 2 }}>{STAT_LABELS[k] || k}</div>
@@ -249,21 +240,19 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, onBack 
       <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
         {showArchive && archiveEntries.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.1em', textAlign: 'center', padding: '4px 0' }}>— АРХИВ —</div>
+            <div style={{ fontSize: 9, color: 'var(--text-muted)', textAlign: 'center', padding: '4px 0' }}>— АРХИВ —</div>
             {archiveEntries.map(e => (
               <div key={e.id} style={{ background: 'var(--bg3)', borderRadius: 8, padding: '7px 10px', fontSize: 10, color: 'var(--text-muted)', borderLeft: `2px solid ${accentColor}20` }}>
-                <span style={{ color: 'var(--text-muted)', marginRight: 6, opacity: 0.6 }}>{e.entry_date}</span>
-                {e.content}
+                <span style={{ color: 'var(--text-muted)', marginRight: 6, opacity: 0.6 }}>{e.entry_date}</span>{e.content}
               </div>
             ))}
-            <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.1em', textAlign: 'center', padding: '4px 0' }}>— ПОСЛЕДНИЕ —</div>
+            <div style={{ fontSize: 9, color: 'var(--text-muted)', textAlign: 'center', padding: '4px 0' }}>— ПОСЛЕДНИЕ —</div>
           </div>
         )}
 
         {recentEntries.map(e => (
           <div key={e.id} style={{ background: 'var(--bg3)', borderRadius: 8, padding: '7px 10px', fontSize: 10, color: 'var(--text-dim)', borderLeft: `2px solid ${accentColor}40` }}>
-            <span style={{ color: 'var(--text-muted)', marginRight: 6 }}>{e.entry_date}</span>
-            {e.content}
+            <span style={{ color: 'var(--text-muted)', marginRight: 6 }}>{e.entry_date}</span>{e.content}
           </div>
         ))}
 
