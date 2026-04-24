@@ -24,3 +24,6 @@ export const sendChat = (user_id, gremlin_id, text) =>
 
 export const getWeeklyReport = (user_id) =>
   api.get(`/reports/weekly?user_id=${user_id}`).then(r => r.data)
+
+export const updateGremlin = (id, data) =>
+  api.patch(`/gremlins/${id}`, data).then(r => r.data)
