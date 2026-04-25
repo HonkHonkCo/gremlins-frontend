@@ -47,8 +47,8 @@ export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
                 <div style={{ fontSize: 13, fontWeight: 700, color: s.color, textShadow: `0 0 10px ${s.color}80` }}>
                   {typeof s.value === 'number' ? s.value.toLocaleString() : String(s.value).slice(0, 8)}
                 </div>
-                <div style={{ fontSize: 8, color: 'var(--text-muted)', marginTop: 2 }}>{statLabel(s.key)}</div>
-                <div style={{ fontSize: 8, color: s.color, opacity: 0.7, marginTop: 1 }}>{s.gremlin.slice(0, 10)}</div>
+                <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>{statLabel(s.key)}</div>
+                <div style={{ fontSize: 10, color: s.color, opacity: 0.7, marginTop: 1 }}>{s.gremlin.slice(0, 10)}</div>
               </div>
             ))}
           </div>

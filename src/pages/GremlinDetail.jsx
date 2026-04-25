@@ -168,7 +168,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
                   <div style={{ fontSize: 13, fontWeight: 700, color: accentColor, textShadow: `0 0 10px ${accentColor}80` }}>
                     {typeof v === 'number' ? v.toLocaleString() : String(v)}
                   </div>
-                  <div style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 2 }}>{statLabel(k)}</div>
+                  <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 2 }}>{statLabel(k)}</div>
                 </div>
               ))}
             </div>
