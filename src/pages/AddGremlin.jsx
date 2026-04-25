@@ -62,7 +62,9 @@ export default function AddGremlin({ userId, user, lang, onBack, onCreated }) {
                 border: `1px solid ${role === r.id ? 'var(--gold)' : 'var(--border)'}`,
                 borderRadius: 10, padding: '10px 8px', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit'
               }}>
-                <div style={{ fontSize: 22, marginBottom: 4 }}>{r.icon}</div>
+                <div style={{ width: 48, height: 48, borderRadius: 10, margin: '0 auto 6px', overflow: 'hidden', border: `1px solid ${role === r.id ? 'var(--gold)' : 'var(--border)'}`, background: 'var(--bg2)' }}>
+                  <img src={`/gremlins/${r.id}.png`} alt={r.id} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display='none'; e.target.parentNode.innerHTML = r.icon }} />
+                </div>
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text)' }}>{t(lang, r.id)}</div>
                 <div style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 2 }}>{t(lang, r.id + 'Desc')}</div>
               </button>

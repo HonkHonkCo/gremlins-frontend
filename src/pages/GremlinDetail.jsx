@@ -110,8 +110,8 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
 
       <div style={{ background: 'var(--bg2)', borderBottom: `1px solid ${accentColor}40`, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
         <button onClick={onBack} style={{ color: accentColor, fontSize: 11, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>← {lang === 'ru' ? 'назад' : 'back'}</button>
-        <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--bg3)', border: `1px solid ${accentColor}60`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
-          {ROLE_ICONS[gremlin.role] || '👾'}
+        <div style={{ width: 44, height: 44, borderRadius: 10, border: `2px solid ${accentColor}70`, boxShadow: `0 0 10px ${accentColor}40`, flexShrink: 0, overflow: 'hidden', background: 'var(--bg3)' }}>
+          <img src={`/gremlins/${gremlin.role}.png`} alt={gremlin.role} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display='none' }} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{gremlin.name}</div>

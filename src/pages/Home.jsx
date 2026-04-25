@@ -75,8 +75,8 @@ export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
             <div key={g.id} className="card"
               style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', borderColor: `${color}30` }}
               onClick={() => onSelect(g)}>
-              <div style={{ width: 40, height: 40, borderRadius: 8, background: 'var(--bg3)', border: `1px solid ${color}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
-                {ROLE_ICONS[g.role] || '👾'}
+              <div style={{ width: 44, height: 44, borderRadius: 10, border: `2px solid ${color}60`, boxShadow: `0 0 8px ${color}30`, flexShrink: 0, overflow: 'hidden', background: 'var(--bg3)' }}>
+                <img src={`/gremlins/${g.role}.png`} alt={g.role} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display='none' }} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>{g.name}</div>
