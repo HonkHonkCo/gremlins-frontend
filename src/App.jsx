@@ -7,6 +7,7 @@ import GremlinDetail from './pages/GremlinDetail'
 import AddGremlin from './pages/AddGremlin'
 import WeeklyReport from './pages/WeeklyReport'
 import Onboarding from './pages/Onboarding'
+import Upgrade from './pages/Upgrade'
 
 export default function App() {
   const [user, setUser] = useState(null)
@@ -16,6 +17,7 @@ export default function App() {
   const [homeKey, setHomeKey] = useState(0)
   const [lang, setLangState] = useState(getLang())
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [showUpgrade, setShowUpgrade] = useState(false)
 
   const changeLang = (l) => { setLang(l); setLangState(l) }
 
@@ -41,7 +43,7 @@ export default function App() {
   const finishOnboarding = () => { setShowOnboarding(false); setPage('add') }
 
   if (notInTelegram) return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, background: 'var(--bg)', color: 'var(--text)', fontFamily: "'Courier New', monospace" }}>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, background: 'var(--bg)', color: 'var(--text)', fontFamily: "'CMUTypewriter', 'Courier New', monospace" }}>
       <div style={{ fontSize: 48 }}>◈</div>
       <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '0.1em' }}>PERSONAL GREMLINS</div>
       <div style={{ fontSize: 12, color: 'var(--text-dim)', textAlign: 'center', lineHeight: 1.7 }}>{t(lang, 'openInTelegram')}</div>
@@ -54,6 +56,13 @@ export default function App() {
 
   return (
     <div className="app">
+      {showUpgrade && (
+        <Upgrade lang={lang} reason="limit_reached" user={user} onClose={(paid) => {
+          setShowUpgrade(false)
+          if (paid) { setUser(u => ({ ...u, plan: 'pro' })); window.location.reload() }
+        }} />
+      )}
+
       {(page === 'home' || page === 'report' || page === 'settings') && (
         <div className="topbar">
           <span style={{ fontSize: 14 }}>◈</span>
@@ -82,6 +91,8 @@ export default function App() {
         {page === 'settings' && (
           <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.1em' }}>{t(lang, 'settings')}</div>
+
+            {/* Language */}
             <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: 12 }}>
               <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 10 }}>{t(lang, 'language')}</div>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -89,21 +100,38 @@ export default function App() {
                 <button onClick={() => changeLang('en')} style={{ flex: 1, padding: '8px', borderRadius: 8, fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: 'pointer', background: lang === 'en' ? 'var(--gold)' : 'var(--bg3)', color: lang === 'en' ? '#000' : 'var(--text-dim)', border: `1px solid ${lang === 'en' ? 'var(--gold)' : 'var(--border)'}` }}>🇬🇧 English</button>
               </div>
             </div>
+
+            {/* Plan */}
             <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: 12 }}>
               <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 8 }}>
                 {lang === 'ru' ? 'Текущий план' : 'Current plan'}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: user.plan === 'pro' ? 'var(--gold)' : 'var(--text-dim)' }}>
-                  {user.plan === 'pro' ? '⭐ PRO' : (lang === 'ru' ? 'Бесплатный' : 'Free')}
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: user.plan === 'pro' ? 'var(--gold)' : 'var(--text)' }}>
+                    {user.plan === 'pro' ? '⭐ PRO' : (lang === 'ru' ? 'Бесплатный' : 'Free')}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 2 }}>
+                    {user.plan === 'pro'
+                      ? (lang === 'ru' ? '12 гремлинов · безлимит' : '12 gremlins · unlimited')
+                      : (lang === 'ru' ? '3 гремлина · 20 сообщений/день' : '3 gremlins · 20 messages/day')
+                    }
+                  </div>
                 </div>
                 {user.plan !== 'pro' && (
-                  <button onClick={() => setPage('upgrade')} style={{ background: 'var(--gold)', color: '#000', border: 'none', borderRadius: 6, padding: '6px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                    {lang === 'ru' ? 'Upgrade' : 'Upgrade'}
+                  <button onClick={() => setShowUpgrade(true)} style={{
+                    background: 'var(--gold)', color: '#000', border: 'none',
+                    borderRadius: 8, padding: '8px 16px', fontSize: 12,
+                    fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                    letterSpacing: '0.04em'
+                  }}>
+                    ⭐ PRO
                   </button>
                 )}
               </div>
             </div>
+
+            {/* Onboarding */}
             <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: 12 }}>
               <button onClick={() => setShowOnboarding(true)} style={{ width: '100%', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px', fontSize: 11, color: 'var(--text-dim)', cursor: 'pointer', fontFamily: 'inherit' }}>
                 {lang === 'ru' ? '◈ Посмотреть онбординг снова' : '◈ View onboarding again'}
