@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { getEntries, sendChat, updateGremlin, deleteGremlin } from '../services/api'
 import { t } from '../i18n'
+import Upgrade from './Upgrade'
 
 const ROLE_COLORS = {
   accountant: '#3ecf70', trainer: '#4a9eff', secretary: '#d4a017', chef: '#ff7043',
@@ -22,6 +23,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, lang, o
   const [editDesc, setEditDesc] = useState(initialGremlin.description || '')
   const [saving, setSaving] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [upgradeReason, setUpgradeReason] = useState(null)
   const bottomRef = useRef(null)
   const fileRef = useRef(null)
 
@@ -62,7 +64,15 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, lang, o
       const res = await sendChat(userId, gremlin.id, text)
       setMessages(m => [...m, { role: 'gremlin', text: res.reply || res.gremlin_reply || '...' }])
       getEntries(gremlin.id).then(data => setEntries(Array.isArray(data) ? data : []))
-    } catch { setMessages(m => [...m, { role: 'gremlin', text: t(lang, 'errorChat') }]) }
+    } catch(err) {
+      const data = err?.response?.data
+      if (data?.error === 'message_limit_reached') {
+        setUpgradeReason('message_limit_reached')
+        setMessages(m => m.slice(0, -1)) // убираем последнее сообщение юзера
+      } else {
+        setMessages(m => [...m, { role: 'gremlin', text: t(lang, 'errorChat') }])
+      }
+    }
     finally { setSending(false) }
   }
 
@@ -91,6 +101,13 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, lang, o
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg)' }}>
+      {upgradeReason && (
+        <Upgrade lang={lang} reason={upgradeReason} onClose={(paid) => {
+          setUpgradeReason(null)
+          if (paid) window.location.reload()
+        }} />
+      )}
+
       {/* Header */}
       <div style={{ background: 'var(--bg2)', borderBottom: `1px solid ${accentColor}40`, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
         <button onClick={onBack} style={{ color: accentColor, fontSize: 11, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>← {lang === 'ru' ? 'назад' : 'back'}</button>
@@ -120,13 +137,13 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, lang, o
           <textarea rows={2} value={editDesc} onChange={e => setEditDesc(e.target.value)} placeholder={t(lang, 'descPlaceholder')}
             style={{ background: 'var(--bg3)', border: `1px solid ${accentColor}40`, borderRadius: 6, padding: '7px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, outline: 'none', resize: 'none' }} />
           <div style={{ display: 'flex', gap: 6 }}>
-            <button onClick={saveEdit} disabled={saving || !editName.trim()} style={{ background: accentColor, color: '#000', border: 'none', borderRadius: 6, padding: '7px 0', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flex: 1, letterSpacing: '0.05em' }}>
+            <button onClick={saveEdit} disabled={saving || !editName.trim()} style={{ background: accentColor, color: '#000', border: 'none', borderRadius: 6, padding: '7px 0', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flex: 1 }}>
               {saving ? t(lang, 'saving') : t(lang, 'save')}
             </button>
             <button onClick={() => { setEditing(false); setConfirmDelete(false) }} style={{ background: 'var(--bg3)', color: 'var(--text-dim)', border: '1px solid var(--border)', borderRadius: 6, padding: '7px 10px', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit' }}>
               {t(lang, 'cancel')}
             </button>
-            <button onClick={handleDelete} style={{ background: confirmDelete ? '#e24b4a' : 'var(--bg3)', color: confirmDelete ? '#fff' : '#e24b4a', border: '1px solid #e24b4a', borderRadius: 6, padding: '7px 10px', fontSize: confirmDelete ? 10 : 14, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+            <button onClick={handleDelete} style={{ background: confirmDelete ? '#e24b4a' : 'var(--bg3)', color: confirmDelete ? '#fff' : '#e24b4a', border: '1px solid #e24b4a', borderRadius: 6, padding: '7px 10px', fontSize: confirmDelete ? 10 : 14, cursor: 'pointer', fontFamily: 'inherit' }}>
               {confirmDelete ? t(lang, 'confirmDelete') : '🗑'}
             </button>
           </div>
@@ -170,7 +187,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, lang, o
             <div style={{ fontSize: 9, color: 'var(--text-muted)', textAlign: 'center', padding: '4px 0' }}>— {t(lang, 'archive')} —</div>
             {archiveEntries.map(e => (
               <div key={e.id} style={{ background: 'var(--bg3)', borderRadius: 8, padding: '7px 10px', fontSize: 10, color: 'var(--text-muted)', borderLeft: `2px solid ${accentColor}20` }}>
-                <span style={{ color: 'var(--text-muted)', marginRight: 6, opacity: 0.6 }}>{e.entry_date}</span>{e.content}
+                <span style={{ marginRight: 6, opacity: 0.6 }}>{e.entry_date}</span>{e.content}
               </div>
             ))}
             <div style={{ fontSize: 9, color: 'var(--text-muted)', textAlign: 'center', padding: '4px 0' }}>———</div>

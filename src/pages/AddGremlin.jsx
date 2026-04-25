@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { createGremlin } from '../services/api'
 import { t } from '../i18n'
+import Upgrade from './Upgrade'
 
 const ROLES = [
   { id: 'accountant', icon: '🧮' },
@@ -15,6 +16,7 @@ export default function AddGremlin({ userId, lang, onBack, onCreated }) {
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showUpgrade, setShowUpgrade] = useState(false)
 
   const create = async () => {
     if (!name.trim()) { setError(t(lang, 'nameRequired')); return }
@@ -22,8 +24,13 @@ export default function AddGremlin({ userId, lang, onBack, onCreated }) {
     try {
       await createGremlin({ user_id: userId, role, name: name.trim(), description: description.trim() })
       onCreated()
-    } catch {
-      setError(t(lang, 'errorCreate'))
+    } catch(err) {
+      const data = err?.response?.data
+      if (data?.error === 'limit_reached') {
+        setShowUpgrade(true)
+      } else {
+        setError(t(lang, 'errorCreate'))
+      }
     } finally {
       setLoading(false)
     }
@@ -31,6 +38,13 @@ export default function AddGremlin({ userId, lang, onBack, onCreated }) {
 
   return (
     <div>
+      {showUpgrade && (
+        <Upgrade lang={lang} reason="limit_reached" onClose={(paid) => {
+          setShowUpgrade(false)
+          if (paid) window.location.reload()
+        }} />
+      )}
+
       <div className="topbar">
         <button className="topbar-back" onClick={onBack}>← {t(lang, 'cancel')}</button>
         <span className="topbar-title">{t(lang, 'newGremlin')}</span>
@@ -60,16 +74,14 @@ export default function AddGremlin({ userId, lang, onBack, onCreated }) {
           <div style={{ fontSize: 9, color: 'var(--gold-dim)', letterSpacing: '0.1em', marginBottom: 6 }}>
             {t(lang, 'gremlinName')}
           </div>
-          <input type="text" value={name} onChange={e => setName(e.target.value)}
-            placeholder={t(lang, 'namePlaceholder')} />
+          <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder={t(lang, 'namePlaceholder')} />
         </div>
 
         <div>
           <div style={{ fontSize: 9, color: 'var(--gold-dim)', letterSpacing: '0.1em', marginBottom: 6 }}>
             {t(lang, 'description')}
           </div>
-          <textarea rows={3} value={description} onChange={e => setDescription(e.target.value)}
-            placeholder={t(lang, 'descPlaceholder')} />
+          <textarea rows={3} value={description} onChange={e => setDescription(e.target.value)} placeholder={t(lang, 'descPlaceholder')} />
         </div>
 
         {error && (
