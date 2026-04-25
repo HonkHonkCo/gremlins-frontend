@@ -6,6 +6,7 @@ import Home from './pages/Home'
 import GremlinDetail from './pages/GremlinDetail'
 import AddGremlin from './pages/AddGremlin'
 import WeeklyReport from './pages/WeeklyReport'
+import Onboarding from './pages/Onboarding'
 
 export default function App() {
   const [user, setUser] = useState(null)
@@ -14,52 +15,47 @@ export default function App() {
   const [selectedGremlin, setSelectedGremlin] = useState(null)
   const [homeKey, setHomeKey] = useState(0)
   const [lang, setLangState] = useState(getLang())
+  const [showOnboarding, setShowOnboarding] = useState(false)
 
-  const changeLang = (l) => {
-    setLang(l)
-    setLangState(l)
-  }
+  const changeLang = (l) => { setLang(l); setLangState(l) }
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp
-    if (!tg?.initDataUnsafe?.user) {
-      setNotInTelegram(true)
-      return
-    }
+    if (!tg?.initDataUnsafe?.user) { setNotInTelegram(true); return }
     const tgId = tg.initDataUnsafe.user.id
     const username = tg.initDataUnsafe.user.username || ''
     tg.expand()
     tg.setHeaderColor('#0e0d0b')
     tg.setBackgroundColor('#0e0d0b')
-    syncUser(tgId, username).then(u => setUser(u)).catch(e => console.error('sync error', e))
+    syncUser(tgId, username)
+      .then(u => {
+        setUser(u)
+        // Показываем онбординг если юзер новый (создан менее 10 секунд назад)
+        const created = new Date(u.created_at)
+        const now = new Date()
+        if (now - created < 30000) setShowOnboarding(true)
+      })
+      .catch(e => console.error('sync error', e))
   }, [])
 
-  const goHome = () => {
-    setPage('home')
-    setSelectedGremlin(null)
-    setHomeKey(k => k + 1)
-  }
+  const goHome = () => { setPage('home'); setSelectedGremlin(null); setHomeKey(k => k + 1) }
+
+  const finishOnboarding = () => { setShowOnboarding(false); setPage('add') }
 
   if (notInTelegram) return (
-    <div style={{
-      height: '100vh', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center', gap: 16,
-      background: 'var(--bg)', color: 'var(--text)', fontFamily: "'Courier New', monospace"
-    }}>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, background: 'var(--bg)', color: 'var(--text)', fontFamily: "'Courier New', monospace" }}>
       <div style={{ fontSize: 48 }}>◈</div>
       <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '0.1em' }}>PERSONAL GREMLINS</div>
-      <div style={{ fontSize: 12, color: 'var(--text-dim)', textAlign: 'center', lineHeight: 1.7 }}>
-        {t(lang, 'openInTelegram')}
-      </div>
-      <a href="https://t.me/Mygremlins_bot" style={{
-        marginTop: 8, background: 'var(--gold)', color: '#000',
-        padding: '10px 24px', borderRadius: 8,
-        fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textDecoration: 'none'
-      }}>{t(lang, 'openButton')}</a>
+      <div style={{ fontSize: 12, color: 'var(--text-dim)', textAlign: 'center', lineHeight: 1.7 }}>{t(lang, 'openInTelegram')}</div>
+      <a href="https://t.me/Mygremlins_bot" style={{ marginTop: 8, background: 'var(--gold)', color: '#000', padding: '10px 24px', borderRadius: 8, fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textDecoration: 'none' }}>
+        {t(lang, 'openButton')}
+      </a>
     </div>
   )
 
   if (!user) return <div className="loading">{t(lang, 'loading')}</div>
+
+  if (showOnboarding) return <Onboarding lang={lang} onDone={finishOnboarding} />
 
   return (
     <div className="app">
@@ -90,29 +86,19 @@ export default function App() {
         {page === 'report' && <WeeklyReport userId={user.id} lang={lang} />}
         {page === 'settings' && (
           <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.1em' }}>
-              {t(lang, 'settings')}
-            </div>
+            <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.1em' }}>{t(lang, 'settings')}</div>
             <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: 12 }}>
-              <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 10 }}>
-                {t(lang, 'language')}
-              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 10 }}>{t(lang, 'language')}</div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={() => changeLang('ru')} style={{
-                  flex: 1, padding: '8px', borderRadius: 8, fontFamily: 'inherit',
-                  fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                  background: lang === 'ru' ? 'var(--gold)' : 'var(--bg3)',
-                  color: lang === 'ru' ? '#000' : 'var(--text-dim)',
-                  border: `1px solid ${lang === 'ru' ? 'var(--gold)' : 'var(--border)'}`,
-                }}>🇷🇺 Русский</button>
-                <button onClick={() => changeLang('en')} style={{
-                  flex: 1, padding: '8px', borderRadius: 8, fontFamily: 'inherit',
-                  fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                  background: lang === 'en' ? 'var(--gold)' : 'var(--bg3)',
-                  color: lang === 'en' ? '#000' : 'var(--text-dim)',
-                  border: `1px solid ${lang === 'en' ? 'var(--gold)' : 'var(--border)'}`,
-                }}>🇬🇧 English</button>
+                <button onClick={() => changeLang('ru')} style={{ flex: 1, padding: '8px', borderRadius: 8, fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: 'pointer', background: lang === 'ru' ? 'var(--gold)' : 'var(--bg3)', color: lang === 'ru' ? '#000' : 'var(--text-dim)', border: `1px solid ${lang === 'ru' ? 'var(--gold)' : 'var(--border)'}` }}>🇷🇺 Русский</button>
+                <button onClick={() => changeLang('en')} style={{ flex: 1, padding: '8px', borderRadius: 8, fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: 'pointer', background: lang === 'en' ? 'var(--gold)' : 'var(--bg3)', color: lang === 'en' ? '#000' : 'var(--text-dim)', border: `1px solid ${lang === 'en' ? 'var(--gold)' : 'var(--border)'}` }}>🇬🇧 English</button>
               </div>
+            </div>
+            {/* Show onboarding again */}
+            <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: 12 }}>
+              <button onClick={() => setShowOnboarding(true)} style={{ width: '100%', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px', fontSize: 11, color: 'var(--text-dim)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                {lang === 'ru' ? '◈ Посмотреть онбординг снова' : '◈ View onboarding again'}
+              </button>
             </div>
           </div>
         )}
