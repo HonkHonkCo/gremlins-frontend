@@ -111,7 +111,7 @@ export default function WeeklyReport({ userId, lang }) {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                     {Object.entries(selected.all_stats).slice(0, 6).map(([k, v]) => (
                       <div key={k} style={{ background: 'var(--bg3)', borderRadius: 6, padding: '8px' }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--gold)', textShadow: '0 0 8px #d4a01760' }}>{String(v)}</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--gold)', textShadow: '0 0 8px #d4a01760' }}>{String(v)}</div>
                         <div style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 2 }}>{t(lang, 'stats')?.[k] || k}</div>
                       </div>
                     ))}
