@@ -10,7 +10,7 @@ const ROLE_ICONS = {
   accountant: '🧮', trainer: '🏋️', secretary: '📋', chef: '🍽️',
 }
 
-export default function GremlinDetail({ gremlin: initialGremlin, userId, lang, onBack }) {
+export default function GremlinDetail({ gremlin: initialGremlin, userId, user, lang, onBack }) {
   const [gremlin, setGremlin] = useState(initialGremlin)
   const [entries, setEntries] = useState([])
   const [messages, setMessages] = useState([])
@@ -68,7 +68,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, lang, o
       const data = err?.response?.data
       if (data?.error === 'message_limit_reached') {
         setUpgradeReason('message_limit_reached')
-        setMessages(m => m.slice(0, -1)) // убираем последнее сообщение юзера
+        setMessages(m => m.slice(0, -1))
       } else {
         setMessages(m => [...m, { role: 'gremlin', text: t(lang, 'errorChat') }])
       }
@@ -102,13 +102,12 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, lang, o
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg)' }}>
       {upgradeReason && (
-        <Upgrade lang={lang} reason={upgradeReason} onClose={(paid) => {
+        <Upgrade lang={lang} reason={upgradeReason} user={user} onClose={(paid) => {
           setUpgradeReason(null)
           if (paid) window.location.reload()
         }} />
       )}
 
-      {/* Header */}
       <div style={{ background: 'var(--bg2)', borderBottom: `1px solid ${accentColor}40`, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
         <button onClick={onBack} style={{ color: accentColor, fontSize: 11, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>← {lang === 'ru' ? 'назад' : 'back'}</button>
         <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--bg3)', border: `1px solid ${accentColor}60`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
@@ -128,7 +127,6 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, lang, o
         </div>
       </div>
 
-      {/* Edit panel */}
       {editing && (
         <div style={{ background: 'var(--bg2)', borderBottom: `1px solid ${accentColor}30`, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ fontSize: 9, color: accentColor, letterSpacing: '0.1em' }}>{t(lang, 'edit')}</div>
@@ -150,7 +148,6 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, lang, o
         </div>
       )}
 
-      {/* Banner */}
       <div style={{ background: `${accentColor}12`, border: `1px solid ${accentColor}30`, borderLeft: `3px solid ${accentColor}`, margin: '8px 12px 0', borderRadius: '0 6px 6px 0', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
         <div style={{ width: 6, height: 6, borderRadius: '50%', background: accentColor, boxShadow: `0 0 6px ${accentColor}` }} />
         <span style={{ fontSize: 10, color: accentColor, letterSpacing: '0.06em' }}>
@@ -158,7 +155,6 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, lang, o
         </span>
       </div>
 
-      {/* Stats */}
       {hasStats && (
         <div style={{ padding: '8px 12px 0' }}>
           <div style={{ background: 'var(--bg2)', border: `1px solid ${accentColor}30`, borderRadius: 8, padding: '10px 12px' }}>
@@ -180,7 +176,6 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, lang, o
         </div>
       )}
 
-      {/* Chat */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
         {showArchive && archiveEntries.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -215,7 +210,6 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, lang, o
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
       <div style={{ padding: '10px 12px', background: 'var(--bg2)', borderTop: `1px solid ${accentColor}30`, display: 'flex', gap: 8, alignItems: 'flex-end' }}>
         <input ref={fileRef} type="file" accept=".csv,.txt,.json" onChange={handleFile} style={{ display: 'none' }} />
         <button onClick={() => fileRef.current?.click()} disabled={sending || fileLoading} style={{ background: 'var(--bg3)', border: `1px solid ${accentColor}30`, borderRadius: 8, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, cursor: 'pointer', flexShrink: 0, color: accentColor, opacity: sending ? 0.5 : 1 }}>📎</button>

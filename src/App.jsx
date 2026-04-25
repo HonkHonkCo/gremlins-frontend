@@ -29,8 +29,7 @@ export default function App() {
     tg.setBackgroundColor('#0e0d0b')
     syncUser(tgId, username)
       .then(u => {
-        setUser(u)
-        // Показываем онбординг если юзер новый (создан менее 10 секунд назад)
+        setUser({ ...u, telegram_id: tgId })
         const created = new Date(u.created_at)
         const now = new Date()
         if (now - created < 30000) setShowOnboarding(true)
@@ -39,7 +38,6 @@ export default function App() {
   }, [])
 
   const goHome = () => { setPage('home'); setSelectedGremlin(null); setHomeKey(k => k + 1) }
-
   const finishOnboarding = () => { setShowOnboarding(false); setPage('add') }
 
   if (notInTelegram) return (
@@ -47,14 +45,11 @@ export default function App() {
       <div style={{ fontSize: 48 }}>◈</div>
       <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '0.1em' }}>PERSONAL GREMLINS</div>
       <div style={{ fontSize: 12, color: 'var(--text-dim)', textAlign: 'center', lineHeight: 1.7 }}>{t(lang, 'openInTelegram')}</div>
-      <a href="https://t.me/Mygremlins_bot" style={{ marginTop: 8, background: 'var(--gold)', color: '#000', padding: '10px 24px', borderRadius: 8, fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textDecoration: 'none' }}>
-        {t(lang, 'openButton')}
-      </a>
+      <a href="https://t.me/Mygremlins_bot" style={{ marginTop: 8, background: 'var(--gold)', color: '#000', padding: '10px 24px', borderRadius: 8, fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textDecoration: 'none' }}>{t(lang, 'openButton')}</a>
     </div>
   )
 
   if (!user) return <div className="loading">{t(lang, 'loading')}</div>
-
   if (showOnboarding) return <Onboarding lang={lang} onDone={finishOnboarding} />
 
   return (
@@ -78,10 +73,10 @@ export default function App() {
           />
         )}
         {page === 'gremlin' && selectedGremlin && (
-          <GremlinDetail gremlin={selectedGremlin} userId={user.id} lang={lang} onBack={goHome} />
+          <GremlinDetail gremlin={selectedGremlin} userId={user.id} user={user} lang={lang} onBack={goHome} />
         )}
         {page === 'add' && (
-          <AddGremlin userId={user.id} lang={lang} onBack={() => setPage('home')} onCreated={goHome} />
+          <AddGremlin userId={user.id} user={user} lang={lang} onBack={() => setPage('home')} onCreated={goHome} />
         )}
         {page === 'report' && <WeeklyReport userId={user.id} lang={lang} />}
         {page === 'settings' && (
@@ -94,7 +89,21 @@ export default function App() {
                 <button onClick={() => changeLang('en')} style={{ flex: 1, padding: '8px', borderRadius: 8, fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: 'pointer', background: lang === 'en' ? 'var(--gold)' : 'var(--bg3)', color: lang === 'en' ? '#000' : 'var(--text-dim)', border: `1px solid ${lang === 'en' ? 'var(--gold)' : 'var(--border)'}` }}>🇬🇧 English</button>
               </div>
             </div>
-            {/* Show onboarding again */}
+            <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: 12 }}>
+              <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 8 }}>
+                {lang === 'ru' ? 'Текущий план' : 'Current plan'}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: user.plan === 'pro' ? 'var(--gold)' : 'var(--text-dim)' }}>
+                  {user.plan === 'pro' ? '⭐ PRO' : (lang === 'ru' ? 'Бесплатный' : 'Free')}
+                </div>
+                {user.plan !== 'pro' && (
+                  <button onClick={() => setPage('upgrade')} style={{ background: 'var(--gold)', color: '#000', border: 'none', borderRadius: 6, padding: '6px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    {lang === 'ru' ? 'Upgrade' : 'Upgrade'}
+                  </button>
+                )}
+              </div>
+            </div>
             <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: 12 }}>
               <button onClick={() => setShowOnboarding(true)} style={{ width: '100%', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px', fontSize: 11, color: 'var(--text-dim)', cursor: 'pointer', fontFamily: 'inherit' }}>
                 {lang === 'ru' ? '◈ Посмотреть онбординг снова' : '◈ View onboarding again'}

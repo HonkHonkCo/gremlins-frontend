@@ -10,7 +10,7 @@ const ROLES = [
   { id: 'chef', icon: '🍽️' },
 ]
 
-export default function AddGremlin({ userId, lang, onBack, onCreated }) {
+export default function AddGremlin({ userId, user, lang, onBack, onCreated }) {
   const [role, setRole] = useState('accountant')
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -39,7 +39,7 @@ export default function AddGremlin({ userId, lang, onBack, onCreated }) {
   return (
     <div>
       {showUpgrade && (
-        <Upgrade lang={lang} reason="limit_reached" onClose={(paid) => {
+        <Upgrade lang={lang} reason="limit_reached" user={user} onClose={(paid) => {
           setShowUpgrade(false)
           if (paid) window.location.reload()
         }} />
