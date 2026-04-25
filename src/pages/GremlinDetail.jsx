@@ -165,7 +165,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
               {Object.entries(stats).filter(([k, v]) => k !== 'last_updated' && v !== 0).slice(0, 6).map(([k, v]) => (
                 <div key={k} style={{ background: 'var(--bg3)', border: `1px solid ${accentColor}20`, borderRadius: 6, padding: '8px' }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: accentColor, textShadow: `0 0 10px ${accentColor}80` }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: accentColor, textShadow: `0 0 10px ${accentColor}80` }}>
                     {typeof v === 'number' ? v.toLocaleString() : String(v)}
                   </div>
                   <div style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 2 }}>{statLabel(k)}</div>

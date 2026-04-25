@@ -44,7 +44,7 @@ export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
             {allStats.map((s, i) => (
               <div key={i} style={{ background: 'var(--bg2)', border: `1px solid ${s.color}30`, borderRadius: 8, padding: '8px' }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: s.color, textShadow: `0 0 10px ${s.color}80` }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: s.color, textShadow: `0 0 10px ${s.color}80` }}>
                   {typeof s.value === 'number' ? s.value.toLocaleString() : String(s.value).slice(0, 8)}
                 </div>
                 <div style={{ fontSize: 8, color: 'var(--text-muted)', marginTop: 2 }}>{statLabel(s.key)}</div>
