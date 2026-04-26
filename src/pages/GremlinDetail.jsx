@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { getEntries, sendChat, updateGremlin, deleteGremlin } from '../services/api'
 import { t } from '../i18n'
 import Upgrade from './Upgrade'
+import GremlinAnimation from '../components/GremlinAnimation'
 
 const ROLE_COLORS = {
   accountant: '#3ecf70', trainer: '#4a9eff', secretary: '#d4a017', chef: '#ff7043',
@@ -165,59 +166,12 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
         position: 'relative', overflow: 'hidden',
         borderBottom: `1px solid ${accentColor}20`,
       }}>
-        {/* Cables decoration left */}
-        <svg style={{ position: 'absolute', left: 0, top: 0, width: 60, height: '100%', opacity: 0.4 }} viewBox="0 0 60 120">
-          <path d="M10 0 Q10 30 20 40 Q30 50 20 70 Q10 90 15 120" fill="none" stroke={accentColor} strokeWidth="2" strokeDasharray="4 4"/>
-          <path d="M30 0 Q25 20 30 50 Q35 80 25 120" fill="none" stroke="#3a3830" strokeWidth="1.5"/>
-          <circle cx="20" cy="40" r="3" fill={accentColor} opacity="0.6"/>
-          <circle cx="20" cy="70" r="2" fill={accentColor} opacity="0.4"/>
-        </svg>
-
-        {/* Cables decoration right */}
-        <svg style={{ position: 'absolute', right: 0, top: 0, width: 60, height: '100%', opacity: 0.4 }} viewBox="0 0 60 120">
-          <path d="M50 0 Q50 30 40 40 Q30 50 40 70 Q50 90 45 120" fill="none" stroke={accentColor} strokeWidth="2" strokeDasharray="4 4"/>
-          <path d="M30 0 Q35 20 30 50 Q25 80 35 120" fill="none" stroke="#3a3830" strokeWidth="1.5"/>
-          <circle cx="40" cy="40" r="3" fill={accentColor} opacity="0.6"/>
-          <circle cx="40" cy="70" r="2" fill={accentColor} opacity="0.4"/>
-        </svg>
-
-        {/* Round portrait */}
-        <div style={{
-          width: 100, height: 100,
-          borderRadius: '50%',
-          border: `3px solid ${accentColor}`,
-          boxShadow: talking
-            ? `0 0 20px ${accentColor}, 0 0 40px ${accentColor}60, inset 0 0 20px ${accentColor}20`
-            : `0 0 12px ${accentColor}60, 0 0 30px ${accentColor}20, inset 0 0 10px rgba(0,0,0,0.5)`,
-          overflow: 'hidden',
-          position: 'relative',
-          transition: 'box-shadow 0.3s',
-          background: '#0a0908',
-          animation: talking ? 'none' : undefined,
-        }}>
-          <img
-            src={`/gremlins/${gremlin.role}.png`}
-            alt={gremlin.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            onError={e => e.target.style.display = 'none'}
-          />
-          {/* Glass overlay */}
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'radial-gradient(ellipse at 30% 25%, rgba(255,255,255,0.15) 0%, transparent 60%)',
-            borderRadius: '50%',
-            pointerEvents: 'none',
-          }} />
-          {/* Talking indicator */}
-          {sending && (
-            <div style={{
-              position: 'absolute', inset: 0,
-              background: `radial-gradient(circle, ${accentColor}20 0%, transparent 70%)`,
-              animation: 'pulse 0.8s ease-in-out infinite',
-              borderRadius: '50%',
-            }} />
-          )}
-        </div>
+        <GremlinAnimation
+          role={gremlin.role}
+          accentColor={accentColor}
+          talking={talking}
+          size={110}
+        />
 
         {/* Name below portrait */}
         <div style={{ marginTop: 8, textAlign: 'center' }}>
