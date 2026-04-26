@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getGremlins } from '../services/api'
 import { t } from '../i18n'
+import BgAnimation from '../components/BgAnimation'
 
 const ROLE_ICONS = {
   accountant: '🧮', trainer: '🏋️', secretary: '📋', chef: '🍽️',
@@ -35,7 +36,9 @@ export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
   const statLabel = (k) => t(lang, 'stats')?.[k] || k
 
   return (
-    <div style={{ padding: '0 12px 12px' }}>
+    <div style={{ padding: '0 12px 12px', position: 'relative' }}>
+      <BgAnimation />
+      <div style={{ position: 'relative', zIndex: 1 }}>
       {allStats.length > 0 && (
         <div style={{ margin: '12px 0 8px' }}>
           <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: 6 }}>
@@ -96,6 +99,7 @@ export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
           <div style={{ width: 40, height: 40, borderRadius: 8, background: 'var(--bg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: 'var(--text-muted)', flexShrink: 0 }}>+</div>
           <span>{t(lang, 'addGremlin')}</span>
         </button>
+      </div>
       </div>
     </div>
   )
