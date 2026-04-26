@@ -61,7 +61,7 @@ export default function GremlinAnimation({ role, accentColor, talking }) {
     if (!loaded) return
     const canvas = canvasRef.current
     if (!canvas) return
-    const ctx = canvas.getContext('2d')
+    const ctx = canvas.getContext('2d', { alpha: true })
     const interval = 1000 / FPS
 
     function draw(timestamp) {
@@ -69,6 +69,7 @@ export default function GremlinAnimation({ role, accentColor, talking }) {
         const frame = frames.current[frameIndex.current]
         if (frame?.complete && frame.naturalWidth > 0) {
           ctx.clearRect(0, 0, canvas.width, canvas.height)
+          ctx.globalCompositeOperation = "source-over"
           ctx.drawImage(frame, 0, 0, canvas.width, canvas.height)
         }
         frameIndex.current = (frameIndex.current + 1) % TOTAL_FRAMES
@@ -88,6 +89,7 @@ export default function GremlinAnimation({ role, accentColor, talking }) {
       width: '100%',
       position: 'relative',
       overflow: 'hidden',
+      background: 'transparent',
       boxShadow: talking ? `0 0 20px ${accentColor}40` : 'none',
       transition: 'box-shadow 0.3s',
     }}>
@@ -104,6 +106,7 @@ export default function GremlinAnimation({ role, accentColor, talking }) {
           width: '100%',
           height: 'auto',
           display: loaded ? 'block' : 'none',
+          background: 'transparent',
         }}
       />
       {/* Talking pulse overlay */}
