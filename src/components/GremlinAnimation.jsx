@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 const TOTAL_FRAMES = 50
-const FPS = 12
+const FPS = 6
 
 const ROLE_PREFIX = {
   chef: 'Chef/Chef00001',
@@ -12,7 +12,7 @@ const ROLE_PREFIX = {
 
 const SUPABASE_URL = 'https://gljpqbsslkunuvzfdshd.supabase.co/storage/v1/object/public/gremlins-anim'
 
-export default function GremlinAnimation({ role, accentColor, talking, size = 120 }) {
+export default function GremlinAnimation({ role, accentColor, talking }) {
   const canvasRef = useRef(null)
   const frames = useRef([])
   const frameIndex = useRef(0)
@@ -32,22 +32,21 @@ export default function GremlinAnimation({ role, accentColor, talking, size = 12
 
     let loadedCount = 0
     let errorCount = 0
-    const total = TOTAL_FRAMES
 
-    for (let i = 0; i < total; i++) {
+    for (let i = 0; i < TOTAL_FRAMES; i++) {
       const img = new Image()
       const num = String(i).padStart(5, '0')
       img.src = `${SUPABASE_URL}/${prefix}_${num}.png`
       img.onload = () => {
         loadedCount++
-        if (loadedCount + errorCount === total) {
+        if (loadedCount + errorCount === TOTAL_FRAMES) {
           if (loadedCount > 0) setLoaded(true)
           else setError(true)
         }
       }
       img.onerror = () => {
         errorCount++
-        if (loadedCount + errorCount === total) {
+        if (loadedCount + errorCount === TOTAL_FRAMES) {
           if (loadedCount > 0) setLoaded(true)
           else setError(true)
         }
@@ -82,54 +81,36 @@ export default function GremlinAnimation({ role, accentColor, talking, size = 12
     return () => cancelAnimationFrame(animRef.current)
   }, [loaded])
 
-  if (error) return (
-    <div style={{
-      width: '100%', height: size,
-      background: '#0a0908',
-      borderBottom: `2px solid ${accentColor}40`,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: size * 0.3, flexShrink: 0
-    }}>
-      👾
-    </div>
-  )
+  if (error) return null
 
   return (
     <div style={{
-      width: '100%', height: size,
-      borderBottom: `2px solid ${accentColor}40`,
-      boxShadow: talking
-        ? `0 0 20px ${accentColor}40, inset 0 -10px 30px ${accentColor}20`
-        : `inset 0 -5px 20px ${accentColor}10`,
-      overflow: 'hidden',
+      width: '100%',
       position: 'relative',
+      overflow: 'hidden',
+      boxShadow: talking ? `0 0 20px ${accentColor}40` : 'none',
       transition: 'box-shadow 0.3s',
-      background: '#0a0908',
     }}>
       {!loaded && (
-        <div style={{
-          position: 'absolute', inset: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: accentColor, fontSize: 10, opacity: 0.5
-        }}>...</div>
+        <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accentColor, opacity: 0.3, fontSize: 12 }}>
+          ...
+        </div>
       )}
       <canvas
         ref={canvasRef}
-        width={size * 3}
-        height={size}
-        style={{ width: '100%', height: '100%', display: loaded ? 'block' : 'none' }}
+        width={540}
+        height={300}
+        style={{
+          width: '100%',
+          height: 'auto',
+          display: loaded ? 'block' : 'none',
+        }}
       />
-      {/* Glass overlay */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        background: 'radial-gradient(ellipse at 30% 25%, rgba(255,255,255,0.12) 0%, transparent 60%)',
-        pointerEvents: 'none',
-      }} />
-      {/* Talking pulse */}
+      {/* Talking pulse overlay */}
       {talking && (
         <div style={{
           position: 'absolute', inset: 0,
-          background: `radial-gradient(circle, ${accentColor}20 0%, transparent 70%)`,
+          background: `radial-gradient(circle, ${accentColor}15 0%, transparent 70%)`,
           animation: 'pulse 0.8s ease-in-out infinite',
           pointerEvents: 'none',
         }} />
