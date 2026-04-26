@@ -8,6 +8,7 @@ import AddGremlin from './pages/AddGremlin'
 import WeeklyReport from './pages/WeeklyReport'
 import Onboarding from './pages/Onboarding'
 import Upgrade from './pages/Upgrade'
+import { themes, getTheme, setTheme } from './themes.js'
 
 export default function App() {
   const [user, setUser] = useState(null)
@@ -18,8 +19,10 @@ export default function App() {
   const [lang, setLangState] = useState(getLang())
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
+  const [theme, setThemeState] = useState(getTheme())
 
   const changeLang = (l) => { setLang(l); setLangState(l) }
+  const changeTheme = (id) => { setTheme(id); setThemeState(id) }
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp
@@ -128,6 +131,32 @@ export default function App() {
                     ⭐ PRO
                   </button>
                 )}
+              </div>
+            </div>
+
+            {/* Theme */}
+            <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: 12 }}>
+              <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 10 }}>
+                {lang === 'ru' ? 'Тема оформления' : 'Theme'}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                {Object.entries(themes).map(([id, t]) => (
+                  <button key={id} onClick={() => changeTheme(id)} style={{
+                    background: theme === id ? 'var(--bg3)' : 'var(--bg2)',
+                    border: `2px solid ${theme === id ? t.preview : 'var(--border)'}`,
+                    borderRadius: 8, padding: '10px 8px', cursor: 'pointer',
+                    fontFamily: 'inherit', textAlign: 'left',
+                    boxShadow: theme === id ? `0 0 10px ${t.preview}40` : 'none',
+                    transition: 'all 0.2s'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                      <div style={{ width: 12, height: 12, borderRadius: '50%', background: t.preview, boxShadow: `0 0 6px ${t.preview}`, flexShrink: 0 }} />
+                      <div style={{ fontSize: 10, fontWeight: 700, color: theme === id ? t.preview : 'var(--text-dim)' }}>
+                        {lang === 'ru' ? t.nameRu : t.name}
+                      </div>
+                    </div>
+                  </button>
+                ))}
               </div>
             </div>
 
