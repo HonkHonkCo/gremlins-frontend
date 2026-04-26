@@ -160,7 +160,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
 
       {/* GREMLIN PORTRAIT AREA */}
       <div style={{
-        background: `linear-gradient(180deg, #0e0d0b 0%, #1a1612 100%)`,
+        background: 'transparent',
         padding: '16px 12px 12px',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         position: 'relative', overflow: 'hidden',
