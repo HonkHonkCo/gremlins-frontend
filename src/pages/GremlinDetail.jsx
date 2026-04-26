@@ -6,8 +6,8 @@ import Upgrade from './Upgrade'
 const ROLE_COLORS = {
   accountant: '#3ecf70', trainer: '#4a9eff', secretary: '#d4a017', chef: '#ff7043',
 }
-const ROLE_ICONS = {
-  accountant: '🧮', trainer: '🏋️', secretary: '📋', chef: '🍽️',
+const ROLE_LABELS = {
+  accountant: 'Бухгалтер', trainer: 'Тренер', secretary: 'Секретарь', chef: 'Шеф-повар',
 }
 
 export default function GremlinDetail({ gremlin: initialGremlin, userId, user, lang, onBack }) {
@@ -24,6 +24,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
   const [saving, setSaving] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [upgradeReason, setUpgradeReason] = useState(null)
+  const [talking, setTalking] = useState(false)
   const bottomRef = useRef(null)
   const fileRef = useRef(null)
 
@@ -60,6 +61,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
     if (!textOverride) setInput('')
     setMessages(m => [...m, { role: 'user', text }])
     setSending(true)
+    setTalking(true)
     try {
       const res = await sendChat(userId, gremlin.id, text)
       setMessages(m => [...m, { role: 'gremlin', text: res.reply || res.gremlin_reply || '...' }])
@@ -73,7 +75,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
         setMessages(m => [...m, { role: 'gremlin', text: t(lang, 'errorChat') }])
       }
     }
-    finally { setSending(false) }
+    finally { setSending(false); setTimeout(() => setTalking(false), 1000) }
   }
 
   const handleKey = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }
@@ -100,7 +102,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
   const statLabel = (k) => t(lang, 'stats')?.[k] || k
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg)', overflow: 'hidden' }}>
       {upgradeReason && (
         <Upgrade lang={lang} reason={upgradeReason} user={user} onClose={(paid) => {
           setUpgradeReason(null)
@@ -108,27 +110,34 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
         }} />
       )}
 
-      <div style={{ background: 'var(--bg2)', borderBottom: `1px solid ${accentColor}40`, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <button onClick={onBack} style={{ color: accentColor, fontSize: 11, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>← {lang === 'ru' ? 'назад' : 'back'}</button>
-        <div style={{ width: 44, height: 44, borderRadius: 10, border: `2px solid ${accentColor}70`, boxShadow: `0 0 10px ${accentColor}40`, flexShrink: 0, overflow: 'hidden', background: 'var(--bg3)' }}>
-          <img src={`/gremlins/${gremlin.role}.png`} alt={gremlin.role} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display='none' }} />
-        </div>
+      {/* TOP HEADER */}
+      <div style={{
+        background: 'var(--bg2)', borderBottom: `1px solid ${accentColor}30`,
+        padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 10,
+        position: 'relative', zIndex: 2
+      }}>
+        <button onClick={onBack} style={{ color: accentColor, fontSize: 11, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+          ← {lang === 'ru' ? 'назад' : 'back'}
+        </button>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{gremlin.name}</div>
-          <div style={{ fontSize: 10, color: accentColor, marginTop: 1 }}>{t(lang, gremlin.role) || gremlin.role}</div>
+          <div style={{ fontSize: 10, color: accentColor }}>{ROLE_LABELS[gremlin.role] || gremlin.role}</div>
         </div>
-        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-          <button onClick={() => { setEditing(v => !v); setEditName(gremlin.name); setEditDesc(gremlin.description || ''); setConfirmDelete(false) }} style={{ background: editing ? `${accentColor}20` : 'var(--bg3)', border: `1px solid ${accentColor}40`, borderRadius: 6, padding: '4px 8px', fontSize: 14, color: accentColor, cursor: 'pointer', fontFamily: 'inherit' }}>✏️</button>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button onClick={() => { setEditing(v => !v); setEditName(gremlin.name); setEditDesc(gremlin.description || ''); setConfirmDelete(false) }}
+            style={{ background: editing ? `${accentColor}20` : 'var(--bg3)', border: `1px solid ${accentColor}40`, borderRadius: 6, padding: '4px 8px', fontSize: 14, color: accentColor, cursor: 'pointer', fontFamily: 'inherit' }}>✏️</button>
           {archiveEntries.length > 0 && (
-            <button onClick={() => setShowArchive(v => !v)} style={{ background: showArchive ? `${accentColor}20` : 'var(--bg3)', border: `1px solid ${accentColor}40`, borderRadius: 6, padding: '4px 8px', fontSize: 9, color: accentColor, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.06em' }}>
+            <button onClick={() => setShowArchive(v => !v)}
+              style={{ background: showArchive ? `${accentColor}20` : 'var(--bg3)', border: `1px solid ${accentColor}40`, borderRadius: 6, padding: '4px 8px', fontSize: 9, color: accentColor, cursor: 'pointer', fontFamily: 'inherit' }}>
               {showArchive ? t(lang, 'hide') : `${t(lang, 'archive')} (${archiveEntries.length})`}
             </button>
           )}
         </div>
       </div>
 
+      {/* EDIT PANEL */}
       {editing && (
-        <div style={{ background: 'var(--bg2)', borderBottom: `1px solid ${accentColor}30`, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ background: 'var(--bg2)', borderBottom: `1px solid ${accentColor}30`, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8, zIndex: 2 }}>
           <div style={{ fontSize: 9, color: accentColor, letterSpacing: '0.1em' }}>{t(lang, 'edit')}</div>
           <input value={editName} onChange={e => setEditName(e.target.value)} placeholder={t(lang, 'namePlaceholder')}
             style={{ background: 'var(--bg3)', border: `1px solid ${accentColor}40`, borderRadius: 6, padding: '7px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, outline: 'none' }} />
@@ -148,34 +157,99 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
         </div>
       )}
 
-      <div style={{ background: `${accentColor}12`, border: `1px solid ${accentColor}30`, borderLeft: `3px solid ${accentColor}`, margin: '8px 12px 0', borderRadius: '0 6px 6px 0', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
-        <div style={{ width: 6, height: 6, borderRadius: '50%', background: accentColor, boxShadow: `0 0 6px ${accentColor}` }} />
-        <span style={{ fontSize: 10, color: accentColor, letterSpacing: '0.06em' }}>
-          {t(lang, 'youAreWriting')}: {gremlin.name.toUpperCase()}
-        </span>
+      {/* GREMLIN PORTRAIT AREA */}
+      <div style={{
+        background: `linear-gradient(180deg, #0e0d0b 0%, #1a1612 100%)`,
+        padding: '16px 12px 12px',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        position: 'relative', overflow: 'hidden',
+        borderBottom: `1px solid ${accentColor}20`,
+      }}>
+        {/* Cables decoration left */}
+        <svg style={{ position: 'absolute', left: 0, top: 0, width: 60, height: '100%', opacity: 0.4 }} viewBox="0 0 60 120">
+          <path d="M10 0 Q10 30 20 40 Q30 50 20 70 Q10 90 15 120" fill="none" stroke={accentColor} strokeWidth="2" strokeDasharray="4 4"/>
+          <path d="M30 0 Q25 20 30 50 Q35 80 25 120" fill="none" stroke="#3a3830" strokeWidth="1.5"/>
+          <circle cx="20" cy="40" r="3" fill={accentColor} opacity="0.6"/>
+          <circle cx="20" cy="70" r="2" fill={accentColor} opacity="0.4"/>
+        </svg>
+
+        {/* Cables decoration right */}
+        <svg style={{ position: 'absolute', right: 0, top: 0, width: 60, height: '100%', opacity: 0.4 }} viewBox="0 0 60 120">
+          <path d="M50 0 Q50 30 40 40 Q30 50 40 70 Q50 90 45 120" fill="none" stroke={accentColor} strokeWidth="2" strokeDasharray="4 4"/>
+          <path d="M30 0 Q35 20 30 50 Q25 80 35 120" fill="none" stroke="#3a3830" strokeWidth="1.5"/>
+          <circle cx="40" cy="40" r="3" fill={accentColor} opacity="0.6"/>
+          <circle cx="40" cy="70" r="2" fill={accentColor} opacity="0.4"/>
+        </svg>
+
+        {/* Round portrait */}
+        <div style={{
+          width: 100, height: 100,
+          borderRadius: '50%',
+          border: `3px solid ${accentColor}`,
+          boxShadow: talking
+            ? `0 0 20px ${accentColor}, 0 0 40px ${accentColor}60, inset 0 0 20px ${accentColor}20`
+            : `0 0 12px ${accentColor}60, 0 0 30px ${accentColor}20, inset 0 0 10px rgba(0,0,0,0.5)`,
+          overflow: 'hidden',
+          position: 'relative',
+          transition: 'box-shadow 0.3s',
+          background: '#0a0908',
+          animation: talking ? 'none' : undefined,
+        }}>
+          <img
+            src={`/gremlins/${gremlin.role}.png`}
+            alt={gremlin.name}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            onError={e => e.target.style.display = 'none'}
+          />
+          {/* Glass overlay */}
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'radial-gradient(ellipse at 30% 25%, rgba(255,255,255,0.15) 0%, transparent 60%)',
+            borderRadius: '50%',
+            pointerEvents: 'none',
+          }} />
+          {/* Talking indicator */}
+          {sending && (
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: `radial-gradient(circle, ${accentColor}20 0%, transparent 70%)`,
+              animation: 'pulse 0.8s ease-in-out infinite',
+              borderRadius: '50%',
+            }} />
+          )}
+        </div>
+
+        {/* Name below portrait */}
+        <div style={{ marginTop: 8, textAlign: 'center' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: accentColor, letterSpacing: '0.1em' }}>
+            {gremlin.name.toUpperCase()}
+          </div>
+          {sending && (
+            <div style={{ fontSize: 9, color: accentColor, opacity: 0.7, marginTop: 2, letterSpacing: '0.06em' }}>
+              {lang === 'ru' ? 'думает...' : 'thinking...'}
+            </div>
+          )}
+        </div>
+
+        {/* Stats row */}
+        {hasStats && (
+          <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 320 }}>
+            {Object.entries(stats).filter(([k, v]) => k !== 'last_updated' && v !== 0).slice(0, 4).map(([k, v]) => (
+              <div key={k} style={{
+                background: `${accentColor}15`, border: `1px solid ${accentColor}30`,
+                borderRadius: 6, padding: '4px 8px', textAlign: 'center'
+              }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: accentColor, textShadow: `0 0 8px ${accentColor}80` }}>
+                  {typeof v === 'number' ? v.toLocaleString() : String(v).slice(0, 10)}
+                </div>
+                <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 1 }}>{statLabel(k)}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {hasStats && (
-        <div style={{ padding: '8px 12px 0' }}>
-          <div style={{ background: 'var(--bg2)', border: `1px solid ${accentColor}30`, borderRadius: 8, padding: '10px 12px' }}>
-            <div style={{ fontSize: 9, color: accentColor, letterSpacing: '0.12em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 5, height: 5, borderRadius: '50%', background: accentColor, boxShadow: `0 0 8px ${accentColor}, 0 0 16px ${accentColor}60` }} />
-              {t(lang, 'status')}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-              {Object.entries(stats).filter(([k, v]) => k !== 'last_updated' && v !== 0).slice(0, 6).map(([k, v]) => (
-                <div key={k} style={{ background: 'var(--bg3)', border: `1px solid ${accentColor}20`, borderRadius: 6, padding: '8px' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: accentColor, textShadow: `0 0 10px ${accentColor}80` }}>
-                    {typeof v === 'number' ? v.toLocaleString() : String(v)}
-                  </div>
-                  <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 2 }}>{statLabel(k)}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
+      {/* CHAT */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
         {showArchive && archiveEntries.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -188,18 +262,26 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
             <div style={{ fontSize: 9, color: 'var(--text-muted)', textAlign: 'center', padding: '4px 0' }}>———</div>
           </div>
         )}
+
         {recentEntries.map(e => (
           <div key={e.id} style={{ background: 'var(--bg3)', borderRadius: 8, padding: '7px 10px', fontSize: 10, color: 'var(--text-dim)', borderLeft: `2px solid ${accentColor}40` }}>
             <span style={{ color: 'var(--text-muted)', marginRight: 6 }}>{e.entry_date}</span>{e.content}
           </div>
         ))}
+
         {messages.map((m, i) => (
           <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
-            <div style={{ maxWidth: '80%', background: m.role === 'user' ? accentColor : 'var(--bg2)', color: m.role === 'user' ? '#000' : 'var(--text)', border: m.role === 'gremlin' ? `1px solid ${accentColor}30` : 'none', borderRadius: m.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px', padding: '8px 12px', fontSize: 12, lineHeight: 1.5 }}>
-              {m.text}
-            </div>
+            <div style={{
+              maxWidth: '80%',
+              background: m.role === 'user' ? accentColor : 'var(--bg2)',
+              color: m.role === 'user' ? '#000' : 'var(--text)',
+              border: m.role === 'gremlin' ? `1px solid ${accentColor}30` : 'none',
+              borderRadius: m.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+              padding: '8px 12px', fontSize: 12, lineHeight: 1.5
+            }}>{m.text}</div>
           </div>
         ))}
+
         {(sending || fileLoading) && (
           <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
             <div style={{ background: 'var(--bg2)', border: `1px solid ${accentColor}30`, borderRadius: '12px 12px 12px 2px', padding: '8px 14px', fontSize: 12, color: 'var(--text-muted)' }}>
@@ -210,6 +292,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
         <div ref={bottomRef} />
       </div>
 
+      {/* INPUT */}
       <div style={{ padding: '10px 12px', background: 'var(--bg2)', borderTop: `1px solid ${accentColor}30`, display: 'flex', gap: 8, alignItems: 'flex-end' }}>
         <input ref={fileRef} type="file" accept=".csv,.txt,.json" onChange={handleFile} style={{ display: 'none' }} />
         <button onClick={() => fileRef.current?.click()} disabled={sending || fileLoading} style={{ background: 'var(--bg3)', border: `1px solid ${accentColor}30`, borderRadius: 8, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, cursor: 'pointer', flexShrink: 0, color: accentColor, opacity: sending ? 0.5 : 1 }}>📎</button>
@@ -218,6 +301,13 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
           style={{ flex: 1, background: 'var(--bg3)', border: `1px solid ${accentColor}30`, borderRadius: 6, padding: '8px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, resize: 'none', outline: 'none' }} />
         <button onClick={() => send()} disabled={sending || !input.trim()} style={{ background: input.trim() ? accentColor : 'var(--bg3)', color: input.trim() ? '#000' : 'var(--text-muted)', borderRadius: 8, padding: '8px 14px', fontSize: 11, fontWeight: 700, transition: 'all 0.15s', flexShrink: 0, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>▸</button>
       </div>
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.8; }
+        }
+      `}</style>
     </div>
   )
 }
