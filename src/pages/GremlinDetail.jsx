@@ -170,7 +170,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
           role={gremlin.role}
           accentColor={accentColor}
           talking={talking}
-          size={110}
+          size={220}
         />
 
         {/* Name below portrait */}

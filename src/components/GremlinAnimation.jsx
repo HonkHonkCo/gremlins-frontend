@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 const TOTAL_FRAMES = 50
-const FPS = 24
+const FPS = 12
 
 const ROLE_PREFIX = {
   chef: 'Chef/Chef00001',
@@ -84,12 +84,11 @@ export default function GremlinAnimation({ role, accentColor, talking, size = 12
 
   if (error) return (
     <div style={{
-      width: size, height: size, borderRadius: '50%',
+      width: '100%', height: size,
       background: '#0a0908',
-      border: `3px solid ${accentColor}`,
-      boxShadow: `0 0 12px ${accentColor}60`,
+      borderBottom: `2px solid ${accentColor}40`,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: size * 0.4, flexShrink: 0
+      fontSize: size * 0.3, flexShrink: 0
     }}>
       👾
     </div>
@@ -97,16 +96,15 @@ export default function GremlinAnimation({ role, accentColor, talking, size = 12
 
   return (
     <div style={{
-      width: size, height: size, borderRadius: '50%',
-      border: `3px solid ${accentColor}`,
+      width: '100%', height: size,
+      borderBottom: `2px solid ${accentColor}40`,
       boxShadow: talking
-        ? `0 0 20px ${accentColor}, 0 0 40px ${accentColor}60, inset 0 0 20px ${accentColor}20`
-        : `0 0 12px ${accentColor}60, 0 0 30px ${accentColor}20`,
+        ? `0 0 20px ${accentColor}40, inset 0 -10px 30px ${accentColor}20`
+        : `inset 0 -5px 20px ${accentColor}10`,
       overflow: 'hidden',
       position: 'relative',
       transition: 'box-shadow 0.3s',
       background: '#0a0908',
-      flexShrink: 0,
     }}>
       {!loaded && (
         <div style={{
@@ -117,7 +115,7 @@ export default function GremlinAnimation({ role, accentColor, talking, size = 12
       )}
       <canvas
         ref={canvasRef}
-        width={size}
+        width={size * 3}
         height={size}
         style={{ width: '100%', height: '100%', display: loaded ? 'block' : 'none' }}
       />
@@ -125,7 +123,7 @@ export default function GremlinAnimation({ role, accentColor, talking, size = 12
       <div style={{
         position: 'absolute', inset: 0,
         background: 'radial-gradient(ellipse at 30% 25%, rgba(255,255,255,0.12) 0%, transparent 60%)',
-        borderRadius: '50%', pointerEvents: 'none',
+        pointerEvents: 'none',
       }} />
       {/* Talking pulse */}
       {talking && (
@@ -133,7 +131,7 @@ export default function GremlinAnimation({ role, accentColor, talking, size = 12
           position: 'absolute', inset: 0,
           background: `radial-gradient(circle, ${accentColor}20 0%, transparent 70%)`,
           animation: 'pulse 0.8s ease-in-out infinite',
-          borderRadius: '50%', pointerEvents: 'none',
+          pointerEvents: 'none',
         }} />
       )}
     </div>
