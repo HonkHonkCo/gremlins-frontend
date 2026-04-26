@@ -19,7 +19,7 @@ export default function BgAnimation() {
     for (let i = 1; i <= TOTAL_FRAMES; i++) {
       const img = new Image()
       const num = String(i).padStart(5, '0')
-      img.src = `/bg/01_${num}.png`
+      img.src = `https://gljpqbsslkunuvzfdshd.supabase.co/storage/v1/object/public/bg-animation/01_${num}.png`
       img.onload = () => {
         loaded++
         if (loaded === TOTAL_FRAMES) startAnimation()
