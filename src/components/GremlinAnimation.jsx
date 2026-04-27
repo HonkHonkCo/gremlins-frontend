@@ -86,7 +86,8 @@ export default function GremlinAnimation({ role, accentColor, talking }) {
 
   return (
     <div style={{
-      width: '100%',
+      width: '100vw',
+      marginLeft: 'calc(-50vw + 50%)',
       position: 'relative',
       overflow: 'hidden',
       background: 'transparent',
@@ -100,11 +101,12 @@ export default function GremlinAnimation({ role, accentColor, talking }) {
       )}
       <canvas
         ref={canvasRef}
-        width={540}
-        height={300}
+        width={560}
+        height={200}
         style={{
           width: '100%',
-          height: 'auto',
+          height: '160px',
+          objectFit: 'cover',
           display: loaded ? 'block' : 'none',
           background: 'transparent',
         }}
