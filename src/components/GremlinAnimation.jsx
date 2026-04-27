@@ -85,8 +85,8 @@ export default function GremlinAnimation({ role, accentColor, talking }) {
 
   if (error) return null
 
-  // Scale down to fit height 180px, keep proportions, overflow width
-  const targetH = 180
+  // Scale down to fit height 100px, keep proportions, overflow width
+  const targetH = 100
   const scale = targetH / naturalSize.h
   const scaledW = naturalSize.w * scale
 
