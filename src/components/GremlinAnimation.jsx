@@ -84,49 +84,42 @@ export default function GremlinAnimation({ role, accentColor, talking }) {
 
   if (error) return null
 
-  // ... (начало кода без изменений)
-
-return (
-  <div style={{
-    width: '100%', // Меняем с 100vw для лучшего контроля внутри родителя
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center', // Центрирует содержимое по горизонтали
-    position: 'relative',
-    overflow: 'visible', // Чтобы поднятый ассет не обрезался сверху
-    background: 'transparent',
-    boxShadow: talking ? `0 0 20px ${accentColor}40` : 'none',
-    transition: 'box-shadow 0.3s',
-  }}>
-    {!loaded && (
-      <div style={{ height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accentColor, opacity: 0.3, fontSize: 12 }}>
-        ...
-      </div>
-    )}
-    <canvas
-      ref={canvasRef}
-      width={840}
-      height={200}
-      style={{
-        width: 'auto',
-        height: '110px', // Регулируй размер здесь
-        display: loaded ? 'block' : 'none',
-        background: 'transparent',
-        marginTop: '-30px', // Регулируй "выше/ниже" здесь
-        position: 'relative',
-        zIndex: 2
-      }}
-    />
-    
-    {/* Talking pulse overlay */}
-    {talking && (
-      <div style={{
-        position: 'absolute', 
-        inset: 0,
-        background: `radial-gradient(circle, ${accentColor}15 0%, transparent 70%)`,
-        animation: 'pulse 0.8s ease-in-out infinite',
-        pointerEvents: 'none',
-      }} />
-    )}
-  </div>
-)
+  return (
+    <div style={{
+      width: '100vw',
+      marginLeft: 'calc(-50vw + 50%)',
+      position: 'relative',
+      overflow: 'hidden',
+      background: 'transparent',
+      boxShadow: talking ? `0 0 20px ${accentColor}40` : 'none',
+      transition: 'box-shadow 0.3s',
+    }}>
+      {!loaded && (
+        <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accentColor, opacity: 0.3, fontSize: 12 }}>
+          ...
+        </div>
+      )}
+      <canvas
+        ref={canvasRef}
+        width={840}
+        height={200}
+        style={{
+          width: '100%',
+          height: '90px',
+          objectFit: 'cover',
+          display: loaded ? 'block' : 'none',
+          background: 'transparent',
+        }}
+      />
+      {/* Talking pulse overlay */}
+      {talking && (
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: `radial-gradient(circle, ${accentColor}15 0%, transparent 70%)`,
+          animation: 'pulse 0.8s ease-in-out infinite',
+          pointerEvents: 'none',
+        }} />
+      )}
+    </div>
+  )
+}
