@@ -82,39 +82,54 @@ export default function GremlinAnimation({ role, accentColor, talking }) {
     return () => cancelAnimationFrame(animRef.current)
   }, [loaded])
 
+  // ... (верхняя часть кода с импортами и загрузкой кадров остается такой же)
+
   if (error) return null
 
   return (
     <div style={{
-      width: '100vw',
-      marginLeft: 'calc(-50vw + 50%)',
+      width: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',     // СТРОГО ПО ЦЕНТРУ
       position: 'relative',
-      overflow: 'hidden',
+      overflow: 'visible',      // ЧТОБЫ НЕ ОБРЕЗАЛО ВЕРХ
       background: 'transparent',
-      boxShadow: talking ? `0 0 20px ${accentColor}40` : 'none',
-      transition: 'box-shadow 0.3s',
+      zIndex: 10,
     }}>
       {!loaded && (
-        <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accentColor, opacity: 0.3, fontSize: 12 }}>
+        <div style={{ height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accentColor, opacity: 0.3, fontSize: 12 }}>
           ...
         </div>
       )}
+      
       <canvas
         ref={canvasRef}
         width={840}
         height={200}
         style={{
-          width: '100%',
-          height: '90px',
-          objectFit: 'cover',
+          width: 'auto',
+          height: '130px',      // РАЗМЕР ГРЕНЛИНА
           display: loaded ? 'block' : 'none',
           background: 'transparent',
+          marginTop: '-40px',   // ПОДНИМАЕМ ВЫШЕ
+          position: 'relative',
+          zIndex: 5
         }}
       />
+
+      {/* ХАК ДЛЯ СКРЫТИЯ ИМЕНИ:
+          Если имя идет сразу после этого компонента, этот пустой блок 
+          с отрицательным margin "наедет" на него и скроет.
+      */}
+      <div style={{ marginBottom: '-100px' }} />
+
       {/* Talking pulse overlay */}
       {talking && (
         <div style={{
-          position: 'absolute', inset: 0,
+          position: 'absolute', 
+          inset: 0,
+          top: '-40px',         // Смещаем пульсацию вместе с гренлином
           background: `radial-gradient(circle, ${accentColor}15 0%, transparent 70%)`,
           animation: 'pulse 0.8s ease-in-out infinite',
           pointerEvents: 'none',
