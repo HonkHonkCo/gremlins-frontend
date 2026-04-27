@@ -108,6 +108,8 @@ export default function GremlinAnimation({ role, accentColor, talking }) {
           height: '90px',
           objectFit: 'cover',
           display: loaded ? 'block' : 'none',
+          margin: '0 auto',  
+          marginTop: '-20px',
           background: 'transparent',
         }}
       />
