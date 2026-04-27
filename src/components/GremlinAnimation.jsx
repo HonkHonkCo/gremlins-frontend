@@ -20,6 +20,7 @@ export default function GremlinAnimation({ role, accentColor, talking }) {
   const lastTime = useRef(0)
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState(false)
+  const [naturalSize, setNaturalSize] = useState({ w: 1520, h: 380 })
 
   useEffect(() => {
     frames.current = []
@@ -38,6 +39,7 @@ export default function GremlinAnimation({ role, accentColor, talking }) {
       const num = String(i).padStart(5, '0')
       img.src = `${SUPABASE_URL}/${prefix}_${num}.png`
       img.onload = () => {
+        if (i === 0) setNaturalSize({ w: img.naturalWidth, h: img.naturalHeight })
         loadedCount++
         if (loadedCount + errorCount === TOTAL_FRAMES) {
           if (loadedCount > 0) setLoaded(true)
@@ -69,7 +71,6 @@ export default function GremlinAnimation({ role, accentColor, talking }) {
         const frame = frames.current[frameIndex.current]
         if (frame?.complete && frame.naturalWidth > 0) {
           ctx.clearRect(0, 0, canvas.width, canvas.height)
-          ctx.globalCompositeOperation = "source-over"
           ctx.drawImage(frame, 0, 0, canvas.width, canvas.height)
         }
         frameIndex.current = (frameIndex.current + 1) % TOTAL_FRAMES
@@ -84,34 +85,36 @@ export default function GremlinAnimation({ role, accentColor, talking }) {
 
   if (error) return null
 
+  // Scale down to fit height 180px, keep proportions, overflow width
+  const targetH = 180
+  const scale = targetH / naturalSize.h
+  const scaledW = naturalSize.w * scale
+
   return (
     <div style={{
-      width: '100vw',
-      marginLeft: 'calc(-50vw + 50%)',
-      position: 'relative',
+      width: '100%',
+      height: targetH,
       overflow: 'hidden',
-      background: 'transparent',
-      boxShadow: talking ? `0 0 20px ${accentColor}40` : 'none',
-      transition: 'box-shadow 0.3s',
+      position: 'relative',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
     }}>
       {!loaded && (
-        <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accentColor, opacity: 0.3, fontSize: 12 }}>
-          ...
-        </div>
+        <div style={{ color: accentColor, opacity: 0.3, fontSize: 12 }}>...</div>
       )}
       <canvas
         ref={canvasRef}
-        width={840}
-        height={200}
+        width={naturalSize.w}
+        height={naturalSize.h}
         style={{
-          width: '100%',
-          height: '90px',
-          objectFit: 'cover',
+          width: scaledW,
+          height: targetH,
+          flexShrink: 0,
           display: loaded ? 'block' : 'none',
           background: 'transparent',
         }}
       />
-      {/* Talking pulse overlay */}
       {talking && (
         <div style={{
           position: 'absolute', inset: 0,

@@ -159,13 +159,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
       )}
 
       {/* GREMLIN PORTRAIT AREA */}
-      <div style={{
-        background: 'transparent',
-        padding: '16px 12px 12px',
-        display: 'flex', flexDirection: 'column', alignItems: 'center',
-        position: 'relative', overflow: 'hidden',
-        borderBottom: `1px solid ${accentColor}20`,
-      }}>
+      <div style={{ position: 'relative', overflow: 'hidden' }}>
         <GremlinAnimation
           role={gremlin.role}
           accentColor={accentColor}
@@ -173,21 +167,9 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
           size={220}
         />
 
-        {/* Name below portrait */}
-        <div style={{ marginTop: 8, textAlign: 'center' }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: accentColor, letterSpacing: '0.1em' }}>
-            {gremlin.name.toUpperCase()}
-          </div>
-          {sending && (
-            <div style={{ fontSize: 9, color: accentColor, opacity: 0.7, marginTop: 2, letterSpacing: '0.06em' }}>
-              {lang === 'ru' ? 'думает...' : 'thinking...'}
-            </div>
-          )}
-        </div>
-
         {/* Stats row */}
         {hasStats && (
-          <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 320 }}>
+          <div style={{ display: 'flex', gap: 6, padding: '8px 12px', flexWrap: 'wrap', justifyContent: 'center' }}>
             {Object.entries(stats).filter(([k, v]) => k !== 'last_updated' && v !== 0).slice(0, 4).map(([k, v]) => (
               <div key={k} style={{
                 background: `${accentColor}15`, border: `1px solid ${accentColor}30`,
