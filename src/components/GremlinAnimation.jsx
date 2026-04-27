@@ -105,7 +105,7 @@ export default function GremlinAnimation({ role, accentColor, talking }) {
         height={200}
         style={{
           width: '100%',
-          height: '110px',
+          height: '90px',
           objectFit: 'cover',
           display: loaded ? 'block' : 'none',
           background: 'transparent',
