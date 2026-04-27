@@ -101,11 +101,11 @@ export default function GremlinAnimation({ role, accentColor, talking }) {
       )}
       <canvas
         ref={canvasRef}
-        width={560}
+        width={840}
         height={200}
         style={{
           width: '100%',
-          height: '160px',
+          height: '110px',
           objectFit: 'cover',
           display: loaded ? 'block' : 'none',
           background: 'transparent',
