@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 
 const TOTAL_FRAMES = 84
-const FPS = 24
+const FPS = 12
 
 export default function BgAnimation() {
   const canvasRef = useRef(null)
@@ -12,25 +12,25 @@ export default function BgAnimation() {
 
   useEffect(() => {
     const canvas = canvasRef.current
+    if (!canvas) return
     const ctx = canvas.getContext('2d')
+
+    canvas.width = 480
+    canvas.height = 800
+
     let loaded = 0
 
-    // Preload all frames
     for (let i = 1; i <= TOTAL_FRAMES; i++) {
       const img = new Image()
       const num = String(i).padStart(5, '0')
       img.src = `https://gljpqbsslkunuvzfdshd.supabase.co/storage/v1/object/public/bg-animation/01_${num}.jpg`
-      img.onload = () => {
-        loaded++
-        if (loaded === TOTAL_FRAMES) startAnimation()
-      }
+      img.onload = () => { loaded++; if (loaded === TOTAL_FRAMES) startAnimation() }
       img.onerror = () => { loaded++; if (loaded === TOTAL_FRAMES) startAnimation() }
       frames.current[i - 1] = img
     }
 
     function startAnimation() {
       const interval = 1000 / FPS
-
       function draw(timestamp) {
         if (timestamp - lastTime.current >= interval) {
           const frame = frames.current[frameIndex.current]
@@ -46,18 +46,7 @@ export default function BgAnimation() {
       animRef.current = requestAnimationFrame(draw)
     }
 
-    // Resize canvas to match container
-    const resize = () => {
-      canvas.width = canvas.offsetWidth
-      canvas.height = canvas.offsetHeight
-    }
-    resize()
-    window.addEventListener('resize', resize)
-
-    return () => {
-      cancelAnimationFrame(animRef.current)
-      window.removeEventListener('resize', resize)
-    }
+    return () => cancelAnimationFrame(animRef.current)
   }, [])
 
   return (
@@ -65,11 +54,11 @@ export default function BgAnimation() {
       ref={canvasRef}
       style={{
         position: 'fixed',
-        top: 0, left: 0, right: 0, bottom: 0,
+        top: 0, left: '50%',
+        transform: 'translateX(-50%)',
         width: '100%', height: '100%',
         maxWidth: 480,
-        margin: '0 auto',
-        opacity: 0.15,
+        opacity: 0.3,
         pointerEvents: 'none',
         zIndex: 0,
       }}

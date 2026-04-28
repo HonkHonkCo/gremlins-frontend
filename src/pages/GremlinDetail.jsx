@@ -23,8 +23,10 @@ const ROLE_LABELS = {
 // Генерируем цвет по id гремлина
 function getAccentColor(role, gremlinId) {
   const variants = ROLE_COLOR_VARIANTS[role] || ['#d4a017']
-  const idx = gremlinId ? gremlinId.charCodeAt(0) % variants.length : 0
-  return variants[idx]
+  if (!gremlinId) return variants[0]
+  // Use last chars of UUID for better distribution
+  const hash = gremlinId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)
+  return variants[hash % variants.length]
 }
 
 export default function GremlinDetail({ gremlin: initialGremlin, userId, user, lang, onBack }) {
@@ -121,7 +123,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
   const statLabel = (k) => t(lang, 'stats')?.[k] || k
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg)', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg)' }}>
       {upgradeReason && (
         <Upgrade lang={lang} reason={upgradeReason} user={user} onClose={(paid) => {
           setUpgradeReason(null)
