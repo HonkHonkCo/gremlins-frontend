@@ -58,7 +58,7 @@ export default function BgAnimation() {
         transform: 'translateX(-50%)',
         width: '100%', height: '100%',
         maxWidth: 480,
-        opacity: 0.3,
+        opacity: 0.85,
         pointerEvents: 'none',
         zIndex: 0,
       }}
