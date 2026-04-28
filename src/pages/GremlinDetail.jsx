@@ -24,8 +24,9 @@ const ROLE_LABELS = {
 function getAccentColor(role, gremlinId) {
   const variants = ROLE_COLOR_VARIANTS[role] || ['#d4a017']
   if (!gremlinId) return variants[0]
-  // Use last chars of UUID for better distribution
-  const hash = gremlinId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)
+  // Use last segment of UUID for unique colors
+  const lastSegment = gremlinId.split('-').pop() || gremlinId
+  const hash = lastSegment.split('').reduce((acc, c, i) => acc + c.charCodeAt(0) * (i + 1), 0)
   return variants[hash % variants.length]
 }
 
@@ -123,7 +124,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
   const statLabel = (k) => t(lang, 'stats')?.[k] || k
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg)', paddingBottom: 0 }}>
       {upgradeReason && (
         <Upgrade lang={lang} reason={upgradeReason} user={user} onClose={(paid) => {
           setUpgradeReason(null)
@@ -135,7 +136,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
       <div style={{
         background: 'var(--bg2)', borderBottom: `1px solid ${accentColor}30`,
         padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 10,
-        flexShrink: 0, zIndex: 2
+        flexShrink: 0, zIndex: 2, position: 'sticky', top: 0
       }}>
         <button onClick={onBack} style={{ color: accentColor, fontSize: 11, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
           ← {lang === 'ru' ? 'назад' : 'back'}
@@ -239,7 +240,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
       </div>
 
       {/* INPUT — fixed at bottom */}
-      <div style={{ padding: '10px 12px', background: 'var(--bg2)', borderTop: `1px solid ${accentColor}30`, display: 'flex', gap: 8, alignItems: 'flex-end', flexShrink: 0 }}>
+      <div style={{ padding: '10px 12px', background: 'var(--bg2)', borderTop: `1px solid ${accentColor}30`, display: 'flex', gap: 8, alignItems: 'flex-end', flexShrink: 0, marginBottom: '-64px', paddingBottom: '74px' }}>
         <input ref={fileRef} type="file" accept=".csv,.txt,.json" onChange={handleFile} style={{ display: 'none' }} />
         <button onClick={() => fileRef.current?.click()} disabled={sending || fileLoading} style={{ background: 'var(--bg3)', border: `1px solid ${accentColor}30`, borderRadius: 8, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, cursor: 'pointer', flexShrink: 0, color: accentColor, opacity: sending ? 0.5 : 1 }}>📎</button>
         <textarea rows={2} value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKey}
