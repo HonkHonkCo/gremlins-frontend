@@ -7,8 +7,24 @@ import GremlinAnimation from '../components/GremlinAnimation'
 const ROLE_COLORS = {
   accountant: '#3ecf70', trainer: '#4a9eff', secretary: '#d4a017', chef: '#ff7043',
 }
+
+// Разные оттенки для одинаковых ролей
+const ROLE_COLOR_VARIANTS = {
+  accountant: ['#3ecf70', '#00aa44', '#88ffaa', '#22dd66'],
+  trainer: ['#4a9eff', '#0066dd', '#88ccff', '#2299ff'],
+  secretary: ['#d4a017', '#ff9900', '#ffcc44', '#aa7700'],
+  chef: ['#ff7043', '#dd3300', '#ff9966', '#cc4400'],
+}
+
 const ROLE_LABELS = {
   accountant: 'Бухгалтер', trainer: 'Тренер', secretary: 'Секретарь', chef: 'Шеф-повар',
+}
+
+// Генерируем цвет по id гремлина
+function getAccentColor(role, gremlinId) {
+  const variants = ROLE_COLOR_VARIANTS[role] || ['#d4a017']
+  const idx = gremlinId ? gremlinId.charCodeAt(0) % variants.length : 0
+  return variants[idx]
 }
 
 export default function GremlinDetail({ gremlin: initialGremlin, userId, user, lang, onBack }) {
@@ -29,7 +45,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
   const bottomRef = useRef(null)
   const fileRef = useRef(null)
 
-  const accentColor = ROLE_COLORS[gremlin.role] || '#d4a017'
+  const accentColor = getAccentColor(gremlin.role, gremlin.id)
 
   useEffect(() => {
     getEntries(gremlin.id).then(data => setEntries(Array.isArray(data) ? data : [])).catch(() => {})
@@ -97,7 +113,9 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
   }
 
   const stats = gremlin.stats || {}
-  const hasStats = Object.keys(stats).filter(k => k !== 'last_updated' && stats[k] !== 0).length > 0
+  // Показываем статус только если есть реальные данные (не дефолтные нули)
+  const statEntries = Object.entries(stats).filter(([k, v]) => k !== 'last_updated' && v !== 0 && v !== null && v !== undefined)
+  const hasStats = statEntries.length > 0
   const recentEntries = entries.slice(0, 5)
   const archiveEntries = entries.slice(5)
   const statLabel = (k) => t(lang, 'stats')?.[k] || k
@@ -111,11 +129,11 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
         }} />
       )}
 
-      {/* TOP HEADER */}
+      {/* TOP HEADER — fixed */}
       <div style={{
         background: 'var(--bg2)', borderBottom: `1px solid ${accentColor}30`,
         padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 10,
-        position: 'relative', zIndex: 2
+        flexShrink: 0, zIndex: 2
       }}>
         <button onClick={onBack} style={{ color: accentColor, fontSize: 11, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
           ← {lang === 'ru' ? 'назад' : 'back'}
@@ -138,7 +156,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
 
       {/* EDIT PANEL */}
       {editing && (
-        <div style={{ background: 'var(--bg2)', borderBottom: `1px solid ${accentColor}30`, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8, zIndex: 2 }}>
+        <div style={{ background: 'var(--bg2)', borderBottom: `1px solid ${accentColor}30`, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
           <div style={{ fontSize: 9, color: accentColor, letterSpacing: '0.1em' }}>{t(lang, 'edit')}</div>
           <input value={editName} onChange={e => setEditName(e.target.value)} placeholder={t(lang, 'namePlaceholder')}
             style={{ background: 'var(--bg3)', border: `1px solid ${accentColor}40`, borderRadius: 6, padding: '7px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, outline: 'none' }} />
@@ -158,23 +176,13 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
         </div>
       )}
 
-      {/* GREMLIN PORTRAIT AREA */}
-      <div style={{ position: 'relative', overflow: 'hidden' }}>
-        <GremlinAnimation
-          role={gremlin.role}
-          accentColor={accentColor}
-          talking={talking}
-          size={220}
-        />
-
-        {/* Stats row */}
+      {/* GREMLIN PORTRAIT — fixed, 5px lower */}
+      <div style={{ position: 'relative', overflow: 'hidden', flexShrink: 0, marginTop: 5 }}>
+        <GremlinAnimation role={gremlin.role} accentColor={accentColor} talking={talking} size={220} />
         {hasStats && (
-          <div style={{ display: 'flex', gap: 6, padding: '8px 12px', flexWrap: 'wrap', justifyContent: 'center' }}>
-            {Object.entries(stats).filter(([k, v]) => k !== 'last_updated' && v !== 0).slice(0, 4).map(([k, v]) => (
-              <div key={k} style={{
-                background: `${accentColor}15`, border: `1px solid ${accentColor}30`,
-                borderRadius: 6, padding: '4px 8px', textAlign: 'center'
-              }}>
+          <div style={{ display: 'flex', gap: 6, padding: '6px 12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            {statEntries.slice(0, 4).map(([k, v]) => (
+              <div key={k} style={{ background: `${accentColor}15`, border: `1px solid ${accentColor}30`, borderRadius: 6, padding: '4px 8px', textAlign: 'center' }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: accentColor, textShadow: `0 0 8px ${accentColor}80` }}>
                   {typeof v === 'number' ? v.toLocaleString() : String(v).slice(0, 10)}
                 </div>
@@ -185,8 +193,8 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
         )}
       </div>
 
-      {/* CHAT */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {/* CHAT — scrollable */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
         {showArchive && archiveEntries.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <div style={{ fontSize: 9, color: 'var(--text-muted)', textAlign: 'center', padding: '4px 0' }}>— {t(lang, 'archive')} —</div>
@@ -228,8 +236,8 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
         <div ref={bottomRef} />
       </div>
 
-      {/* INPUT */}
-      <div style={{ padding: '10px 12px', background: 'var(--bg2)', borderTop: `1px solid ${accentColor}30`, display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+      {/* INPUT — fixed at bottom */}
+      <div style={{ padding: '10px 12px', background: 'var(--bg2)', borderTop: `1px solid ${accentColor}30`, display: 'flex', gap: 8, alignItems: 'flex-end', flexShrink: 0 }}>
         <input ref={fileRef} type="file" accept=".csv,.txt,.json" onChange={handleFile} style={{ display: 'none' }} />
         <button onClick={() => fileRef.current?.click()} disabled={sending || fileLoading} style={{ background: 'var(--bg3)', border: `1px solid ${accentColor}30`, borderRadius: 8, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, cursor: 'pointer', flexShrink: 0, color: accentColor, opacity: sending ? 0.5 : 1 }}>📎</button>
         <textarea rows={2} value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKey}

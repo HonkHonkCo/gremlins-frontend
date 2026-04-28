@@ -19,7 +19,7 @@ export default function BgAnimation() {
     for (let i = 1; i <= TOTAL_FRAMES; i++) {
       const img = new Image()
       const num = String(i).padStart(5, '0')
-      img.src = `https://gljpqbsslkunuvzfdshd.supabase.co/storage/v1/object/public/bg-animation/01_${num}.png`
+      img.src = `https://gljpqbsslkunuvzfdshd.supabase.co/storage/v1/object/public/bg-animation/01_${num}.jpg`
       img.onload = () => {
         loaded++
         if (loaded === TOTAL_FRAMES) startAnimation()
@@ -69,7 +69,7 @@ export default function BgAnimation() {
         width: '100%', height: '100%',
         maxWidth: 480,
         margin: '0 auto',
-        opacity: 0.8,
+        opacity: 0.15,
         pointerEvents: 'none',
         zIndex: 0,
       }}
