@@ -5,10 +5,10 @@ import Upgrade from './Upgrade'
 import GremlinAnimation from '../components/GremlinAnimation'
 
 const ROLE_COLOR_VARIANTS = {
-  accountant: ['#3ecf70', '#00aa44', '#66ffaa', '#22cc55'],
-  trainer:    ['#4a9eff', '#0055cc', '#66aaff', '#2277dd'],
-  secretary:  ['#d4a017', '#ff8800', '#ffcc00', '#cc7700'],
-  chef:       ['#ff7043', '#cc2200', '#ff9966', '#ee4400'],
+  accountant: ['#3ecf70', '#00ddaa', '#aaff44', '#00ffcc'],
+  trainer:    ['#4a9eff', '#aa44ff', '#00ccff', '#ff44aa'],
+  secretary:  ['#d4a017', '#ff6600', '#ffdd00', '#dd4488'],
+  chef:       ['#ff7043', '#ff2288', '#ffaa00', '#ff44cc'],
 }
 
 const ROLE_LABELS = {
