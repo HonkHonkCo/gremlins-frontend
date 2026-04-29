@@ -4,30 +4,24 @@ import { t } from '../i18n'
 import Upgrade from './Upgrade'
 import GremlinAnimation from '../components/GremlinAnimation'
 
-const ROLE_COLORS = {
-  accountant: '#3ecf70', trainer: '#4a9eff', secretary: '#d4a017', chef: '#ff7043',
-}
-
-// Разные оттенки для одинаковых ролей
 const ROLE_COLOR_VARIANTS = {
-  accountant: ['#3ecf70', '#00aa44', '#88ffaa', '#22dd66'],
-  trainer: ['#4a9eff', '#0066dd', '#88ccff', '#2299ff'],
-  secretary: ['#d4a017', '#ff9900', '#ffcc44', '#aa7700'],
-  chef: ['#ff7043', '#dd3300', '#ff9966', '#cc4400'],
+  accountant: ['#3ecf70', '#00aa44', '#66ffaa', '#22cc55'],
+  trainer:    ['#4a9eff', '#0055cc', '#66aaff', '#2277dd'],
+  secretary:  ['#d4a017', '#ff8800', '#ffcc00', '#cc7700'],
+  chef:       ['#ff7043', '#cc2200', '#ff9966', '#ee4400'],
 }
 
 const ROLE_LABELS = {
   accountant: 'Бухгалтер', trainer: 'Тренер', secretary: 'Секретарь', chef: 'Шеф-повар',
 }
 
-// Генерируем цвет по id гремлина
 function getAccentColor(role, gremlinId) {
   const variants = ROLE_COLOR_VARIANTS[role] || ['#d4a017']
-  if (!gremlinId) return variants[0]
-  // Use last segment of UUID for unique colors
-  const lastSegment = gremlinId.split('-').pop() || gremlinId
-  const hash = lastSegment.split('').reduce((acc, c, i) => acc + c.charCodeAt(0) * (i + 1), 0)
-  return variants[hash % variants.length]
+  if (!gremlinId || variants.length === 1) return variants[0]
+  const seg = gremlinId.replace(/-/g, '')
+  const last8 = seg.slice(-8)
+  const num = parseInt(last8, 16) || 0
+  return variants[num % variants.length]
 }
 
 export default function GremlinDetail({ gremlin: initialGremlin, userId, user, lang, onBack }) {
@@ -45,6 +39,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [upgradeReason, setUpgradeReason] = useState(null)
   const [talking, setTalking] = useState(false)
+  const chatRef = useRef(null)
   const bottomRef = useRef(null)
   const fileRef = useRef(null)
 
@@ -80,8 +75,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
     if (!text || sending) return
     if (!textOverride) setInput('')
     setMessages(m => [...m, { role: 'user', text }])
-    setSending(true)
-    setTalking(true)
+    setSending(true); setTalking(true)
     try {
       const res = await sendChat(userId, gremlin.id, text)
       setMessages(m => [...m, { role: 'gremlin', text: res.reply || res.gremlin_reply || '...' }])
@@ -107,24 +101,23 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
       const text = await file.text()
       const ext = file.name.split('.').pop().toLowerCase()
       const content = ext === 'csv'
-        ? `File: ${file.name}\n\nData (CSV):\n${text.split('\n').slice(0, 50).join('\n')}`
+        ? `File: ${file.name}\n\n${text.split('\n').slice(0, 50).join('\n')}`
         : `File: ${file.name}\n\n${text.slice(0, 2000)}`
-      setMessages(m => [...m, { role: 'user', text: `📎 ${file.name}`, isFile: true }])
+      setMessages(m => [...m, { role: 'user', text: `📎 ${file.name}` }])
       await send(content)
     } catch { setMessages(m => [...m, { role: 'gremlin', text: t(lang, 'errorChat') }]) }
     finally { setFileLoading(false); e.target.value = '' }
   }
 
   const stats = gremlin.stats || {}
-  // Показываем статус только если есть реальные данные (не дефолтные нули)
-  const statEntries = Object.entries(stats).filter(([k, v]) => k !== 'last_updated' && v !== 0 && v !== null && v !== undefined)
+  const statEntries = Object.entries(stats).filter(([k, v]) => k !== 'last_updated' && v !== 0 && v !== null)
   const hasStats = statEntries.length > 0
   const recentEntries = entries.slice(0, 5)
   const archiveEntries = entries.slice(5)
   const statLabel = (k) => t(lang, 'stats')?.[k] || k
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg)', paddingBottom: 0 }}>
+    <>
       {upgradeReason && (
         <Upgrade lang={lang} reason={upgradeReason} user={user} onClose={(paid) => {
           setUpgradeReason(null)
@@ -132,121 +125,131 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
         }} />
       )}
 
-      {/* TOP HEADER — fixed */}
       <div style={{
-        background: 'var(--bg2)', borderBottom: `1px solid ${accentColor}30`,
-        padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 10,
-        flexShrink: 0, zIndex: 2, position: 'sticky', top: 0
+        position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)',
+        width: '100%', maxWidth: 480,
+        height: '100vh',
+        display: 'flex', flexDirection: 'column',
+        background: 'var(--bg)',
+        zIndex: 50,
       }}>
-        <button onClick={onBack} style={{ color: accentColor, fontSize: 11, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-          ← {lang === 'ru' ? 'назад' : 'back'}
-        </button>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{gremlin.name}</div>
-          <div style={{ fontSize: 10, color: accentColor }}>{ROLE_LABELS[gremlin.role] || gremlin.role}</div>
-        </div>
-        <div style={{ display: 'flex', gap: 6 }}>
-          <button onClick={() => { setEditing(v => !v); setEditName(gremlin.name); setEditDesc(gremlin.description || ''); setConfirmDelete(false) }}
-            style={{ background: editing ? `${accentColor}20` : 'var(--bg3)', border: `1px solid ${accentColor}40`, borderRadius: 6, padding: '4px 8px', fontSize: 14, color: accentColor, cursor: 'pointer', fontFamily: 'inherit' }}>✏️</button>
-          {archiveEntries.length > 0 && (
-            <button onClick={() => setShowArchive(v => !v)}
-              style={{ background: showArchive ? `${accentColor}20` : 'var(--bg3)', border: `1px solid ${accentColor}40`, borderRadius: 6, padding: '4px 8px', fontSize: 9, color: accentColor, cursor: 'pointer', fontFamily: 'inherit' }}>
-              {showArchive ? t(lang, 'hide') : `${t(lang, 'archive')} (${archiveEntries.length})`}
-            </button>
-          )}
-        </div>
-      </div>
 
-      {/* EDIT PANEL */}
-      {editing && (
-        <div style={{ background: 'var(--bg2)', borderBottom: `1px solid ${accentColor}30`, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
-          <div style={{ fontSize: 9, color: accentColor, letterSpacing: '0.1em' }}>{t(lang, 'edit')}</div>
-          <input value={editName} onChange={e => setEditName(e.target.value)} placeholder={t(lang, 'namePlaceholder')}
-            style={{ background: 'var(--bg3)', border: `1px solid ${accentColor}40`, borderRadius: 6, padding: '7px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, outline: 'none' }} />
-          <textarea rows={2} value={editDesc} onChange={e => setEditDesc(e.target.value)} placeholder={t(lang, 'descPlaceholder')}
-            style={{ background: 'var(--bg3)', border: `1px solid ${accentColor}40`, borderRadius: 6, padding: '7px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, outline: 'none', resize: 'none' }} />
+        {/* HEADER */}
+        <div style={{
+          background: 'var(--bg2)', borderBottom: `1px solid ${accentColor}30`,
+          padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 10,
+          flexShrink: 0,
+        }}>
+          <button onClick={onBack} style={{ color: accentColor, fontSize: 11, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+            ← {lang === 'ru' ? 'назад' : 'back'}
+          </button>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{gremlin.name}</div>
+            <div style={{ fontSize: 10, color: accentColor }}>{ROLE_LABELS[gremlin.role] || gremlin.role}</div>
+          </div>
           <div style={{ display: 'flex', gap: 6 }}>
-            <button onClick={saveEdit} disabled={saving || !editName.trim()} style={{ background: accentColor, color: '#000', border: 'none', borderRadius: 6, padding: '7px 0', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flex: 1 }}>
-              {saving ? t(lang, 'saving') : t(lang, 'save')}
-            </button>
-            <button onClick={() => { setEditing(false); setConfirmDelete(false) }} style={{ background: 'var(--bg3)', color: 'var(--text-dim)', border: '1px solid var(--border)', borderRadius: 6, padding: '7px 10px', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit' }}>
-              {t(lang, 'cancel')}
-            </button>
-            <button onClick={handleDelete} style={{ background: confirmDelete ? '#e24b4a' : 'var(--bg3)', color: confirmDelete ? '#fff' : '#e24b4a', border: '1px solid #e24b4a', borderRadius: 6, padding: '7px 10px', fontSize: confirmDelete ? 10 : 14, cursor: 'pointer', fontFamily: 'inherit' }}>
-              {confirmDelete ? t(lang, 'confirmDelete') : '🗑'}
-            </button>
+            <button onClick={() => { setEditing(v => !v); setEditName(gremlin.name); setEditDesc(gremlin.description || ''); setConfirmDelete(false) }}
+              style={{ background: editing ? `${accentColor}20` : 'var(--bg3)', border: `1px solid ${accentColor}40`, borderRadius: 6, padding: '4px 8px', fontSize: 14, color: accentColor, cursor: 'pointer', fontFamily: 'inherit' }}>✏️</button>
+            {archiveEntries.length > 0 && (
+              <button onClick={() => setShowArchive(v => !v)}
+                style={{ background: showArchive ? `${accentColor}20` : 'var(--bg3)', border: `1px solid ${accentColor}40`, borderRadius: 6, padding: '4px 8px', fontSize: 9, color: accentColor, cursor: 'pointer', fontFamily: 'inherit' }}>
+                {showArchive ? t(lang, 'hide') : `${t(lang, 'archive')} (${archiveEntries.length})`}
+              </button>
+            )}
           </div>
         </div>
-      )}
 
-      {/* GREMLIN PORTRAIT — fixed, 5px lower */}
-      <div style={{ position: 'relative', overflow: 'hidden', flexShrink: 0, marginTop: 5 }}>
-        <GremlinAnimation role={gremlin.role} accentColor={accentColor} talking={talking} size={220} />
-        {hasStats && (
-          <div style={{ display: 'flex', gap: 6, padding: '6px 12px', flexWrap: 'wrap', justifyContent: 'center' }}>
-            {statEntries.slice(0, 4).map(([k, v]) => (
-              <div key={k} style={{ background: `${accentColor}15`, border: `1px solid ${accentColor}30`, borderRadius: 6, padding: '4px 8px', textAlign: 'center' }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: accentColor, textShadow: `0 0 8px ${accentColor}80` }}>
-                  {typeof v === 'number' ? v.toLocaleString() : String(v).slice(0, 10)}
-                </div>
-                <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 1 }}>{statLabel(k)}</div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* CHAT — scrollable */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
-        {showArchive && archiveEntries.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <div style={{ fontSize: 9, color: 'var(--text-muted)', textAlign: 'center', padding: '4px 0' }}>— {t(lang, 'archive')} —</div>
-            {archiveEntries.map(e => (
-              <div key={e.id} style={{ background: 'var(--bg3)', borderRadius: 8, padding: '7px 10px', fontSize: 10, color: 'var(--text-muted)', borderLeft: `2px solid ${accentColor}20` }}>
-                <span style={{ marginRight: 6, opacity: 0.6 }}>{e.entry_date}</span>{e.content}
-              </div>
-            ))}
-            <div style={{ fontSize: 9, color: 'var(--text-muted)', textAlign: 'center', padding: '4px 0' }}>———</div>
-          </div>
-        )}
-
-        {recentEntries.map(e => (
-          <div key={e.id} style={{ background: 'var(--bg3)', borderRadius: 8, padding: '7px 10px', fontSize: 10, color: 'var(--text-dim)', borderLeft: `2px solid ${accentColor}40` }}>
-            <span style={{ color: 'var(--text-muted)', marginRight: 6 }}>{e.entry_date}</span>{e.content}
-          </div>
-        ))}
-
-        {messages.map((m, i) => (
-          <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
-            <div style={{
-              maxWidth: '80%',
-              background: m.role === 'user' ? accentColor : 'var(--bg2)',
-              color: m.role === 'user' ? '#000' : 'var(--text)',
-              border: m.role === 'gremlin' ? `1px solid ${accentColor}30` : 'none',
-              borderRadius: m.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
-              padding: '8px 12px', fontSize: 12, lineHeight: 1.5
-            }}>{m.text}</div>
-          </div>
-        ))}
-
-        {(sending || fileLoading) && (
-          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-            <div style={{ background: 'var(--bg2)', border: `1px solid ${accentColor}30`, borderRadius: '12px 12px 12px 2px', padding: '8px 14px', fontSize: 12, color: 'var(--text-muted)' }}>
-              {fileLoading ? t(lang, 'readingFile') : '...'}
+        {/* EDIT PANEL */}
+        {editing && (
+          <div style={{ background: 'var(--bg2)', borderBottom: `1px solid ${accentColor}30`, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
+            <div style={{ fontSize: 9, color: accentColor, letterSpacing: '0.1em' }}>{t(lang, 'edit')}</div>
+            <input value={editName} onChange={e => setEditName(e.target.value)} placeholder={t(lang, 'namePlaceholder')}
+              style={{ background: 'var(--bg3)', border: `1px solid ${accentColor}40`, borderRadius: 6, padding: '7px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, outline: 'none' }} />
+            <textarea rows={2} value={editDesc} onChange={e => setEditDesc(e.target.value)} placeholder={t(lang, 'descPlaceholder')}
+              style={{ background: 'var(--bg3)', border: `1px solid ${accentColor}40`, borderRadius: 6, padding: '7px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, outline: 'none', resize: 'none' }} />
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button onClick={saveEdit} disabled={saving || !editName.trim()} style={{ background: accentColor, color: '#000', border: 'none', borderRadius: 6, padding: '7px 0', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flex: 1 }}>
+                {saving ? t(lang, 'saving') : t(lang, 'save')}
+              </button>
+              <button onClick={() => { setEditing(false); setConfirmDelete(false) }} style={{ background: 'var(--bg3)', color: 'var(--text-dim)', border: '1px solid var(--border)', borderRadius: 6, padding: '7px 10px', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit' }}>
+                {t(lang, 'cancel')}
+              </button>
+              <button onClick={handleDelete} style={{ background: confirmDelete ? '#e24b4a' : 'var(--bg3)', color: confirmDelete ? '#fff' : '#e24b4a', border: '1px solid #e24b4a', borderRadius: 6, padding: '7px 10px', fontSize: confirmDelete ? 10 : 14, cursor: 'pointer', fontFamily: 'inherit' }}>
+                {confirmDelete ? t(lang, 'confirmDelete') : '🗑'}
+              </button>
             </div>
           </div>
         )}
-        <div ref={bottomRef} />
-      </div>
 
-      {/* INPUT — fixed at bottom */}
-      <div style={{ padding: '10px 12px', background: 'var(--bg2)', borderTop: `1px solid ${accentColor}30`, display: 'flex', gap: 8, alignItems: 'flex-end', flexShrink: 0, marginBottom: '-64px', paddingBottom: '74px' }}>
-        <input ref={fileRef} type="file" accept=".csv,.txt,.json" onChange={handleFile} style={{ display: 'none' }} />
-        <button onClick={() => fileRef.current?.click()} disabled={sending || fileLoading} style={{ background: 'var(--bg3)', border: `1px solid ${accentColor}30`, borderRadius: 8, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, cursor: 'pointer', flexShrink: 0, color: accentColor, opacity: sending ? 0.5 : 1 }}>📎</button>
-        <textarea rows={2} value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKey}
-          placeholder={`${t(lang, 'writeTo')} ${gremlin.name}...`}
-          style={{ flex: 1, background: 'var(--bg3)', border: `1px solid ${accentColor}30`, borderRadius: 6, padding: '8px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, resize: 'none', outline: 'none' }} />
-        <button onClick={() => send()} disabled={sending || !input.trim()} style={{ background: input.trim() ? accentColor : 'var(--bg3)', color: input.trim() ? '#000' : 'var(--text-muted)', borderRadius: 8, padding: '8px 14px', fontSize: 11, fontWeight: 700, transition: 'all 0.15s', flexShrink: 0, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>▸</button>
+        {/* PORTRAIT */}
+        <div style={{ flexShrink: 0, marginTop: 5 }}>
+          <GremlinAnimation role={gremlin.role} accentColor={accentColor} talking={talking} size={220} />
+          {hasStats && (
+            <div style={{ display: 'flex', gap: 6, padding: '6px 12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+              {statEntries.slice(0, 4).map(([k, v]) => (
+                <div key={k} style={{ background: `${accentColor}15`, border: `1px solid ${accentColor}30`, borderRadius: 6, padding: '4px 8px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: accentColor, textShadow: `0 0 8px ${accentColor}80` }}>
+                    {typeof v === 'number' ? v.toLocaleString() : String(v).slice(0, 10)}
+                  </div>
+                  <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 1 }}>{statLabel(k)}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* CHAT - scrollable */}
+        <div ref={chatRef} style={{ flex: 1, overflowY: 'auto', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {showArchive && archiveEntries.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ fontSize: 9, color: 'var(--text-muted)', textAlign: 'center', padding: '4px 0' }}>— {t(lang, 'archive')} —</div>
+              {archiveEntries.map(e => (
+                <div key={e.id} style={{ background: 'var(--bg3)', borderRadius: 8, padding: '7px 10px', fontSize: 10, color: 'var(--text-muted)', borderLeft: `2px solid ${accentColor}20` }}>
+                  <span style={{ marginRight: 6, opacity: 0.6 }}>{e.entry_date}</span>{e.content}
+                </div>
+              ))}
+              <div style={{ fontSize: 9, color: 'var(--text-muted)', textAlign: 'center' }}>———</div>
+            </div>
+          )}
+
+          {recentEntries.map(e => (
+            <div key={e.id} style={{ background: 'var(--bg3)', borderRadius: 8, padding: '7px 10px', fontSize: 10, color: 'var(--text-dim)', borderLeft: `2px solid ${accentColor}40` }}>
+              <span style={{ color: 'var(--text-muted)', marginRight: 6 }}>{e.entry_date}</span>{e.content}
+            </div>
+          ))}
+
+          {messages.map((m, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
+              <div style={{
+                maxWidth: '80%',
+                background: m.role === 'user' ? accentColor : 'var(--bg2)',
+                color: m.role === 'user' ? '#000' : 'var(--text)',
+                border: m.role === 'gremlin' ? `1px solid ${accentColor}30` : 'none',
+                borderRadius: m.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+                padding: '8px 12px', fontSize: 12, lineHeight: 1.5
+              }}>{m.text}</div>
+            </div>
+          ))}
+
+          {(sending || fileLoading) && (
+            <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+              <div style={{ background: 'var(--bg2)', border: `1px solid ${accentColor}30`, borderRadius: '12px 12px 12px 2px', padding: '8px 14px', fontSize: 12, color: 'var(--text-muted)' }}>
+                {fileLoading ? t(lang, 'readingFile') : '...'}
+              </div>
+            </div>
+          )}
+          <div ref={bottomRef} />
+        </div>
+
+        {/* INPUT */}
+        <div style={{ padding: '10px 12px', background: 'var(--bg2)', borderTop: `1px solid ${accentColor}30`, display: 'flex', gap: 8, alignItems: 'flex-end', flexShrink: 0 }}>
+          <input ref={fileRef} type="file" accept=".csv,.txt,.json" onChange={handleFile} style={{ display: 'none' }} />
+          <button onClick={() => fileRef.current?.click()} disabled={sending || fileLoading} style={{ background: 'var(--bg3)', border: `1px solid ${accentColor}30`, borderRadius: 8, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, cursor: 'pointer', flexShrink: 0, color: accentColor, opacity: sending ? 0.5 : 1 }}>📎</button>
+          <textarea rows={2} value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKey}
+            placeholder={`${t(lang, 'writeTo')} ${gremlin.name}...`}
+            style={{ flex: 1, background: 'var(--bg3)', border: `1px solid ${accentColor}30`, borderRadius: 6, padding: '8px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, resize: 'none', outline: 'none' }} />
+          <button onClick={() => send()} disabled={sending || !input.trim()} style={{ background: input.trim() ? accentColor : 'var(--bg3)', color: input.trim() ? '#000' : 'var(--text-muted)', borderRadius: 8, padding: '8px 14px', fontSize: 11, fontWeight: 700, transition: 'all 0.15s', flexShrink: 0, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>▸</button>
+        </div>
       </div>
 
       <style>{`
@@ -255,6 +258,6 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
           50% { opacity: 0.8; }
         }
       `}</style>
-    </div>
+    </>
   )
 }
