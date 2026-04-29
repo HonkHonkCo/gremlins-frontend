@@ -99,20 +99,53 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
     setFileLoading(true)
     try {
       const ext = file.name.split('.').pop().toLowerCase()
-      let fileContent = ''
-      if (['txt', 'csv', 'json', 'html', 'htm'].includes(ext)) {
-        fileContent = await file.text()
+      let summary = ''
+
+      if (ext === 'json') {
+        const text = await file.text()
+        try {
+          const json = JSON.parse(text)
+          // Telegram export format
+          if (json.messages && Array.isArray(json.messages)) {
+            const msgs = json.messages
+              .filter(m => m.type === 'message' && m.text)
+              .slice(-200)
+            const textMsgs = msgs.map(m => {
+              const txt = typeof m.text === 'string' ? m.text : m.text?.map?.(t => typeof t === 'string' ? t : t.text || '').join('') || ''
+              return `[${m.date?.slice(0,10)}] ${m.from || ''}: ${txt}`
+            }).join('
+')
+            summary = `Telegram chat export "${json.name || file.name}".
+Last ${msgs.length} messages:
+
+${textMsgs.slice(0, 6000)}`
+          } else {
+            summary = `JSON file "${file.name}":
+${JSON.stringify(json, null, 2).slice(0, 4000)}`
+          }
+        } catch {
+          summary = (await file.text()).slice(0, 4000)
+        }
+      } else if (['txt', 'csv', 'html', 'htm'].includes(ext)) {
+        const text = await file.text()
+        summary = `File "${file.name}" (${ext.toUpperCase()}):
+
+${text.slice(0, 6000)}`
       } else if (['docx', 'doc'].includes(ext)) {
-        fileContent = `[Word document: ${file.name}. User uploaded this file for you to analyze.]`
+        summary = `Word document "${file.name}" uploaded. Analyze its likely financial/task content based on the filename.`
       } else {
-        fileContent = `[File: ${file.name}, type: ${file.type}]`
+        summary = `File "${file.name}" (${file.type || ext}) uploaded by user.`
       }
-      // Show only filename in chat
+
+      // Show only icon + filename in chat
       setMessages(m => [...m, { role: 'user', text: `📎 ${file.name}`, isFile: true }])
-      // Send full content silently to gremlin
-      const prompt = `Пользователь прислал файл "${file.name}". Вот его содержимое:\n\n${fileContent.slice(0, 4000)}`
-      await send(prompt, true)
-    } catch { setMessages(m => [...m, { role: 'gremlin', text: t(lang, 'errorChat') }]) }
+      // Send full summary silently
+      await send(`Пользователь загрузил файл. Проанализируй и дай краткий итог:
+
+${summary}`, true)
+    } catch (err) {
+      setMessages(m => [...m, { role: 'gremlin', text: t(lang, 'errorChat') }])
+    }
     finally { setFileLoading(false); e.target.value = '' }
   }
 
