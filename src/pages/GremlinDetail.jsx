@@ -70,11 +70,11 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
     catch { alert(t(lang, 'errorDelete')) }
   }
 
-  const send = async (textOverride) => {
+  const send = async (textOverride, silent = false) => {
     const text = textOverride || input.trim()
     if (!text || sending) return
     if (!textOverride) setInput('')
-    setMessages(m => [...m, { role: 'user', text }])
+    if (!silent) setMessages(m => [...m, { role: 'user', text }])
     setSending(true); setTalking(true)
     try {
       const res = await sendChat(userId, gremlin.id, text)
@@ -98,13 +98,20 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
     const file = e.target.files[0]; if (!file) return
     setFileLoading(true)
     try {
-      const text = await file.text()
       const ext = file.name.split('.').pop().toLowerCase()
-      const content = ext === 'csv'
-        ? `File: ${file.name}\n\n${text.split('\n').slice(0, 50).join('\n')}`
-        : `File: ${file.name}\n\n${text.slice(0, 2000)}`
-      setMessages(m => [...m, { role: 'user', text: `📎 ${file.name}` }])
-      await send(content)
+      let fileContent = ''
+      if (['txt', 'csv', 'json', 'html', 'htm'].includes(ext)) {
+        fileContent = await file.text()
+      } else if (['docx', 'doc'].includes(ext)) {
+        fileContent = `[Word document: ${file.name}. User uploaded this file for you to analyze.]`
+      } else {
+        fileContent = `[File: ${file.name}, type: ${file.type}]`
+      }
+      // Show only filename in chat
+      setMessages(m => [...m, { role: 'user', text: `📎 ${file.name}`, isFile: true }])
+      // Send full content silently to gremlin
+      const prompt = `Пользователь прислал файл "${file.name}". Вот его содержимое:\n\n${fileContent.slice(0, 4000)}`
+      await send(prompt, true)
     } catch { setMessages(m => [...m, { role: 'gremlin', text: t(lang, 'errorChat') }]) }
     finally { setFileLoading(false); e.target.value = '' }
   }
@@ -204,8 +211,19 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <div style={{ fontSize: 9, color: 'var(--text-muted)', textAlign: 'center', padding: '4px 0' }}>— {t(lang, 'archive')} —</div>
               {archiveEntries.map(e => (
-                <div key={e.id} style={{ background: 'var(--bg3)', borderRadius: 8, padding: '7px 10px', fontSize: 10, color: 'var(--text-muted)', borderLeft: `2px solid ${accentColor}20` }}>
-                  <span style={{ marginRight: 6, opacity: 0.6 }}>{e.entry_date}</span>{e.content}
+                <div key={e.id} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <div style={{ maxWidth: '80%', background: `${accentColor}60`, color: '#000', borderRadius: '12px 12px 2px 12px', padding: '7px 10px', fontSize: 11, lineHeight: 1.5, opacity: 0.8 }}>
+                      {e.content}
+                    </div>
+                  </div>
+                  {e.reply && (
+                    <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                      <div style={{ maxWidth: '80%', background: 'var(--bg3)', color: 'var(--text-dim)', border: `1px solid ${accentColor}20`, borderRadius: '12px 12px 12px 2px', padding: '7px 10px', fontSize: 11, lineHeight: 1.5 }}>
+                        {e.reply}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
               <div style={{ fontSize: 9, color: 'var(--text-muted)', textAlign: 'center' }}>———</div>
@@ -213,8 +231,19 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
           )}
 
           {recentEntries.map(e => (
-            <div key={e.id} style={{ background: 'var(--bg3)', borderRadius: 8, padding: '7px 10px', fontSize: 10, color: 'var(--text-dim)', borderLeft: `2px solid ${accentColor}40` }}>
-              <span style={{ color: 'var(--text-muted)', marginRight: 6 }}>{e.entry_date}</span>{e.content}
+            <div key={e.id} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <div style={{ maxWidth: '80%', background: accentColor, color: '#000', borderRadius: '12px 12px 2px 12px', padding: '8px 12px', fontSize: 12, lineHeight: 1.5 }}>
+                  {e.isFile ? `📎 ${e.fileName || 'file'}` : e.content}
+                </div>
+              </div>
+              {e.reply && (
+                <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                  <div style={{ maxWidth: '80%', background: 'var(--bg2)', color: 'var(--text)', border: `1px solid ${accentColor}30`, borderRadius: '12px 12px 12px 2px', padding: '8px 12px', fontSize: 12, lineHeight: 1.5 }}>
+                    {e.reply}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
 
@@ -243,7 +272,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
 
         {/* INPUT */}
         <div style={{ padding: '10px 12px', background: 'var(--bg2)', borderTop: `1px solid ${accentColor}30`, display: 'flex', gap: 8, alignItems: 'flex-end', flexShrink: 0 }}>
-          <input ref={fileRef} type="file" accept=".csv,.txt,.json" onChange={handleFile} style={{ display: 'none' }} />
+          <input ref={fileRef} type="file" accept=".csv,.txt,.json,.html,.htm,.docx,.doc" onChange={handleFile} style={{ display: 'none' }} />
           <button onClick={() => fileRef.current?.click()} disabled={sending || fileLoading} style={{ background: 'var(--bg3)', border: `1px solid ${accentColor}30`, borderRadius: 8, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, cursor: 'pointer', flexShrink: 0, color: accentColor, opacity: sending ? 0.5 : 1 }}>📎</button>
           <textarea rows={2} value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKey}
             placeholder={`${t(lang, 'writeTo')} ${gremlin.name}...`}
