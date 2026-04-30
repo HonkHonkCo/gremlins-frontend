@@ -1,6 +1,65 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { getWeeklyReport } from '../services/api'
 import { t } from '../i18n'
+
+const REPORT_FRAMES = 5
+const SUPABASE_URL = 'https://gljpqbsslkunuvzfdshd.supabase.co/storage/v1/object/public/gremlins-anim'
+
+function ReportAnimation() {
+  const canvasRef = useRef(null)
+  const frames = useRef([])
+  const frameIndex = useRef(0)
+  const animRef = useRef(null)
+  const lastTime = useRef(0)
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    let loadedCount = 0
+    for (let i = 0; i < REPORT_FRAMES; i++) {
+      const img = new Image()
+      const num = String(i).padStart(5, '0')
+      img.src = `${SUPABASE_URL}/Report/Report_${num}.png`
+      img.onload = () => { loadedCount++; if (loadedCount === REPORT_FRAMES) setLoaded(true) }
+      img.onerror = () => { loadedCount++; if (loadedCount === REPORT_FRAMES && loadedCount > 0) setLoaded(false) }
+      frames.current[i] = img
+    }
+    return () => cancelAnimationFrame(animRef.current)
+  }, [])
+
+  useEffect(() => {
+    if (!loaded) return
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    const interval = 1000 / 8
+
+    function draw(timestamp) {
+      if (timestamp - lastTime.current >= interval) {
+        const frame = frames.current[frameIndex.current]
+        if (frame?.complete && frame.naturalWidth > 0) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height)
+          ctx.drawImage(frame, 0, 0, canvas.width, canvas.height)
+        }
+        frameIndex.current = (frameIndex.current + 1) % REPORT_FRAMES
+        lastTime.current = timestamp
+      }
+      animRef.current = requestAnimationFrame(draw)
+    }
+    animRef.current = requestAnimationFrame(draw)
+    return () => cancelAnimationFrame(animRef.current)
+  }, [loaded])
+
+  if (!loaded) return <div style={{ fontSize: 48, marginBottom: 12 }}>📊</div>
+
+  return (
+    <canvas
+      ref={canvasRef}
+      width={200}
+      height={200}
+      style={{ width: 120, height: 120, marginBottom: 12, imageRendering: 'pixelated' }}
+    />
+  )
+}
 
 function getNextMonday(lang) {
   const now = new Date()
@@ -57,8 +116,8 @@ export default function WeeklyReport({ userId, lang }) {
       </div>
 
       {reports.length === 0 && (
-        <div style={{ padding: '20px 0', textAlign: 'center' }}>
-          <div style={{ fontSize: 32, marginBottom: 12 }}>📊</div>
+        <div style={{ padding: '20px 0', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <ReportAnimation />
           <div style={{ fontSize: 12, color: 'var(--text-dim)', lineHeight: 1.7 }}>
             {t(lang, 'noReports')}<br />{t(lang, 'noReportsSub')}
           </div>
