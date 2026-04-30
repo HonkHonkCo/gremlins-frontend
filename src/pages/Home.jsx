@@ -1,14 +1,28 @@
 import { useState, useEffect } from 'react'
 import { getGremlins } from '../services/api'
 import { t } from '../i18n'
+
+const ROLE_COLOR_VARIANTS = {
+  accountant: ['#3ecf70', '#00ddaa', '#aaff44', '#00ffcc'],
+  trainer:    ['#4a9eff', '#aa44ff', '#00ccff', '#ff44aa'],
+  secretary:  ['#d4a017', '#ff6600', '#ffdd00', '#dd4488'],
+  chef:       ['#ff7043', '#ff2288', '#ffaa00', '#ff44cc'],
+}
+
+function getAccentColor(role, gremlinId) {
+  const variants = ROLE_COLOR_VARIANTS[role] || ['#d4a017']
+  if (!gremlinId || variants.length === 1) return variants[0]
+  const seg = gremlinId.replace(/-/g, '')
+  const last8 = seg.slice(-8)
+  const num = parseInt(last8, 16) || 0
+  return variants[num % variants.length]
+}
 import BgAnimation from '../components/BgAnimation'
 
 const ROLE_ICONS = {
   accountant: '🧮', trainer: '🏋️', secretary: '📋', chef: '🍽️',
 }
-const ROLE_COLORS = {
-  accountant: '#3ecf70', trainer: '#4a9eff', secretary: '#d4a017', chef: '#ff7043',
-}
+
 
 export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
   const [gremlins, setGremlins] = useState([])
@@ -25,7 +39,7 @@ export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
   if (loading) return <div className="loading">{t(lang, 'loading')}</div>
 
   const allStats = gremlins.flatMap(g => {
-    const color = ROLE_COLORS[g.role] || '#d4a017'
+    const color = getAccentColor(g.role, g.id)
     const stats = g.stats || {}
     return Object.entries(stats)
       .filter(([k, v]) => k !== 'last_updated' && v !== 0)
@@ -71,7 +85,7 @@ export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {gremlins.map(g => {
-          const color = ROLE_COLORS[g.role] || '#d4a017'
+          const color = getAccentColor(g.role, g.id)
           const stats = g.stats || {}
           const firstStat = Object.entries(stats).find(([k, v]) => k !== 'last_updated' && v !== 0)
           return (
