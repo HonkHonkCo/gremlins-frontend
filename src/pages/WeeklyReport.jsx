@@ -3,7 +3,7 @@ import { getWeeklyReport } from '../services/api'
 import { t } from '../i18n'
 
 const REPORT_FRAMES = 5
-const SUPABASE_URL = 'https://gljpqbsslkunuvzfdshd.supabase.co/storage/v1/object/public/gremlins-anim'
+const SUPABASE_STORAGE = 'https://gljpqbsslkunuvzfdshd.supabase.co/storage/v1/object/public/gremlins-anim'
 
 function ReportAnimation() {
   const canvasRef = useRef(null)
@@ -11,52 +11,59 @@ function ReportAnimation() {
   const frameIndex = useRef(0)
   const animRef = useRef(null)
   const lastTime = useRef(0)
-  const [loaded, setLoaded] = useState(false)
+  const [status, setStatus] = useState('loading')
 
   useEffect(() => {
-    let loadedCount = 0
+    let done = 0
+    let ok = 0
     for (let i = 0; i < REPORT_FRAMES; i++) {
       const img = new Image()
       const num = String(i).padStart(5, '0')
-      img.src = `${SUPABASE_URL}/Report/Report_${num}.png`
-      img.onload = () => { loadedCount++; if (loadedCount === REPORT_FRAMES) setLoaded(true) }
-      img.onerror = () => { loadedCount++; if (loadedCount === REPORT_FRAMES && loadedCount > 0) setLoaded(false) }
-      frames.current[i] = img
+      img.src = `${SUPABASE_STORAGE}/Report/Report_${num}.png`
+      img.onload = () => {
+        frames.current[i] = img
+        ok++; done++
+        if (done === REPORT_FRAMES) setStatus(ok > 0 ? 'ready' : 'error')
+      }
+      img.onerror = () => {
+        done++
+        if (done === REPORT_FRAMES) setStatus(ok > 0 ? 'ready' : 'error')
+      }
     }
     return () => cancelAnimationFrame(animRef.current)
   }, [])
 
   useEffect(() => {
-    if (!loaded) return
+    if (status !== 'ready') return
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
-    const interval = 1000 / 8
+    const interval = 1000 / 6
 
-    function draw(timestamp) {
-      if (timestamp - lastTime.current >= interval) {
+    function draw(ts) {
+      if (ts - lastTime.current >= interval) {
         const frame = frames.current[frameIndex.current]
         if (frame?.complete && frame.naturalWidth > 0) {
           ctx.clearRect(0, 0, canvas.width, canvas.height)
           ctx.drawImage(frame, 0, 0, canvas.width, canvas.height)
         }
         frameIndex.current = (frameIndex.current + 1) % REPORT_FRAMES
-        lastTime.current = timestamp
+        lastTime.current = ts
       }
       animRef.current = requestAnimationFrame(draw)
     }
     animRef.current = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(animRef.current)
-  }, [loaded])
+  }, [status])
 
-  if (!loaded) return <div style={{ fontSize: 48, marginBottom: 12 }}>📊</div>
+  if (status !== 'ready') return <div style={{ fontSize: 48, marginBottom: 12 }}>📊</div>
 
   return (
     <canvas
       ref={canvasRef}
-      width={200}
-      height={200}
-      style={{ width: 120, height: 120, marginBottom: 12, imageRendering: 'pixelated' }}
+      width={300}
+      height={300}
+      style={{ width: 140, height: 140, marginBottom: 12 }}
     />
   )
 }
