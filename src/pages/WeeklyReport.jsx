@@ -63,7 +63,7 @@ function ReportAnimation() {
       ref={canvasRef}
       width={300}
       height={300}
-      style={{ width: 140, height: 140, marginBottom: 12 }}
+      style={{ width: 100, height: 100, marginBottom: 12 }}
     />
   )
 }
