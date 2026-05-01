@@ -72,9 +72,8 @@ const STAT_LABELS_EN = {
   last_protein: 'protein (g)',
 }
 
-// Приоритет показа статов по роли — самые важные первыми
+// Приоритет показа статов — для не-бухгалтеров
 const STAT_PRIORITY = {
-  accountant: ['balance_thb', 'balance_rub', 'expense_thb', 'expense_rub', 'income_thb', 'income_rub'],
   trainer: ['last_workout', 'last_distance_km', 'last_pushups', 'weight_kg', 'last_calories', 'steps'],
   secretary: ['pending_tasks', 'next_deadline', 'last_task'],
   chef: ['last_meal', 'last_calories', 'last_protein'],
@@ -89,11 +88,25 @@ function getAccentColor(role, gremlinId) {
   return variants[num % variants.length]
 }
 
+// Для бухгалтера — строим панель по валютам отдельно
+function getAccountantStatRows(stats) {
+  const rows = []
+  const currencies = [
+    { code: 'THB', symbol: '฿', exp: stats.expense_thb, inc: stats.income_thb, bal: stats.balance_thb },
+    { code: 'USD', symbol: '$', exp: stats.expense_usd, inc: stats.income_usd, bal: stats.balance_usd },
+    { code: 'RUB', symbol: '₽', exp: stats.expense_rub, inc: stats.income_rub, bal: stats.balance_rub },
+  ]
+  for (const c of currencies) {
+    if ((c.exp || 0) > 0 || (c.inc || 0) > 0) {
+      rows.push(c)
+    }
+  }
+  return rows
+}
+
 function getPriorityStats(stats, role) {
   const priority = STAT_PRIORITY[role] || []
   const result = []
-
-  // Сначала добавляем по приоритету
   for (const key of priority) {
     const val = stats[key]
     if (val !== undefined && val !== null && val !== 0 && val !== '') {
@@ -101,8 +114,6 @@ function getPriorityStats(stats, role) {
     }
     if (result.length >= 4) break
   }
-
-  // Если мало — добиваем остальными
   if (result.length < 4) {
     for (const [k, v] of Object.entries(stats)) {
       if (k === 'last_updated') continue
@@ -112,7 +123,6 @@ function getPriorityStats(stats, role) {
       if (result.length >= 4) break
     }
   }
-
   return result
 }
 
@@ -352,7 +362,61 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
         {/* PORTRAIT + STATS */}
         <div style={{ flexShrink: 0, marginTop: 5 }}>
           <GremlinAnimation role={gremlin.role} accentColor={accentColor} talking={talking} size={220} />
-          {hasStats && (
+
+          {/* БУХГАЛТЕР — таблица по валютам */}
+          {gremlin.role === 'accountant' && (() => {
+            const currencyRows = getAccountantStatRows(stats)
+            const totalUSD = stats.total_balance_usd
+            if (currencyRows.length === 0 && !totalUSD) return null
+            return (
+              <div style={{ padding: '6px 12px' }}>
+                {/* Итого в USD */}
+                {totalUSD !== undefined && (
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
+                    <div style={{ background: accentColor + '20', border: '1px solid ' + accentColor + '50', borderRadius: 8, padding: '5px 18px', textAlign: 'center' }}>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>
+                        {lang === 'ru' ? 'итого баланс' : 'total balance'}
+                      </div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: totalUSD >= 0 ? accentColor : '#ff5a5a', textShadow: '0 0 10px ' + accentColor + '60' }}>
+                        {totalUSD >= 0 ? '+' : ''}{totalUSD?.toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} $
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {/* По валютам */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {currencyRows.map(c => (
+                    <div key={c.code} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                      <div style={{ width: 32, fontSize: 11, color: 'var(--text-muted)', textAlign: 'right', flexShrink: 0 }}>{c.symbol}</div>
+                      <div style={{ flex: 1, display: 'flex', gap: 4 }}>
+                        <div style={{ flex: 1, background: '#ff5a5a15', border: '1px solid #ff5a5a30', borderRadius: 6, padding: '3px 8px', textAlign: 'center' }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: '#ff5a5a' }}>
+                            {(c.exp || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })}
+                          </div>
+                          <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>{lang === 'ru' ? 'расход' : 'expense'}</div>
+                        </div>
+                        <div style={{ flex: 1, background: accentColor + '15', border: '1px solid ' + accentColor + '30', borderRadius: 6, padding: '3px 8px', textAlign: 'center' }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: accentColor }}>
+                            {(c.inc || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })}
+                          </div>
+                          <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>{lang === 'ru' ? 'доход' : 'income'}</div>
+                        </div>
+                        <div style={{ flex: 1, background: (c.bal || 0) >= 0 ? '#3ecf7015' : '#ff5a5a15', border: '1px solid ' + ((c.bal || 0) >= 0 ? '#3ecf7030' : '#ff5a5a30'), borderRadius: 6, padding: '3px 8px', textAlign: 'center' }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: (c.bal || 0) >= 0 ? '#3ecf70' : '#ff5a5a' }}>
+                            {(c.bal || 0) >= 0 ? '+' : ''}{(c.bal || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })}
+                          </div>
+                          <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>{lang === 'ru' ? 'баланс' : 'balance'}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
+
+          {/* ОСТАЛЬНЫЕ РОЛИ — обычные плитки */}
+          {gremlin.role !== 'accountant' && hasStats && (
             <div style={{ display: 'flex', gap: 6, padding: '6px 12px', flexWrap: 'wrap', justifyContent: 'center' }}>
               {priorityStats.map(([k, v]) => (
                 <div key={k} style={{ background: accentColor + '15', border: '1px solid ' + accentColor + '30', borderRadius: 6, padding: '5px 10px', textAlign: 'center', minWidth: 60 }}>
