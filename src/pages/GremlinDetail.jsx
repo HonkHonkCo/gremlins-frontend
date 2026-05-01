@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { getEntries, sendChat, updateGremlin, deleteGremlin } from '../services/api'
+import { getEntries, sendChat, updateGremlin, deleteGremlin, getGremlin } from '../services/api'
 import { t } from '../i18n'
 import Upgrade from './Upgrade'
 import GremlinAnimation from '../components/GremlinAnimation'
@@ -44,8 +44,20 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
 
   const accentColor = getAccentColor(gremlin.role, gremlin.id)
 
+  const refreshGremlin = async () => {
+    try {
+      const updated = await getGremlin(gremlin.id)
+      if (updated) setGremlin(updated)
+    } catch {}
+  }
+
+  const refreshEntries = () =>
+    getEntries(gremlin.id)
+      .then(data => setEntries(Array.isArray(data) ? data : []))
+      .catch(() => {})
+
   useEffect(() => {
-    getEntries(gremlin.id).then(data => setEntries(Array.isArray(data) ? data : [])).catch(() => {})
+    refreshEntries()
   }, [gremlin.id])
 
   useEffect(() => {
@@ -69,16 +81,18 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
     catch { alert(t(lang, 'errorDelete')) }
   }
 
-  const send = async (textOverride, silent = false) => {
+  const send = async (textOverride, silent = false, isFile = false) => {
     const text = textOverride || input.trim()
     if (!text || sending) return
     if (!textOverride) setInput('')
-    if (!silent) setMessages(m => [...m, { role: 'user', text }])
+    if (!silent) setMessages(m => [...m, { role: 'user', text, isFile }])
     setSending(true); setTalking(true)
     try {
-      const res = await sendChat(userId, gremlin.id, text)
+      const res = await sendChat(userId, gremlin.id, text, isFile)
       setMessages(m => [...m, { role: 'gremlin', text: res.reply || res.gremlin_reply || '...' }])
-      getEntries(gremlin.id).then(data => setEntries(Array.isArray(data) ? data : []))
+      // Обновляем стейт гремлина чтобы статы обновились
+      await refreshGremlin()
+      refreshEntries()
     } catch(err) {
       const data = err?.response?.data
       if (data?.error === 'message_limit_reached') {
@@ -134,8 +148,10 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
         summary = 'File "' + file.name + '" (' + (file.type || ext) + ') uploaded.'
       }
 
+      // Показываем файл в чате как файл-сообщение
       setMessages(m => [...m, { role: 'user', text: '📎 ' + file.name, isFile: true }])
-      await send('Пользователь загрузил файл. Проанализируй и дай краткий итог:\n\n' + summary, true)
+      // Отправляем содержимое с флагом is_file=true — не сохранится как обычное сообщение
+      await send('Пользователь загрузил файл. Проанализируй и дай краткий итог:\n\n' + summary, true, true)
     } catch {
       setMessages(m => [...m, { role: 'gremlin', text: t(lang, 'errorChat') }])
     }
@@ -143,10 +159,14 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
   }
 
   const stats = gremlin.stats || {}
-  const statEntries = Object.entries(stats).filter(([k, v]) => k !== 'last_updated' && v !== 0 && v !== null)
+  const statEntries = Object.entries(stats).filter(([k, v]) => k !== 'last_updated' && v !== 0 && v !== null && v !== undefined)
   const hasStats = statEntries.length > 0
-  const recentEntries = entries.slice(0, 30)
-  const archiveEntries = entries.slice(30)
+
+  // Разделяем на обычные entries и файловые — файловые не показываем как текст
+  const visibleEntries = entries.filter(e => !e.is_file)
+  const recentEntries = visibleEntries.slice(0, 30)
+  const archiveEntries = visibleEntries.slice(30)
+
   const statLabel = (k) => t(lang, 'stats')?.[k] || k
 
   return (
@@ -282,11 +302,14 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
             <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
               <div style={{
                 maxWidth: '80%',
-                background: m.role === 'user' ? accentColor : 'var(--bg2)',
-                color: m.role === 'user' ? '#000' : 'var(--text)',
+                background: m.role === 'user'
+                  ? (m.isFile ? accentColor + '40' : accentColor)
+                  : 'var(--bg2)',
+                color: m.role === 'user' ? (m.isFile ? 'var(--text)' : '#000') : 'var(--text)',
                 border: m.role === 'gremlin' ? '1px solid ' + accentColor + '30' : 'none',
                 borderRadius: m.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
-                padding: '8px 12px', fontSize: 12, lineHeight: 1.5
+                padding: '8px 12px', fontSize: 12, lineHeight: 1.5,
+                fontStyle: m.isFile ? 'italic' : 'normal',
               }}>{m.text}</div>
             </div>
           ))}
