@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react'
 import { getGremlins } from '../services/api'
 import { t } from '../i18n'
+import BgAnimation from '../components/BgAnimation'
 
 const ROLE_COLOR_VARIANTS = {
   accountant: ['#3ecf70', '#00ddaa', '#aaff44', '#00ffcc'],
   trainer:    ['#4a9eff', '#aa44ff', '#00ccff', '#ff44aa'],
   secretary:  ['#d4a017', '#ff6600', '#ffdd00', '#dd4488'],
   chef:       ['#ff7043', '#ff2288', '#ffaa00', '#ff44cc'],
+}
+
+const ROLE_ICONS = {
+  accountant: '🧮', trainer: '🏋️', secretary: '📋', chef: '🍽️',
 }
 
 function getAccentColor(role, gremlinId) {
@@ -17,29 +22,18 @@ function getAccentColor(role, gremlinId) {
   const num = parseInt(last8, 16) || 0
   return variants[num % variants.length]
 }
-import BgAnimation from '../components/BgAnimation'
-
-const ROLE_ICONS = {
-  accountant: '🧮', trainer: '🏋️', secretary: '📋', chef: '🍽️',
-}
-
 
 const STAT_LABELS = {
-  // accountant
   expense_thb: 'расход ฿', expense_rub: 'расход ₽', expense_usd: 'расход $',
   income_thb: 'доход ฿', income_rub: 'доход ₽', income_usd: 'доход $',
   balance_thb: 'баланс ฿', balance_rub: 'баланс ₽', balance_usd: 'баланс $',
   total_balance_usd: 'баланс $', total_expense_usd: 'расход $', total_income_usd: 'доход $',
-  // trainer
   last_calories: 'ккал', last_workout: 'тренировка', last_water: 'вода л',
   weight_kg: 'вес кг', steps: 'шаги', last_pushups: 'отжимания', last_distance_km: 'км',
-  // secretary
   pending_tasks: 'задач', last_task: 'задача', next_deadline: 'дедлайн',
-  // chef
-  last_meal: 'блюдо', last_calories: 'ккал', last_protein: 'белок г',
+  last_meal: 'блюдо', last_protein: 'белок г',
 }
 
-// Для динамических ключей бухгалтера (expense_idr, income_eur и тд)
 function humanLabel(k) {
   if (STAT_LABELS[k]) return STAT_LABELS[k]
   if (k.startsWith('expense_')) return 'расход ' + k.split('_').slice(1).join('').toUpperCase()
@@ -50,7 +44,7 @@ function humanLabel(k) {
   return k.replace(/_/g, ' ')
 }
 
-
+export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
   const [gremlins, setGremlins] = useState([])
   const [loading, setLoading] = useState(true)
 
