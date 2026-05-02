@@ -88,18 +88,29 @@ function getAccentColor(role, gremlinId) {
   return variants[num % variants.length]
 }
 
-// Для бухгалтера — строим панель по валютам отдельно
+// Для бухгалтера — строим панель по всем валютам из stats динамически
+const CURRENCY_SYMBOLS = {
+  THB: '฿', USD: '$', RUB: '₽', EUR: '€', GBP: '£',
+  IDR: 'Rp', AUD: 'A$', JPY: '¥', CNY: '¥', KRW: '₩',
+  CAD: 'C$', SGD: 'S$', MYR: 'RM', VND: '₫',
+}
+
 function getAccountantStatRows(stats) {
-  const rows = []
-  const currencies = [
-    { code: 'THB', symbol: '฿', exp: stats.expense_thb, inc: stats.income_thb, bal: stats.balance_thb },
-    { code: 'USD', symbol: '$', exp: stats.expense_usd, inc: stats.income_usd, bal: stats.balance_usd },
-    { code: 'RUB', symbol: '₽', exp: stats.expense_rub, inc: stats.income_rub, bal: stats.balance_rub },
-  ]
-  for (const c of currencies) {
-    if ((c.exp || 0) > 0 || (c.inc || 0) > 0) {
-      rows.push(c)
+  const currencies = new Set()
+  Object.keys(stats).forEach(k => {
+    if (k.startsWith('expense_') || k.startsWith('income_') || k.startsWith('balance_')) {
+      const cur = k.split('_').slice(1).join('_').toUpperCase()
+      currencies.add(cur)
     }
+  })
+  const rows = []
+  for (const cur of currencies) {
+    const curLow = cur.toLowerCase()
+    const exp = stats['expense_' + curLow] || 0
+    const inc = stats['income_' + curLow] || 0
+    const bal = stats['balance_' + curLow] || 0
+    if (exp === 0 && inc === 0) continue
+    rows.push({ code: cur, symbol: CURRENCY_SYMBOLS[cur] || cur, exp, inc, bal })
   }
   return rows
 }
@@ -192,14 +203,15 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
     setSending(true); setTalking(true)
     try {
       const res = await sendChat(userId, gremlin.id, text, isFile)
-      setMessages(m => [...m, { role: 'gremlin', text: res.reply || res.gremlin_reply || '...' }])
-      // Обновляем stats сразу из ответа если есть, иначе перечитываем
+      // Обновляем stats сразу из ответа
       if (res.stats) {
         setGremlin(g => ({ ...g, stats: res.stats }))
       } else {
         await refreshGremlin()
       }
-      refreshEntries()
+      // Обновляем entries и очищаем локальные messages — они теперь в entries
+      await refreshEntries()
+      setMessages([])
     } catch(err) {
       const data = err?.response?.data
       if (data?.error === 'message_limit_reached') {
@@ -511,7 +523,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
             style={{ background: 'var(--bg3)', border: '1px solid ' + accentColor + '30', borderRadius: 8, width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, cursor: 'pointer', flexShrink: 0, color: accentColor, opacity: sending ? 0.5 : 1 }}
           >📎</button>
           <textarea
-            rows={3}
+            rows={2}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKey}
