@@ -25,8 +25,7 @@ export const deleteGremlin = (id) =>
 export const getEntries = (gremlin_id) =>
   api.get(`/entries?gremlin_id=${gremlin_id}`).then(r => r.data)
 
-export const sendChat = (user_id, gremlin_id, text, is_file = false) =>
-  api.post('/entries/chat', { gremlin_id, content: text, is_file }).then(r => r.data)
-
+export const sendChat = (user_id, gremlin_id, text, is_file = false, parsedTotals = null, fileName = null) =>
+  api.post('/entries/chat', { gremlin_id, content: text, is_file, parsed_totals: parsedTotals, file_name: fileName }).then(r => r.data)
 export const getWeeklyReport = (user_id) =>
   api.get(`/reports/weekly?user_id=${user_id}`).then(r => r.data)

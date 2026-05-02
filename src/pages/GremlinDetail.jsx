@@ -195,20 +195,19 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
     catch { alert(t(lang, 'errorDelete')) }
   }
 
-  const send = async (textOverride, silent = false, isFile = false, parsedTotals = null) => {
+  const send = async (textOverride, silent = false, isFile = false, parsedTotals = null, fileName = null) => {
     const text = textOverride || input.trim()
     if (!text || sending) return
     if (!textOverride) setInput('')
     if (!silent) setMessages(m => [...m, { role: 'user', text, isFile }])
     setSending(true); setTalking(true)
     try {
-      const res = await sendChat(userId, gremlin.id, text, isFile, parsedTotals)
+      const res = await sendChat(userId, gremlin.id, text, isFile, parsedTotals, fileName)
       if (res.stats) {
         setGremlin(g => ({ ...g, stats: res.stats }))
       } else {
         await refreshGremlin()
       }
-      // Добавляем ответ гремлина в локальные messages (не очищаем — файл-сообщение там)
       const replyText = res.reply || res.gremlin_reply || '...'
       setMessages(m => [...m, { role: 'gremlin', text: replyText }])
       refreshEntries()
@@ -278,9 +277,10 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
           text: '📊 Файл обработан (' + opCount + ' операций):\n\n' + summary
         }])
 
-        // Сохраняем данные в базу через бэк — короткий промпт гремлину
-        const prompt = 'Данные из файла приняты и записаны:\n' + summary + '\nПодтверди кратко.'
-        await send(prompt, true, true, parsedTotals)
+        // Сохраняем — content это имя файла (покажется как 📎 в истории)
+        // parsedTotals идут на бэк для обновления stats
+        const prompt = 'Файл обработан:\n' + summary + '\nПодтверди кратко что данные записаны.'
+        await send(prompt, true, true, parsedTotals, file.name)
 
       } else {
         // Для других ролей
