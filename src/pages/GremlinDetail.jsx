@@ -195,23 +195,23 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
     catch { alert(t(lang, 'errorDelete')) }
   }
 
-  const send = async (textOverride, silent = false, isFile = false) => {
+  const send = async (textOverride, silent = false, isFile = false, parsedTotals = null) => {
     const text = textOverride || input.trim()
     if (!text || sending) return
     if (!textOverride) setInput('')
     if (!silent) setMessages(m => [...m, { role: 'user', text, isFile }])
     setSending(true); setTalking(true)
     try {
-      const res = await sendChat(userId, gremlin.id, text, isFile)
-      // Обновляем stats сразу из ответа
+      const res = await sendChat(userId, gremlin.id, text, isFile, parsedTotals)
       if (res.stats) {
         setGremlin(g => ({ ...g, stats: res.stats }))
       } else {
         await refreshGremlin()
       }
-      // Обновляем entries и очищаем локальные messages — они теперь в entries
-      await refreshEntries()
-      setMessages([])
+      // Добавляем ответ гремлина в локальные messages (не очищаем — файл-сообщение там)
+      const replyText = res.reply || res.gremlin_reply || '...'
+      setMessages(m => [...m, { role: 'gremlin', text: replyText }])
+      refreshEntries()
     } catch(err) {
       const data = err?.response?.data
       if (data?.error === 'message_limit_reached') {
@@ -230,49 +230,94 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
     const file = e.target.files[0]
     if (!file) return
     setFileLoading(true)
+    setMessages(m => [...m, { role: 'user', text: '📎 ' + file.name, isFile: true }])
+
     try {
       const ext = file.name.split('.').pop().toLowerCase()
-      let summary = ''
 
-      if (ext === 'json') {
-        const text = await file.text()
-        try {
+      if (gremlin.role === 'accountant' && ['json', 'txt', 'csv'].includes(ext)) {
+        // ШАГ 1: программа сканирует числа и группирует по меткам
+        const { parseTelegramExport, scanFile, formatGroupsForAI } = await import('../services/fileParser.js')
+        let groups = {}
+        let opCount = 0
+
+        if (ext === 'json') {
+          const text = await file.text()
           const json = JSON.parse(text)
-          if (json.messages && Array.isArray(json.messages)) {
-            const msgs = json.messages
-              .filter(m => m.type === 'message' && m.text)
-              .slice(-200)
-            const textMsgs = msgs.map(m => {
-              const txt = typeof m.text === 'string'
-                ? m.text
-                : Array.isArray(m.text)
-                  ? m.text.map(t => typeof t === 'string' ? t : (t.text || '')).join('')
-                  : ''
-              return '[' + (m.date || '').slice(0, 10) + '] ' + (m.from || '') + ': ' + txt
-            }).join('\n')
-            summary = 'Telegram chat export "' + (json.name || file.name) + '".\nLast ' + msgs.length + ' messages:\n\n' + textMsgs.slice(0, 6000)
+          if (json.messages) {
+            const result = parseTelegramExport(json)
+            groups = result.groups
+            opCount = result.opCount
           } else {
-            summary = 'JSON file "' + file.name + '":\n' + JSON.stringify(json, null, 2).slice(0, 4000)
+            const flat = JSON.stringify(json)
+            groups = scanFile(flat)
           }
-        } catch {
-          const raw = await file.text()
-          summary = raw.slice(0, 4000)
+        } else {
+          const text = await file.text()
+          groups = scanFile(text)
+          opCount = Object.values(groups).reduce((s, g) => s + (g.expense > 0 || g.income > 0 ? 1 : 0), 0)
         }
-      } else if (['txt', 'csv', 'html', 'htm'].includes(ext)) {
-        const text = await file.text()
-        summary = 'File "' + file.name + '" (' + ext.toUpperCase() + '):\n\n' + text.slice(0, 6000)
-      } else if (['docx', 'doc'].includes(ext)) {
-        summary = 'Word document "' + file.name + '" uploaded. Analyze its likely financial or task content.'
+
+        if (Object.keys(groups).length === 0) {
+          setMessages(m => [...m, { role: 'gremlin', text: 'Хм, в этом файле финансовых данных не нашёл. Попробуй написать цифры текстом прямо в чат.' }])
+          return
+        }
+
+        // Показываем промежуточный статус
+        setMessages(m => [...m, {
+          role: 'gremlin',
+          text: '⚙️ Нашёл ' + Object.keys(groups).length + ' видов валют, ' + opCount + ' операций. Определяю валюты...'
+        }])
+
+        // ШАГ 2: AI смотрит только на итоги (~50 токенов) и определяет ISO коды
+        const groupsText = formatGroupsForAI(groups)
+        const aiPrompt = 'Определи валюты и подтверди данные:\n\n' + groupsText +
+          '\n\nЕсли все валюты понятны — подтверди принятие данных кратко. Если что-то непонятно — спроси.'
+
+        // parsedTotals для бэка — собираем из groups напрямую пока AI отвечает
+        const parsedTotals = {}
+        for (const [label, g] of Object.entries(groups)) {
+          // Простое угадывание для быстрого сохранения
+          let iso = 'UNKNOWN'
+          const l = label.toLowerCase()
+          if (l.includes('рп') || l.includes('rp') || l.includes('idr')) iso = 'IDR'
+          else if (l === '$' || l.includes('usd') || l.includes('долл')) iso = 'USD'
+          else if (l.includes('руб') || l === 'р' || l === '₽' || l.includes('rub')) iso = 'RUB'
+          else if (l.includes('бат') || l === '฿' || l.includes('thb')) iso = 'THB'
+          else if (l === '€' || l.includes('eur') || l.includes('евро')) iso = 'EUR'
+          else if (l === '£' || l.includes('gbp') || l.includes('фунт')) iso = 'GBP'
+          if (iso === 'UNKNOWN') continue
+          const isoLow = iso.toLowerCase()
+          if (g.expense > 0) parsedTotals['expense_' + isoLow] = (parsedTotals['expense_' + isoLow] || 0) + g.expense
+          if (g.income > 0) parsedTotals['income_' + isoLow] = (parsedTotals['income_' + isoLow] || 0) + g.income
+        }
+
+        await send(aiPrompt, true, true, parsedTotals)
+
       } else {
-        summary = 'File "' + file.name + '" (' + (file.type || ext) + ') uploaded.'
+        // Для других ролей и форматов — как раньше
+        let summary = ''
+        if (ext === 'json') {
+          const text = await file.text()
+          summary = 'JSON файл "' + file.name + '":\n' + text.slice(0, 3000)
+        } else if (['txt', 'csv', 'html', 'htm'].includes(ext)) {
+          const text = await file.text()
+          summary = 'Файл "' + file.name + '":\n\n' + text.slice(0, 4000)
+        } else if (['docx', 'doc'].includes(ext)) {
+          summary = 'Word документ "' + file.name + '" — проанализируй содержимое.'
+        } else {
+          summary = 'Файл "' + file.name + '"'
+        }
+        await send('Пользователь загрузил файл. Проанализируй:\n\n' + summary, true, true, null)
       }
 
-      setMessages(m => [...m, { role: 'user', text: '📎 ' + file.name, isFile: true }])
-      await send('Пользователь загрузил файл. Проанализируй и дай краткий итог:\n\n' + summary, true, true)
-    } catch {
-      setMessages(m => [...m, { role: 'gremlin', text: t(lang, 'errorChat') }])
+    } catch (err) {
+      console.error('File error:', err)
+      setMessages(m => [...m, { role: 'gremlin', text: 'Не смог обработать файл. Попробуй написать данные текстом.' }])
+    } finally {
+      setFileLoading(false)
+      e.target.value = ''
     }
-    finally { setFileLoading(false); e.target.value = '' }
   }
 
   const stats = gremlin.stats || {}
