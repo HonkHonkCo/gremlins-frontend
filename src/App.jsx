@@ -12,7 +12,6 @@ import { themes, getTheme, setTheme } from './themes.js'
 
 export default function App() {
   const [user, setUser] = useState(null)
-  const [notInTelegram, setNotInTelegram] = useState(false)
   const [page, setPage] = useState('home')
   const [selectedGremlin, setSelectedGremlin] = useState(null)
   const [homeKey, setHomeKey] = useState(0)
@@ -26,33 +25,43 @@ export default function App() {
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp
-    if (!tg?.initDataUnsafe?.user) { setNotInTelegram(true); return }
-    const tgId = tg.initDataUnsafe.user.id
-    const username = tg.initDataUnsafe.user.username || ''
-    tg.expand()
-    tg.setHeaderColor('#0e0d0b')
-    tg.setBackgroundColor('#0e0d0b')
-    syncUser(tgId, username)
-      .then(u => {
-        setUser({ ...u, telegram_id: tgId })
-        const created = new Date(u.created_at)
-        const now = new Date()
-        if (now - created < 30000) setShowOnboarding(true)
-      })
-      .catch(e => console.error('sync error', e))
+    const tgUser = tg?.initDataUnsafe?.user
+
+    if (tgUser) {
+      // Режим Telegram Mini App
+      tg.expand()
+      tg.setHeaderColor('#1a1812')
+      tg.setBackgroundColor('#1a1812')
+      const tgId = tgUser.id
+      const username = tgUser.username || ''
+      syncUser(tgId, username)
+        .then(u => {
+          setUser({ ...u, telegram_id: tgId, via: 'telegram' })
+          const created = new Date(u.created_at)
+          if (new Date() - created < 30000) setShowOnboarding(true)
+        })
+        .catch(e => console.error('sync error', e))
+    } else {
+      // Режим браузера — генерируем стабильный анонимный ID
+      let browserId = localStorage.getItem('gremlins_browser_id')
+      if (!browserId) {
+        browserId = 'browser_' + Math.random().toString(36).slice(2) + Date.now()
+        localStorage.setItem('gremlins_browser_id', browserId)
+      }
+      // Используем хэш как telegram_id (отрицательный чтобы не пересекаться с реальными)
+      const fakeId = -(Math.abs(browserId.split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 0)) % 999999999 + 1)
+      syncUser(fakeId, 'web_user')
+        .then(u => {
+          setUser({ ...u, telegram_id: fakeId, via: 'browser' })
+          const created = new Date(u.created_at)
+          if (new Date() - created < 30000) setShowOnboarding(true)
+        })
+        .catch(e => console.error('browser sync error', e))
+    }
   }, [])
 
   const goHome = () => { setPage('home'); setSelectedGremlin(null); setHomeKey(k => k + 1) }
   const finishOnboarding = () => { setShowOnboarding(false); setPage('add') }
-
-  if (notInTelegram) return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, background: 'var(--bg)', color: 'var(--text)', fontFamily: "'CMUTypewriter', 'Courier New', monospace" }}>
-      <div style={{ fontSize: 48 }}>◈</div>
-      <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '0.1em' }}>PERSONAL GREMLINS</div>
-      <div style={{ fontSize: 12, color: 'var(--text-dim)', textAlign: 'center', lineHeight: 1.7 }}>{t(lang, 'openInTelegram')}</div>
-      <a href="https://t.me/Mygremlins_bot" style={{ marginTop: 8, background: 'var(--gold)', color: '#000', padding: '10px 24px', borderRadius: 8, fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textDecoration: 'none' }}>{t(lang, 'openButton')}</a>
-    </div>
-  )
 
   if (!user) return <div className="loading">{t(lang, 'loading')}</div>
   if (showOnboarding) return <Onboarding lang={lang} onDone={finishOnboarding} />
@@ -60,10 +69,57 @@ export default function App() {
   return (
     <div className="app">
       {showUpgrade && (
-        <Upgrade lang={lang} reason="limit_reached" user={user} onClose={(paid) => {
-          setShowUpgrade(false)
-          if (paid) { setUser(u => ({ ...u, plan: 'pro' })); window.location.reload() }
-        }} />
+        user?.via === 'browser' ? (
+          // Браузерный пользователь — предлагаем перейти в телеграм для оплаты
+          <div style={{
+            position: 'fixed', inset: 0, background: '#000a',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 200, padding: 24
+          }}>
+            <div style={{
+              background: 'var(--bg2)', border: '1px solid var(--gold)',
+              borderRadius: 16, padding: 28, maxWidth: 340, width: '100%',
+              textAlign: 'center', fontFamily: 'inherit'
+            }}>
+              <div style={{ fontSize: 36, marginBottom: 12 }}>⭐</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
+                {lang === 'ru' ? 'PRO доступен в Telegram' : 'PRO available in Telegram'}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text-dim)', lineHeight: 1.7, marginBottom: 20 }}>
+                {lang === 'ru'
+                  ? 'Оплата через Telegram Stars. Открой бота и оформи подписку — всё сохранится.'
+                  : 'Payment via Telegram Stars. Open the bot and subscribe — your data is saved.'}
+              </div>
+              <a
+                href="https://t.me/Mygremlins_bot"
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: 'block', background: 'var(--gold)', color: '#000',
+                  borderRadius: 10, padding: '12px 0', fontSize: 13,
+                  fontWeight: 700, textDecoration: 'none', marginBottom: 10,
+                  letterSpacing: '0.04em'
+                }}
+              >
+                {lang === 'ru' ? '→ Открыть в Telegram' : '→ Open in Telegram'}
+              </a>
+              <button
+                onClick={() => setShowUpgrade(false)}
+                style={{
+                  background: 'none', border: 'none', color: 'var(--text-muted)',
+                  fontSize: 11, cursor: 'pointer', fontFamily: 'inherit'
+                }}
+              >
+                {lang === 'ru' ? 'закрыть' : 'close'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <Upgrade lang={lang} reason="limit_reached" user={user} onClose={(paid) => {
+            setShowUpgrade(false)
+            if (paid) { setUser(u => ({ ...u, plan: 'pro' })); window.location.reload() }
+          }} />
+        )
       )}
 
       {(page === 'home' || page === 'report' || page === 'settings') && (

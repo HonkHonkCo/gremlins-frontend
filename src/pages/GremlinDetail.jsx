@@ -236,75 +236,63 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
       const ext = file.name.split('.').pop().toLowerCase()
 
       if (gremlin.role === 'accountant' && ['json', 'txt', 'csv'].includes(ext)) {
-        // ШАГ 1: программа сканирует числа и группирует по меткам
-        const { parseTelegramExport, scanFile, formatGroupsForAI } = await import('../services/fileParser.js')
-        let groups = {}
+        const { parseTelegramExport, scanFile, formatSummary, totalsToParsed } = await import('../services/fileParser.js')
+
+        let totals = {}
         let opCount = 0
 
         if (ext === 'json') {
           const text = await file.text()
-          const json = JSON.parse(text)
-          if (json.messages) {
-            const result = parseTelegramExport(json)
-            groups = result.groups
-            opCount = result.opCount
-          } else {
-            const flat = JSON.stringify(json)
-            groups = scanFile(flat)
-          }
+          try {
+            const json = JSON.parse(text)
+            if (json.messages) {
+              const result = parseTelegramExport(json)
+              totals = result.totals
+              opCount = result.opCount
+            } else {
+              totals = scanFile(JSON.stringify(json))
+            }
+          } catch { totals = {} }
         } else {
           const text = await file.text()
-          groups = scanFile(text)
-          opCount = Object.values(groups).reduce((s, g) => s + (g.expense > 0 || g.income > 0 ? 1 : 0), 0)
+          totals = scanFile(text)
+          opCount = Object.keys(totals).length
         }
 
-        if (Object.keys(groups).length === 0) {
-          setMessages(m => [...m, { role: 'gremlin', text: 'Хм, в этом файле финансовых данных не нашёл. Попробуй написать цифры текстом прямо в чат.' }])
+        if (Object.keys(totals).length === 0) {
+          setMessages(m => [...m, {
+            role: 'gremlin',
+            text: 'Хм, финансовых данных в файле не нашёл. Попробуй написать цифры текстом — например "потратил 500 бат на еду".'
+          }])
+          setFileLoading(false)
+          e.target.value = ''
           return
         }
 
-        // Показываем промежуточный статус
+        const summary = formatSummary(totals)
+        const parsedTotals = totalsToParsed(totals)
+
+        // Показываем итог сразу — без ожидания AI
         setMessages(m => [...m, {
           role: 'gremlin',
-          text: '⚙️ Нашёл ' + Object.keys(groups).length + ' видов валют, ' + opCount + ' операций. Определяю валюты...'
+          text: '📊 Файл обработан (' + opCount + ' операций):\n\n' + summary
         }])
 
-        // ШАГ 2: AI смотрит только на итоги (~50 токенов) и определяет ISO коды
-        const groupsText = formatGroupsForAI(groups)
-        const aiPrompt = 'Определи валюты и подтверди данные:\n\n' + groupsText +
-          '\n\nЕсли все валюты понятны — подтверди принятие данных кратко. Если что-то непонятно — спроси.'
-
-        // parsedTotals для бэка — собираем из groups напрямую пока AI отвечает
-        const parsedTotals = {}
-        for (const [label, g] of Object.entries(groups)) {
-          // Простое угадывание для быстрого сохранения
-          let iso = 'UNKNOWN'
-          const l = label.toLowerCase()
-          if (l.includes('рп') || l.includes('rp') || l.includes('idr')) iso = 'IDR'
-          else if (l === '$' || l.includes('usd') || l.includes('долл')) iso = 'USD'
-          else if (l.includes('руб') || l === 'р' || l === '₽' || l.includes('rub')) iso = 'RUB'
-          else if (l.includes('бат') || l === '฿' || l.includes('thb')) iso = 'THB'
-          else if (l === '€' || l.includes('eur') || l.includes('евро')) iso = 'EUR'
-          else if (l === '£' || l.includes('gbp') || l.includes('фунт')) iso = 'GBP'
-          if (iso === 'UNKNOWN') continue
-          const isoLow = iso.toLowerCase()
-          if (g.expense > 0) parsedTotals['expense_' + isoLow] = (parsedTotals['expense_' + isoLow] || 0) + g.expense
-          if (g.income > 0) parsedTotals['income_' + isoLow] = (parsedTotals['income_' + isoLow] || 0) + g.income
-        }
-
-        await send(aiPrompt, true, true, parsedTotals)
+        // Сохраняем данные в базу через бэк — короткий промпт гремлину
+        const prompt = 'Данные из файла приняты и записаны:\n' + summary + '\nПодтверди кратко.'
+        await send(prompt, true, true, parsedTotals)
 
       } else {
-        // Для других ролей и форматов — как раньше
+        // Для других ролей
         let summary = ''
-        if (ext === 'json') {
+        if (['txt', 'csv'].includes(ext)) {
           const text = await file.text()
-          summary = 'JSON файл "' + file.name + '":\n' + text.slice(0, 3000)
-        } else if (['txt', 'csv', 'html', 'htm'].includes(ext)) {
+          summary = 'Файл "' + file.name + '":\n\n' + text.slice(0, 3000)
+        } else if (ext === 'json') {
           const text = await file.text()
-          summary = 'Файл "' + file.name + '":\n\n' + text.slice(0, 4000)
+          summary = 'JSON файл "' + file.name + '":\n' + text.slice(0, 2000)
         } else if (['docx', 'doc'].includes(ext)) {
-          summary = 'Word документ "' + file.name + '" — проанализируй содержимое.'
+          summary = 'Word документ "' + file.name + '" — опиши что там может быть.'
         } else {
           summary = 'Файл "' + file.name + '"'
         }
@@ -313,7 +301,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
 
     } catch (err) {
       console.error('File error:', err)
-      setMessages(m => [...m, { role: 'gremlin', text: 'Не смог обработать файл. Попробуй написать данные текстом.' }])
+      setMessages(m => [...m, { role: 'gremlin', text: 'Не смог обработать файл. Напиши данные текстом.' }])
     } finally {
       setFileLoading(false)
       e.target.value = ''
@@ -324,12 +312,13 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
   const priorityStats = getPriorityStats(stats, gremlin.role)
   const hasStats = priorityStats.length > 0
 
-  // История: entries приходят DESC (новые первые), переворачиваем для показа
-  const visibleEntries = entries.filter(e => !e.is_file)
-  // Показываем последние 30 в хронологическом порядке (старые сверху, новые снизу)
-  const recentEntries = [...visibleEntries.slice(0, 30)].reverse()
-  // Архив — старые записи, тоже в хронологии
-  const archiveEntries = [...visibleEntries.slice(30)].reverse()
+  // Все видимые entries (не файловые системные записи с огромным контентом)
+  // Показываем файловые как "📎 файл" но не их полное содержимое
+  const visibleEntries = entries // показываем все, is_file просто рендерится иначе
+  // Последние 20 — основной чат (DESC → reverse = хронологически)
+  const recentEntries = [...visibleEntries.slice(0, 20)].reverse()
+  // Архив — всё что старше 20
+  const archiveEntries = [...visibleEntries.slice(20)].reverse()
 
   const statLabel = (k) => {
     const labels = lang === 'ru' ? STAT_LABELS_RU : STAT_LABELS_EN
@@ -497,8 +486,15 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
               {archiveEntries.map(e => (
                 <div key={e.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <div style={{ maxWidth: '80%', background: accentColor + '50', color: 'var(--text)', borderRadius: '10px 10px 2px 10px', padding: '7px 11px', fontSize: 13, lineHeight: 1.55, opacity: 0.8 }}>
-                      {e.content}
+                    <div style={{
+                      maxWidth: '80%',
+                      background: accentColor + '40',
+                      color: 'var(--text)',
+                      borderRadius: '10px 10px 2px 10px',
+                      padding: '7px 11px', fontSize: 13, lineHeight: 1.55, opacity: 0.8,
+                      fontStyle: e.is_file ? 'italic' : 'normal'
+                    }}>
+                      {e.is_file ? '📎 ' + (e.content?.replace('...[файл]', '').trim() || 'файл') : e.content}
                     </div>
                   </div>
                   {e.reply && (
@@ -518,8 +514,16 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
           {recentEntries.map(e => (
             <div key={e.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <div style={{ maxWidth: '80%', background: accentColor, color: '#000', borderRadius: '12px 12px 2px 12px', padding: '9px 13px', fontSize: 14, lineHeight: 1.55 }}>
-                  {e.content}
+                <div style={{
+                  maxWidth: '80%',
+                  background: e.is_file ? accentColor + '30' : accentColor,
+                  color: e.is_file ? 'var(--text)' : '#000',
+                  borderRadius: '12px 12px 2px 12px',
+                  padding: '9px 13px', fontSize: 14, lineHeight: 1.55,
+                  fontStyle: e.is_file ? 'italic' : 'normal',
+                  border: e.is_file ? '1px solid ' + accentColor + '50' : 'none'
+                }}>
+                  {e.is_file ? '📎 ' + (e.content?.replace('...[файл]', '').trim() || 'файл') : e.content}
                 </div>
               </div>
               {e.reply && (

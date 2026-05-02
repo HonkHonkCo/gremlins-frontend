@@ -24,7 +24,33 @@ const ROLE_ICONS = {
 }
 
 
-export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
+const STAT_LABELS = {
+  // accountant
+  expense_thb: 'расход ฿', expense_rub: 'расход ₽', expense_usd: 'расход $',
+  income_thb: 'доход ฿', income_rub: 'доход ₽', income_usd: 'доход $',
+  balance_thb: 'баланс ฿', balance_rub: 'баланс ₽', balance_usd: 'баланс $',
+  total_balance_usd: 'баланс $', total_expense_usd: 'расход $', total_income_usd: 'доход $',
+  // trainer
+  last_calories: 'ккал', last_workout: 'тренировка', last_water: 'вода л',
+  weight_kg: 'вес кг', steps: 'шаги', last_pushups: 'отжимания', last_distance_km: 'км',
+  // secretary
+  pending_tasks: 'задач', last_task: 'задача', next_deadline: 'дедлайн',
+  // chef
+  last_meal: 'блюдо', last_calories: 'ккал', last_protein: 'белок г',
+}
+
+// Для динамических ключей бухгалтера (expense_idr, income_eur и тд)
+function humanLabel(k) {
+  if (STAT_LABELS[k]) return STAT_LABELS[k]
+  if (k.startsWith('expense_')) return 'расход ' + k.split('_').slice(1).join('').toUpperCase()
+  if (k.startsWith('income_')) return 'доход ' + k.split('_').slice(1).join('').toUpperCase()
+  if (k.startsWith('balance_')) return 'баланс ' + k.split('_').slice(1).join('').toUpperCase()
+  if (k.startsWith('investment_')) return 'инвест ' + k.split('_').slice(1).join('').toUpperCase()
+  if (k.startsWith('last_')) return k.slice(5).replace(/_/g, ' ')
+  return k.replace(/_/g, ' ')
+}
+
+
   const [gremlins, setGremlins] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -47,7 +73,7 @@ export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
       .map(([k, v]) => ({ key: k, value: v, color, gremlin: g.name }))
   }).slice(0, 6)
 
-  const statLabel = (k) => t(lang, 'stats')?.[k] || k
+  const statLabel = (k) => humanLabel(k)
 
   return (
     <div style={{ padding: '0 12px 12px', position: 'relative' }}>
