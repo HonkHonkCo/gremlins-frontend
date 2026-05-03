@@ -137,6 +137,51 @@ function getPriorityStats(stats, role) {
   return result
 }
 
+function CategoriesDropdown({ categories, accentColor, lang }) {
+  const [open, setOpen] = useState(false)
+  const sorted = Object.entries(categories).sort((a, b) => b[1] - a[1])
+  const total = sorted.reduce((s, [, v]) => s + v, 0)
+
+  return (
+    <div style={{ marginTop: 6, padding: '0 12px' }}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        style={{
+          width: '100%', background: accentColor + '10',
+          border: '1px solid ' + accentColor + '30', borderRadius: 8,
+          padding: '7px 12px', display: 'flex', justifyContent: 'space-between',
+          alignItems: 'center', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--text-dim)', fontSize: 11
+        }}
+      >
+        <span>{lang === 'ru' ? '📂 категории расходов' : '📂 expense categories'}</span>
+        <span style={{ color: accentColor }}>{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div style={{
+          background: 'var(--bg2)', border: '1px solid ' + accentColor + '20',
+          borderRadius: '0 0 8px 8px', overflow: 'hidden', marginTop: -1
+        }}>
+          {sorted.map(([cat, amount]) => {
+            const pct = total > 0 ? Math.round((amount / total) * 100) : 0
+            return (
+              <div key={cat} style={{ padding: '6px 12px', borderBottom: '1px solid ' + accentColor + '10', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ flex: 1, fontSize: 12, color: 'var(--text)', textTransform: 'capitalize' }}>{cat}</div>
+                <div style={{ width: 60, height: 4, background: 'var(--bg3)', borderRadius: 2, overflow: 'hidden' }}>
+                  <div style={{ width: pct + '%', height: '100%', background: accentColor, borderRadius: 2 }} />
+                </div>
+                <div style={{ fontSize: 11, color: accentColor, minWidth: 32, textAlign: 'right' }}>{pct}%</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', minWidth: 60, textAlign: 'right' }}>
+                  {amount.toLocaleString('ru-RU', { maximumFractionDigits: 0 })}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function GremlinDetail({ gremlin: initialGremlin, userId, user, lang, onBack }) {
   const [gremlin, setGremlin] = useState(initialGremlin)
   const [entries, setEntries] = useState([])
@@ -457,6 +502,10 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
                     </div>
                   ))}
                 </div>
+                {/* Категории расходов — выпадающий список */}
+                {stats.categories && Object.keys(stats.categories).length > 0 && (
+                  <CategoriesDropdown categories={stats.categories} accentColor={accentColor} lang={lang} />
+                )}
               </div>
             )
           })()}
