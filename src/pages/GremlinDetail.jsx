@@ -746,8 +746,6 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
           )}
           <div ref={bottomRef} />
         </div>
-
-        </div>
         )}
 
         {/* INPUT — показываем всегда или только в чат-режиме */}
