@@ -3,6 +3,7 @@ import { getEntries, sendChat, updateGremlin, deleteGremlin, getGremlin } from '
 import { t } from '../i18n'
 import Upgrade from './Upgrade'
 import GremlinAnimation from '../components/GremlinAnimation'
+import AccountantForm from '../components/AccountantForm'
 
 const ROLE_COLOR_VARIANTS = {
   accountant: ['#3ecf70', '#00ddaa', '#aaff44', '#00ffcc'],
@@ -197,6 +198,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
   const [upgradeReason, setUpgradeReason] = useState(null)
+  const [activeTab, setActiveTab] = useState(gremlin.role === 'accountant' ? 'data' : 'chat')
   const [talking, setTalking] = useState(false)
   const bottomRef = useRef(null)
   const fileRef = useRef(null)
@@ -553,9 +555,114 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
           )}
         </div>
 
-        {/* CHAT */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {/* ТАБЫ — только для бухгалтера */}
+        {gremlin.role === 'accountant' && (
+          <div style={{ display: 'flex', gap: 3, background: 'var(--bg2)', padding: '4px 12px', flexShrink: 0 }}>
+            {[
+              { id: 'data', label: lang === 'ru' ? '+ Данные' : '+ Data' },
+              { id: 'chat', label: lang === 'ru' ? '💬 Чат' : '💬 Chat' },
+              { id: 'stats', label: lang === 'ru' ? '📊 Итого' : '📊 Stats' },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  flex: 1, padding: '7px 4px', borderRadius: 6,
+                  fontFamily: 'inherit', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                  background: activeTab === tab.id ? accentColor : 'var(--bg3)',
+                  color: activeTab === tab.id ? '#000' : 'var(--text-muted)',
+                  border: 'none', transition: 'all 0.15s'
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
 
+        {/* ФОРМА ДАННЫХ — только для бухгалтера */}
+        {gremlin.role === 'accountant' && activeTab === 'data' && (
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            <AccountantForm
+              gremlinId={gremlin.id}
+              accentColor={accentColor}
+              lang={lang}
+              onStatsUpdate={(newStats) => setGremlin(g => ({ ...g, stats: newStats }))}
+            />
+          </div>
+        )}
+
+        {/* ИТОГО — для бухгалтера */}
+        {gremlin.role === 'accountant' && activeTab === 'stats' && (
+          <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px' }}>
+            {(() => {
+              const currencyRows = getAccountantStatRows(stats)
+              const investments = Object.entries(stats).filter(([k]) => k.startsWith('investment_'))
+              const cats = stats.categories ? Object.entries(stats.categories).sort((a,b) => b[1]-a[1]) : []
+              const totalExp = Object.entries(stats).filter(([k]) => k.startsWith('expense_')).reduce((s,[,v])=>s+v,0)
+              return (
+                <>
+                  {currencyRows.length === 0 && <div style={{textAlign:'center',color:'var(--text-muted)',fontSize:12,marginTop:20}}>Добавь первую запись</div>}
+                  {currencyRows.map(c => (
+                    <div key={c.code} style={{ marginBottom: 6 }}>
+                      <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+                        <div style={{ width: 32, fontSize: 12, color: 'var(--text-muted)', textAlign: 'right', flexShrink: 0 }}>
+                          {c.symbol}
+                        </div>
+                        <div style={{ flex: 1, display: 'flex', gap: 4 }}>
+                          {[
+                            { val: c.exp, label: lang==='ru'?'расход':'expense', color: '#e24b4a' },
+                            { val: c.inc, label: lang==='ru'?'доход':'income', color: accentColor },
+                            { val: c.bal, label: lang==='ru'?'баланс':'balance', color: c.bal>=0?accentColor:'#e24b4a', sign: true },
+                          ].map(cell => (
+                            <div key={cell.label} style={{ flex:1, background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:6, padding:'4px 6px', textAlign:'center' }}>
+                              <div style={{ fontSize:12, fontWeight:700, color: cell.color }}>
+                                {cell.sign && cell.val>=0?'+':''}{(cell.val||0).toLocaleString('ru-RU',{maximumFractionDigits:2})}
+                              </div>
+                              <div style={{ fontSize:9, color:'var(--text-muted)' }}>{cell.label}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {investments.length > 0 && (
+                    <>
+                      <div style={{fontSize:10,color:'var(--text-muted)',margin:'10px 0 5px',letterSpacing:'0.06em'}}>{lang==='ru'?'ВКЛАДЫ':'INVESTMENTS'}</div>
+                      {investments.map(([k,v]) => (
+                        <div key={k} style={{display:'flex',justifyContent:'space-between',background:'var(--bg2)',borderRadius:8,padding:'8px 12px',marginBottom:4}}>
+                          <span style={{fontSize:12,color:'var(--text)'}}>{k.replace('investment_','').toUpperCase()}</span>
+                          <span style={{fontSize:13,fontWeight:700,color:'#4a9eff'}}>{v.toLocaleString('ru-RU')}</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  {cats.length > 0 && (
+                    <>
+                      <div style={{fontSize:10,color:'var(--text-muted)',margin:'10px 0 5px',letterSpacing:'0.06em'}}>{lang==='ru'?'КАТЕГОРИИ РАСХОДОВ':'EXPENSE CATEGORIES'}</div>
+                      {cats.map(([cat, val]) => {
+                        const pct = totalExp > 0 ? Math.round((val/totalExp)*100) : 0
+                        return (
+                          <div key={cat} style={{display:'flex',alignItems:'center',gap:8,background:'var(--bg2)',borderRadius:8,padding:'7px 12px',marginBottom:4}}>
+                            <div style={{flex:1,fontSize:12,color:'var(--text)',textTransform:'capitalize'}}>{cat}</div>
+                            <div style={{width:60,height:4,background:'var(--bg3)',borderRadius:2,overflow:'hidden'}}>
+                              <div style={{width:pct+'%',height:'100%',background:accentColor,borderRadius:2}}/>
+                            </div>
+                            <div style={{fontSize:10,color:accentColor,minWidth:28,textAlign:'right'}}>{pct}%</div>
+                            <div style={{fontSize:10,color:'var(--text-muted)',minWidth:50,textAlign:'right'}}>{val.toLocaleString('ru-RU',{maximumFractionDigits:0})}</div>
+                          </div>
+                        )
+                      })}
+                    </>
+                  )}
+                </>
+              )
+            })()}
+          </div>
+        )}
+
+        {(gremlin.role !== 'accountant' || activeTab === 'chat') && (
+        <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
           {/* АРХИВ — старые записи, хронологически */}
           {showArchive && archiveEntries.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -640,7 +747,11 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
           <div ref={bottomRef} />
         </div>
 
-        {/* INPUT */}
+        </div>
+        )}
+
+        {/* INPUT — показываем всегда или только в чат-режиме */}
+        {(gremlin.role !== 'accountant' || activeTab === 'chat') && (
         <div style={{ padding: '10px 12px', background: 'var(--bg2)', borderTop: '1px solid ' + accentColor + '30', display: 'flex', gap: 8, alignItems: 'flex-end', flexShrink: 0 }}>
           <input ref={fileRef} type="file" accept=".csv,.txt,.json,.html,.htm,.docx,.doc" onChange={handleFile} style={{ display: 'none' }} />
           <button
@@ -662,6 +773,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
             style={{ background: input.trim() ? accentColor : 'var(--bg3)', color: input.trim() ? '#000' : 'var(--text-muted)', borderRadius: 8, padding: '10px 16px', fontSize: 16, fontWeight: 700, transition: 'all 0.15s', flexShrink: 0, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
           >▸</button>
         </div>
+        )}
       </div>
 
       <style>{`

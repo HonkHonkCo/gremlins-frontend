@@ -29,3 +29,12 @@ export const sendChat = (user_id, gremlin_id, text, is_file = false, parsedTotal
   api.post('/entries/chat', { gremlin_id, content: text, is_file, parsed_totals: parsedTotals, file_name: fileName }).then(r => r.data)
 export const getWeeklyReport = (user_id) =>
   api.get(`/reports/weekly?user_id=${user_id}`).then(r => r.data)
+
+export const getTransactions = (gremlin_id) =>
+  api.get('/transactions?gremlin_id=' + gremlin_id).then(r => r.data)
+
+export const addTransaction = (gremlin_id, data) =>
+  api.post('/transactions', { gremlin_id, ...data }).then(r => r.data)
+
+export const deleteTransaction = (id, gremlin_id) =>
+  api.delete('/transactions/' + id, { data: { gremlin_id } }).then(r => r.data)
