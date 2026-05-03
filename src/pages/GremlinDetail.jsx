@@ -195,6 +195,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
   const [editDesc, setEditDesc] = useState(initialGremlin.description || '')
   const [saving, setSaving] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [confirmReset, setConfirmReset] = useState(false)
   const [upgradeReason, setUpgradeReason] = useState(null)
   const [talking, setTalking] = useState(false)
   const bottomRef = useRef(null)
@@ -238,6 +239,16 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
     if (!confirmDelete) { setConfirmDelete(true); return }
     try { await deleteGremlin(gremlin.id); onBack() }
     catch { alert(t(lang, 'errorDelete')) }
+  }
+
+  const resetStats = async () => {
+    if (!confirmReset) { setConfirmReset(true); return }
+    try {
+      await updateGremlin(gremlin.id, { stats: {} })
+      setGremlin(g => ({ ...g, stats: {} }))
+      setConfirmReset(false)
+      setEditing(false)
+    } catch { alert(lang === 'ru' ? 'Ошибка сброса' : 'Reset error') }
   }
 
   const send = async (textOverride, silent = false, isFile = false, parsedTotals = null, fileName = null) => {
@@ -447,6 +458,23 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
                 {confirmDelete ? t(lang, 'confirmDelete') : '🗑'}
               </button>
             </div>
+            {/* Сброс статистики — только для бухгалтера */}
+            {gremlin.role === 'accountant' && (
+              <button
+                onClick={resetStats}
+                style={{
+                  background: confirmReset ? '#e24b4a20' : 'var(--bg3)',
+                  color: confirmReset ? '#e24b4a' : 'var(--text-muted)',
+                  border: '1px solid ' + (confirmReset ? '#e24b4a' : 'var(--border)'),
+                  borderRadius: 6, padding: '7px 10px', fontSize: 11,
+                  cursor: 'pointer', fontFamily: 'inherit', width: '100%'
+                }}
+              >
+                {confirmReset
+                  ? (lang === 'ru' ? '⚠️ подтвердить сброс статистики' : '⚠️ confirm reset stats')
+                  : (lang === 'ru' ? '↺ сбросить статистику' : '↺ reset stats')}
+              </button>
+            )}
           </div>
         )}
 
