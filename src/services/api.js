@@ -38,3 +38,29 @@ export const addTransaction = (gremlin_id, data) =>
 
 export const deleteTransaction = (id, gremlin_id) =>
   api.delete('/transactions/' + id, { data: { gremlin_id } }).then(r => r.data)
+
+// Тренер
+export const getWorkouts = (gremlin_id) =>
+  api.get('/workouts?gremlin_id=' + gremlin_id).then(r => r.data)
+export const addWorkout = (gremlin_id, data) =>
+  api.post('/workouts', { gremlin_id, ...data }).then(r => r.data)
+export const deleteWorkout = (id, gremlin_id) =>
+  api.delete('/workouts/' + id, { data: { gremlin_id } }).then(r => r.data)
+
+// Повар
+export const getMeals = (gremlin_id) =>
+  api.get('/meals?gremlin_id=' + gremlin_id).then(r => r.data)
+export const addMeal = (gremlin_id, data) =>
+  api.post('/meals', { gremlin_id, ...data }).then(r => r.data)
+export const deleteMeal = (id, gremlin_id) =>
+  api.delete('/meals/' + id, { data: { gremlin_id } }).then(r => r.data)
+
+// Секретарь
+export const getTasks = (gremlin_id) =>
+  api.get('/tasks?gremlin_id=' + gremlin_id).then(r => r.data)
+export const addTask = (gremlin_id, data) =>
+  api.post('/tasks', { gremlin_id, ...data }).then(r => r.data)
+export const updateTask = (id, data) =>
+  api.patch('/tasks/' + id, data).then(r => r.data)
+export const deleteTask = (id, gremlin_id) =>
+  api.delete('/tasks/' + id, { data: { gremlin_id } }).then(r => r.data)

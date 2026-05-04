@@ -4,6 +4,9 @@ import { t } from '../i18n'
 import Upgrade from './Upgrade'
 import GremlinAnimation from '../components/GremlinAnimation'
 import AccountantForm from '../components/AccountantForm'
+import TrainerForm from '../components/TrainerForm'
+import ChefForm from '../components/ChefForm'
+import SecretaryForm from '../components/SecretaryForm'
 
 const ROLE_COLOR_VARIANTS = {
   accountant: ['#3ecf70', '#00ddaa', '#aaff44', '#00ffcc'],
@@ -198,7 +201,8 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
   const [upgradeReason, setUpgradeReason] = useState(null)
-  const [activeTab, setActiveTab] = useState(gremlin.role === 'accountant' ? 'data' : 'chat')
+  const hasDataTab = ['accountant', 'trainer', 'chef', 'secretary'].includes(gremlin.role)
+  const [activeTab, setActiveTab] = useState(hasDataTab ? 'data' : 'chat')
   const [talking, setTalking] = useState(false)
   const bottomRef = useRef(null)
   const fileRef = useRef(null)
@@ -555,40 +559,44 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
           )}
         </div>
 
-        {/* ТАБЫ — только для бухгалтера */}
-        {gremlin.role === 'accountant' && (
+        {/* ТАБЫ — для всех гремлинов */}
+        {hasDataTab && (
           <div style={{ display: 'flex', gap: 3, background: 'var(--bg2)', padding: '4px 12px', flexShrink: 0 }}>
             {[
-              { id: 'data', label: lang === 'ru' ? '+ Данные' : '+ Data' },
-              { id: 'chat', label: lang === 'ru' ? '💬 Чат' : '💬 Chat' },
-              { id: 'stats', label: lang === 'ru' ? '📊 Итого' : '📊 Stats' },
+              { id: 'data', label: gremlin.role === 'accountant' ? '+ Данные' : gremlin.role === 'trainer' ? '🏋️ Трен.' : gremlin.role === 'chef' ? '🍽️ Еда' : '📋 Задачи' },
+              { id: 'chat', label: '💬 Чат' },
+              ...(gremlin.role === 'accountant' ? [{ id: 'stats', label: '📊 Итого' }] : []),
             ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                style={{
-                  flex: 1, padding: '7px 4px', borderRadius: 6,
-                  fontFamily: 'inherit', fontSize: 11, fontWeight: 700, cursor: 'pointer',
-                  background: activeTab === tab.id ? accentColor : 'var(--bg3)',
-                  color: activeTab === tab.id ? '#000' : 'var(--text-muted)',
-                  border: 'none', transition: 'all 0.15s'
-                }}
-              >
-                {tab.label}
-              </button>
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
+                flex: 1, padding: '7px 4px', borderRadius: 6, fontFamily: 'inherit',
+                fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                background: activeTab === tab.id ? accentColor : 'var(--bg3)',
+                color: activeTab === tab.id ? '#000' : 'var(--text-muted)',
+                border: 'none', transition: 'all 0.15s'
+              }}>{tab.label}</button>
             ))}
           </div>
         )}
 
-        {/* ФОРМА ДАННЫХ — только для бухгалтера */}
-        {gremlin.role === 'accountant' && activeTab === 'data' && (
+        {/* ФОРМА ДАННЫХ */}
+        {hasDataTab && activeTab === 'data' && (
           <div style={{ flex: 1, overflowY: 'auto' }}>
-            <AccountantForm
-              gremlinId={gremlin.id}
-              accentColor={accentColor}
-              lang={lang}
-              onStatsUpdate={(newStats) => setGremlin(g => ({ ...g, stats: newStats }))}
-            />
+            {gremlin.role === 'accountant' && (
+              <AccountantForm gremlinId={gremlin.id} accentColor={accentColor} lang={lang}
+                onStatsUpdate={(s) => setGremlin(g => ({ ...g, stats: s }))} />
+            )}
+            {gremlin.role === 'trainer' && (
+              <TrainerForm gremlinId={gremlin.id} accentColor={accentColor} lang={lang}
+                onStatsUpdate={(s) => setGremlin(g => ({ ...g, stats: s }))} />
+            )}
+            {gremlin.role === 'chef' && (
+              <ChefForm gremlinId={gremlin.id} accentColor={accentColor} lang={lang}
+                onStatsUpdate={(s) => setGremlin(g => ({ ...g, stats: s }))} />
+            )}
+            {gremlin.role === 'secretary' && (
+              <SecretaryForm gremlinId={gremlin.id} accentColor={accentColor} lang={lang}
+                onStatsUpdate={(s) => setGremlin(g => ({ ...g, stats: s }))} />
+            )}
           </div>
         )}
 
@@ -661,7 +669,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
           </div>
         )}
 
-        {(gremlin.role !== 'accountant' || activeTab === 'chat') && (
+        {(!hasDataTab || activeTab === 'chat') && (
         <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
           {/* АРХИВ — старые записи, хронологически */}
           {showArchive && archiveEntries.length > 0 && (
@@ -749,7 +757,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
         )}
 
         {/* INPUT — показываем всегда или только в чат-режиме */}
-        {(gremlin.role !== 'accountant' || activeTab === 'chat') && (
+        {(!hasDataTab || activeTab === 'chat') && (
         <div style={{ padding: '10px 12px', background: 'var(--bg2)', borderTop: '1px solid ' + accentColor + '30', display: 'flex', gap: 8, alignItems: 'flex-end', flexShrink: 0 }}>
           <input ref={fileRef} type="file" accept=".csv,.txt,.json,.html,.htm,.docx,.doc" onChange={handleFile} style={{ display: 'none' }} />
           <button
