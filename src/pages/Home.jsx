@@ -48,6 +48,16 @@ const HOME_STAT_KEYS = {
   secretary: ['pending_tasks', 'next_deadline'],
 }
 
+function humanLabel(k) {
+  if (STAT_LABELS[k]) return STAT_LABELS[k]
+  if (k.startsWith('expense_')) return 'расход ' + k.split('_').slice(1).join('').toUpperCase()
+  if (k.startsWith('income_')) return 'доход ' + k.split('_').slice(1).join('').toUpperCase()
+  if (k.startsWith('balance_')) return 'баланс ' + k.split('_').slice(1).join('').toUpperCase()
+  if (k.startsWith('investment_')) return 'инвест ' + k.split('_').slice(1).join('').toUpperCase()
+  if (k.startsWith('last_')) return k.slice(5).replace(/_/g, ' ')
+  return k.replace(/_/g, ' ')
+}
+
 function getHomeStats(g) {
   const stats = g.stats || {}
   const priority = HOME_STAT_KEYS[g.role] || []
