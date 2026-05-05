@@ -34,14 +34,37 @@ const STAT_LABELS = {
   last_meal: 'блюдо', last_protein: 'белок г',
 }
 
-function humanLabel(k) {
-  if (STAT_LABELS[k]) return STAT_LABELS[k]
-  if (k.startsWith('expense_')) return 'расход ' + k.split('_').slice(1).join('').toUpperCase()
-  if (k.startsWith('income_')) return 'доход ' + k.split('_').slice(1).join('').toUpperCase()
-  if (k.startsWith('balance_')) return 'баланс ' + k.split('_').slice(1).join('').toUpperCase()
-  if (k.startsWith('investment_')) return 'инвест ' + k.split('_').slice(1).join('').toUpperCase()
-  if (k.startsWith('last_')) return k.slice(5).replace(/_/g, ' ')
-  return k.replace(/_/g, ' ')
+// Ключи которые не нужно показывать на главном экране
+const SKIP_KEYS = new Set([
+  'categories', 'last_updated', 'total_meals', 'total_workouts',
+  'last_task', 'last_meal', 'last_workout', 'last_water',
+])
+
+// Только важные ключи по роли для главного экрана
+const HOME_STAT_KEYS = {
+  accountant: ['balance_thb', 'balance_usd', 'balance_rub', 'expense_thb', 'expense_usd', 'expense_rub'],
+  trainer: ['last_distance_km', 'last_duration_min', 'last_pushups', 'total_calories', 'weight_kg'],
+  chef: ['last_calories', 'last_protein'],
+  secretary: ['pending_tasks', 'next_deadline'],
+}
+
+function getHomeStats(g) {
+  const stats = g.stats || {}
+  const priority = HOME_STAT_KEYS[g.role] || []
+  // Сначала по приоритету
+  for (const k of priority) {
+    if (stats[k] !== undefined && stats[k] !== null && stats[k] !== 0 && stats[k] !== '') {
+      return [k, stats[k]]
+    }
+  }
+  // Fallback — первый непустой не-мусорный ключ
+  for (const [k, v] of Object.entries(stats)) {
+    if (SKIP_KEYS.has(k)) continue
+    if (typeof v === 'object') continue
+    if (v === 0 || v === null || v === '' || v === undefined) continue
+    return [k, v]
+  }
+  return null
 }
 
 export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
@@ -61,10 +84,16 @@ export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
   const allStats = gremlins.flatMap(g => {
     const color = getAccentColor(g.role, g.id)
     const stats = g.stats || {}
-    return Object.entries(stats)
-      .filter(([k, v]) => k !== 'last_updated' && v !== 0)
-      .slice(0, 2)
-      .map(([k, v]) => ({ key: k, value: v, color, gremlin: g.name }))
+    const priority = HOME_STAT_KEYS[g.role] || []
+    // Берём до 2 важных стата по приоритету
+    const result = []
+    for (const k of priority) {
+      if (stats[k] !== undefined && stats[k] !== null && stats[k] !== 0 && stats[k] !== '' && typeof stats[k] !== 'object') {
+        result.push({ key: k, value: stats[k], color, gremlin: g.name })
+        if (result.length >= 2) break
+      }
+    }
+    return result
   }).slice(0, 6)
 
   const statLabel = (k) => humanLabel(k)
@@ -107,7 +136,7 @@ export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
         {gremlins.map(g => {
           const color = getAccentColor(g.role, g.id)
           const stats = g.stats || {}
-          const firstStat = Object.entries(stats).find(([k, v]) => k !== 'last_updated' && v !== 0)
+          const firstStat = getHomeStats(g)
           return (
             <div key={g.id} className="card"
               style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', borderColor: `${color}30`, background: 'rgba(26, 25, 22, 0.6)', backdropFilter: 'blur(8px)' }}
