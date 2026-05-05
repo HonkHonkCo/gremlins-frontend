@@ -8,19 +8,28 @@ const MEAL_TYPES = [
   { id: 'перекус', label: '🍎 перекус' },
 ]
 
-// База рецептов хранится в localStorage (простое решение без доп. таблиц)
-function loadRecipes(gremlinId) {
-  try { return JSON.parse(localStorage.getItem('recipes_' + gremlinId) || '[]') } catch { return [] }
+// Безопасная работа с localStorage — Telegram WebApp может блокировать
+function safeGet(key) {
+  try { return JSON.parse(localStorage.getItem(key) || '[]') } catch { return [] }
 }
-function saveRecipes(gremlinId, recipes) {
-  try { localStorage.setItem('recipes_' + gremlinId, JSON.stringify(recipes)) } catch {}
+function safeSet(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)) } catch {}
 }
+
+function loadRecipes(gremlinId) { return safeGet('recipes_' + gremlinId) }
+function saveRecipes(gremlinId, recipes) { safeSet('recipes_' + gremlinId, recipes) }
 
 function todayStr() { return new Date().toISOString().split('T')[0] }
 
 export default function ChefForm({ gremlinId, accentColor, lang, onStatsUpdate }) {
-  const [tab, setTab] = useState('meal') // 'meal' | 'recipes'
-  const [recipes, setRecipes] = useState(() => loadRecipes(gremlinId))
+  const [tab, setTab] = useState('meal')
+  // Рецепты храним в stats гремлина через updateGremlin
+  const [recipes, setRecipes] = useState(() => {
+    try {
+      const stored = localStorage.getItem('recipes_' + gremlinId)
+      return stored ? JSON.parse(stored) : []
+    } catch { return [] }
+  })
   const [newRecipeName, setNewRecipeName] = useState('')
   const [newRecipeText, setNewRecipeText] = useState('')
   const [savingRecipe, setSavingRecipe] = useState(false)
