@@ -245,7 +245,7 @@ export default function ChefForm({ gremlinId, accentColor, lang, onStatsUpdate }
       <div style={{ display: 'flex', gap: 5 }}>
         {MEAL_TYPES.map(mt => (
           <button key={mt.id} onClick={() => setMealType(mt.id)}
-            style={{ flex: 1, padding: '7px 4px', borderRadius: 8, fontFamily: 'inherit', fontSize: 10, fontWeight: 700, cursor: 'pointer', background: mealType === mt.id ? accentColor + '20' : 'var(--bg3)', border: '1px solid ' + (mealType === mt.id ? accentColor + '60' : 'var(--border)'), color: mealType === mt.id ? accentColor : 'var(--text-muted)' }}>
+            style={{ flex: 1, padding: '7px 4px', borderRadius: 8, fontFamily: 'inherit', fontSize: 10, fontWeight: 700, cursor: 'pointer', background: mealType === mt.id ? accentColor + '25' : 'var(--bg3)', border: '1px solid ' + (mealType === mt.id ? accentColor + '70' : 'var(--border)'), color: mealType === mt.id ? accentColor : 'var(--text-muted)', fontWeight: mealType === mt.id ? 700 : 400 }}>
             {mt.label}
           </button>
         ))}
@@ -266,11 +266,11 @@ export default function ChefForm({ gremlinId, accentColor, lang, onStatsUpdate }
           <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>КБЖУ</div>
           <div style={{ display: 'flex', gap: 4 }}>
             <button onClick={() => setKbjuMode('auto')}
-              style={{ padding: '3px 10px', borderRadius: 20, fontFamily: 'inherit', fontSize: 10, cursor: 'pointer', background: kbjuMode === 'auto' ? accentColor + '20' : 'var(--bg3)', border: '1px solid ' + (kbjuMode === 'auto' ? accentColor + '50' : 'var(--border)'), color: kbjuMode === 'auto' ? accentColor : 'var(--text-muted)' }}>
+              style={{ padding: '3px 10px', borderRadius: 20, fontFamily: 'inherit', fontSize: 10, cursor: 'pointer', background: kbjuMode === 'auto' ? accentColor + '25' : 'var(--bg3)', border: '1px solid ' + (kbjuMode === 'auto' ? accentColor + '70' : 'var(--border)'), color: kbjuMode === 'auto' ? accentColor : 'var(--text-muted)', fontWeight: kbjuMode === 'auto' ? 700 : 400 }}>
               авто
             </button>
             <button onClick={() => setKbjuMode('manual')}
-              style={{ padding: '3px 10px', borderRadius: 20, fontFamily: 'inherit', fontSize: 10, cursor: 'pointer', background: kbjuMode === 'manual' ? accentColor + '20' : 'var(--bg3)', border: '1px solid ' + (kbjuMode === 'manual' ? accentColor + '50' : 'var(--border)'), color: kbjuMode === 'manual' ? accentColor : 'var(--text-muted)' }}>
+              style={{ padding: '3px 10px', borderRadius: 20, fontFamily: 'inherit', fontSize: 10, cursor: 'pointer', background: kbjuMode === 'manual' ? accentColor + '25' : 'var(--bg3)', border: '1px solid ' + (kbjuMode === 'manual' ? accentColor + '70' : 'var(--border)'), color: kbjuMode === 'manual' ? accentColor : 'var(--text-muted)', fontWeight: kbjuMode === 'manual' ? 700 : 400 }}>
               вручную
             </button>
           </div>

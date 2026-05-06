@@ -59,13 +59,13 @@ const EXPENSE_CATS = [
 ]
 
 const TYPES = [
-  { id: 'expense', label: '↓ Расход', color: '#e24b4a' },
-  { id: 'income', label: '↑ Доход', color: '#3ecf70' },
-  { id: 'investment', label: '📈 Вклад', color: '#4a9eff' },
-  { id: 'transfer', label: '⇄ Перевод', color: '#888' },
+  { id: 'expense',    label: '↓ Расход',   bg: '#fc7c6f' },
+  { id: 'income',     label: '↑ Доход',    bg: '#68b281' },
+  { id: 'investment', label: '📈 Вклад',   bg: '#4173a8' },
+  { id: 'transfer',   label: '⇄ Перевод', bg: '#b09767' },
 ]
 
-const DOT = { expense: '#e24b4a', income: '#3ecf70', investment: '#4a9eff', transfer: '#888' }
+const DOT = { expense: '#fc7c6f', income: '#68b281', investment: '#4173a8', transfer: '#b09767' }
 
 function todayStr() {
   return new Date().toISOString().split('T')[0]
@@ -224,7 +224,7 @@ export default function AccountantForm({ gremlinId, accentColor, lang, onStatsUp
       {/* Тип */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5 }}>
         {TYPES.map(tp => (
-          <button key={tp.id} onClick={() => setType(tp.id)} style={{ padding: '9px 4px', borderRadius: 8, fontFamily: 'inherit', fontSize: 11, fontWeight: 700, cursor: 'pointer', background: type === tp.id ? tp.color + '20' : 'var(--bg3)', border: '1px solid ' + (type === tp.id ? tp.color + '80' : 'var(--border)'), color: type === tp.id ? tp.color : 'var(--text-muted)', transition: 'all 0.15s' }}>
+          <button key={tp.id} onClick={() => setType(tp.id)} style={{ padding: '9px 4px', borderRadius: 8, fontFamily: 'inherit', fontSize: 11, fontWeight: 700, cursor: 'pointer', background: type === tp.id ? tp.bg + '25' : 'var(--bg3)', border: '1px solid ' + (type === tp.id ? tp.bg + '80' : 'var(--border)'), color: type === tp.id ? tp.bg : 'var(--text-muted)', transition: 'all 0.15s' }}>
             {tp.label}
           </button>
         ))}

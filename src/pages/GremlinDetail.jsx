@@ -570,8 +570,8 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
               <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
                 flex: 1, padding: '7px 4px', borderRadius: 6, fontFamily: 'inherit',
                 fontSize: 11, fontWeight: 700, cursor: 'pointer',
-                background: activeTab === tab.id ? accentColor : 'var(--bg3)',
-                color: activeTab === tab.id ? '#000' : 'var(--text-muted)',
+                background: activeTab === tab.id ? accentColor + '25' : 'var(--bg3)',
+                color: activeTab === tab.id ? accentColor : 'var(--text-muted)',
                 border: 'none', transition: 'all 0.15s'
               }}>{tab.label}</button>
             ))}

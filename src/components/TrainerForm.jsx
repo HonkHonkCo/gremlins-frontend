@@ -115,7 +115,7 @@ export default function TrainerForm({ gremlinId, accentColor, lang, onStatsUpdat
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
           {WORKOUT_TYPES.map(t => (
             <button key={t.id} onClick={() => setWorkoutType(t.id)}
-              style={{ padding: '6px 10px', borderRadius: 20, fontFamily: 'inherit', fontSize: 11, cursor: 'pointer', background: workoutType === t.id ? accentColor + '20' : 'var(--bg3)', border: '1px solid ' + (workoutType === t.id ? accentColor + '60' : 'var(--border)'), color: workoutType === t.id ? accentColor : 'var(--text-muted)' }}>
+              style={{ padding: '6px 10px', borderRadius: 20, fontFamily: 'inherit', fontSize: 11, cursor: 'pointer', background: workoutType === t.id ? accentColor + '25' : 'var(--bg3)', border: '1px solid ' + (workoutType === t.id ? accentColor + '70' : 'var(--border)'), color: workoutType === t.id ? accentColor : 'var(--text-muted)', fontWeight: workoutType === t.id ? 700 : 400 }}>
               {t.label}
             </button>
           ))}

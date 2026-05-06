@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react'
 import { addTask, getTasks, updateTask, deleteTask } from '../services/api'
 
 const PRIORITIES = [
-  { id: 'high', label: '🔴 срочно', color: '#e24b4a' },
-  { id: 'medium', label: '🟡 средне', color: '#d4a017' },
-  { id: 'low', label: '🟢 не горит', color: '#3ecf70' },
+  { id: 'high',   label: '● срочно',   bg: '#fc7c6f', text: '#fff0ee' },
+  { id: 'medium', label: '● средне',   bg: '#da934c', text: '#fff4e8' },
+  { id: 'low',    label: '● не горит', bg: '#68b281', text: '#f0fff4' },
 ]
 
 function daysLeft(deadline) {
@@ -73,7 +73,7 @@ export default function SecretaryForm({ gremlinId, accentColor, lang, onStatsUpd
   const done = tasks.filter(t => t.status === 'done')
   const shown = filter === 'pending' ? pending : done
 
-  const priColor = { high: '#e24b4a', medium: '#d4a017', low: '#3ecf70' }
+  const priColor = { high: '#fc7c6f', medium: '#da934c', low: '#68b281' }
 
   return (
     <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -114,7 +114,14 @@ export default function SecretaryForm({ gremlinId, accentColor, lang, onStatsUpd
       <div style={{ display: 'flex', gap: 5 }}>
         {PRIORITIES.map(p => (
           <button key={p.id} onClick={() => setPriority(p.id)}
-            style={{ flex: 1, padding: '8px 4px', borderRadius: 8, fontFamily: 'inherit', fontSize: 10, fontWeight: 700, cursor: 'pointer', background: priority === p.id ? p.color + '20' : 'var(--bg3)', border: '1px solid ' + (priority === p.id ? p.color + '60' : 'var(--border)'), color: priority === p.id ? p.color : 'var(--text-muted)' }}>
+            style={{
+              flex: 1, padding: '9px 4px', borderRadius: 8, fontFamily: 'inherit',
+              fontSize: 11, fontWeight: 700, cursor: 'pointer',
+              background: priority === p.id ? p.bg + '25' : 'var(--bg3)',
+              border: '1px solid ' + (priority === p.id ? p.bg + '80' : 'var(--border)'),
+              color: priority === p.id ? p.bg : 'var(--text-muted)',
+              transition: 'all 0.15s'
+            }}>
             {p.label}
           </button>
         ))}
