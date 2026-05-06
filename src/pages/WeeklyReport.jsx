@@ -56,14 +56,14 @@ function ReportAnimation() {
     return () => cancelAnimationFrame(animRef.current)
   }, [status])
 
-  if (status !== 'ready') return <div style={{ fontSize: 48, marginBottom: 12 }}>📊</div>
+  if (status !== 'ready') return <div style={{ width: 140, height: 140, marginBottom: 12 }} />
 
   return (
     <canvas
       ref={canvasRef}
       width={300}
       height={300}
-      style={{ width: 90, height: 90, marginBottom: 12 }}
+      style={{ width: 140, height: 140, marginBottom: 12 }}
     />
   )
 }
