@@ -64,3 +64,25 @@ export const updateTask = (id, data) =>
   api.patch('/tasks/' + id, data).then(r => r.data)
 export const deleteTask = (id, gremlin_id) =>
   api.delete('/tasks/' + id, { data: { gremlin_id } }).then(r => r.data)
+
+// Счета
+export const getAccounts = (gremlin_id) =>
+  api.get('/accounts?gremlin_id=' + gremlin_id).then(r => r.data)
+export const addAccount = (gremlin_id, data) =>
+  api.post('/accounts', { gremlin_id, ...data }).then(r => r.data)
+export const deleteAccount = (id) =>
+  api.delete('/accounts/' + id).then(r => r.data)
+
+// Долги
+export const getDebts = (gremlin_id) =>
+  api.get('/debts?gremlin_id=' + gremlin_id).then(r => r.data)
+export const addDebt = (gremlin_id, data) =>
+  api.post('/debts', { gremlin_id, ...data }).then(r => r.data)
+export const updateDebt = (id, data) =>
+  api.patch('/debts/' + id, data).then(r => r.data)
+export const deleteDebt = (id) =>
+  api.delete('/debts/' + id).then(r => r.data)
+
+// Снапшоты для графиков
+export const getSnapshots = (gremlin_id, currency) =>
+  api.get('/snapshots?gremlin_id=' + gremlin_id + '&currency=' + currency + '&days=90').then(r => r.data)

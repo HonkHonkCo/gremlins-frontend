@@ -271,8 +271,9 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
         await refreshGremlin()
       }
       const replyText = res.reply || res.gremlin_reply || '...'
-      setMessages(m => [...m, { role: 'gremlin', text: replyText }])
-      refreshEntries()
+      // Обновляем entries и очищаем локальные messages — они теперь в entries
+      await refreshEntries()
+      setMessages([])
     } catch(err) {
       const data = err?.response?.data
       if (data?.error === 'message_limit_reached') {
@@ -680,7 +681,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
                   <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <div style={{
                       maxWidth: '80%',
-                      background: accentColor + '40',
+                      background: accentColor + '20',
                       color: 'var(--text)',
                       borderRadius: '10px 10px 2px 10px',
                       padding: '7px 11px', fontSize: 13, lineHeight: 1.55, opacity: 0.8,
@@ -708,8 +709,8 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <div style={{
                   maxWidth: '80%',
-                  background: e.is_file ? accentColor + '30' : accentColor,
-                  color: e.is_file ? 'var(--text)' : '#000',
+                  background: e.is_file ? accentColor + '20' : accentColor + '25',
+                  color: 'var(--text)',
                   borderRadius: '12px 12px 2px 12px',
                   padding: '9px 13px', fontSize: 14, lineHeight: 1.55,
                   fontStyle: e.is_file ? 'italic' : 'normal',
@@ -734,9 +735,9 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
               <div style={{
                 maxWidth: '80%',
                 background: m.role === 'user'
-                  ? (m.isFile ? accentColor + '40' : accentColor)
+                  ? (m.isFile ? accentColor + '25' : accentColor + '30')
                   : 'var(--bg2)',
-                color: m.role === 'user' ? (m.isFile ? 'var(--text)' : '#000') : 'var(--text)',
+                color: 'var(--text)',
                 border: m.role === 'gremlin' ? '1px solid ' + accentColor + '30' : 'none',
                 borderRadius: m.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
                 padding: '9px 13px', fontSize: 14, lineHeight: 1.55,
