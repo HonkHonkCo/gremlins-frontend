@@ -26,8 +26,6 @@ const CAL_PER_MIN = {
   силовая: 6, ходьба: 4, отжимания: 7, подтягивания: 7, другое: 5,
 }
 
-function todayStr() { return new Date().toISOString().split('T')[0] }
-
 export default function TrainerForm({ gremlinId, accentColor, lang, onStatsUpdate }) {
   const [activeTab, setActiveTab] = useState('log')
   const [plan, setPlan] = useState({}) // { пн: 'бег', вт: '', ... }

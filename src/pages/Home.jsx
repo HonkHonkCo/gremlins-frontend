@@ -159,7 +159,7 @@ function GremlinStatusLine({ g, color, statLabel }) {
   )
 }
 
-
+export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
   const [gremlins, setGremlins] = useState([])
   const [loading, setLoading] = useState(true)
 
