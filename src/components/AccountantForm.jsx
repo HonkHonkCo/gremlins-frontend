@@ -698,7 +698,6 @@ function AccountsForm({ gremlinId, accounts, transfers, onAddAccount, onDeleteAc
               </button>
             </>
           )}
-        </div>
       </div>
 
       {transfers.map(tx => (
