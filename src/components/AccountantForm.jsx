@@ -74,38 +74,12 @@ function CurrencySelect({ value, onChange, style }) {
   )
 }
 
-// Кнопка-ячейка для главного экрана
-function NavCell({ label, color, meta, metaSub, onClick }) {
-  return (
-    <button onClick={onClick} style={{
-      flex: 1, minWidth: 0,
-      background: 'var(--bg2)', border: '1px solid ' + color + '30',
-      borderRadius: 12, padding: '14px 10px',
-      display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4,
-      cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
-      transition: 'border-color 0.15s',
-    }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color }}>{label}</div>
-      {meta !== undefined && (
-        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{meta}</div>
-      )}
-      {metaSub && (
-        <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>{metaSub}</div>
-      )}
-      <div style={{ fontSize: 10, color, opacity: 0.6, marginTop: 2 }}>открыть →</div>
-    </button>
-  )
-}
-
-// Шапка внутреннего экрана
-function ScreenHeader({ title, color, onBack }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px 8px', borderBottom: '1px solid ' + color + '20', flexShrink: 0 }}>
-      <button onClick={onBack} style={{ background: 'none', border: 'none', color, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>← назад</button>
-      <div style={{ fontSize: 13, fontWeight: 700, color }}>{title}</div>
-    </div>
-  )
-}
+const ACCOUNT_TABS = [
+  { id: 'expenses', label: '↕ Расходы', color: '#fc7c6f' },
+  { id: 'invest',   label: 'Вклады',    color: '#4173a8' },
+  { id: 'accounts', label: 'Счета',     color: '#b09767' },
+  { id: 'debts',    label: 'Долги',     color: '#849cff' },
+]
 
 export default function AccountantForm({ gremlinId, accentColor, lang, onStatsUpdate }) {
   const [transactions, setTransactions] = useState([])
@@ -113,7 +87,7 @@ export default function AccountantForm({ gremlinId, accentColor, lang, onStatsUp
   const [debts, setDebts] = useState([])
   const [snapshots, setSnapshots] = useState({})
   const [loading, setLoading] = useState(true)
-  const [screen, setScreen] = useState(null) // null | 'expenses' | 'invest' | 'accounts' | 'debts'
+  const [activeTab, setActiveTab] = useState('expenses')
 
   useEffect(() => {
     Promise.all([
@@ -137,11 +111,6 @@ export default function AccountantForm({ gremlinId, accentColor, lang, onStatsUp
   const incomeTx = transactions.filter(t => t.type === 'income')
   const investTx = transactions.filter(t => t.type === 'investment')
   const transferTx = transactions.filter(t => t.type === 'transfer')
-  const activeDebts = debts.filter(d => d.status === 'active')
-
-  const totalExpense = expenseTx.reduce((s, t) => s + t.amount, 0)
-  const totalIncome = incomeTx.reduce((s, t) => s + t.amount, 0)
-  const totalInvest = investTx.reduce((s, t) => s + t.amount, 0)
 
   const handleDeleteTx = async (id) => {
     const result = await deleteTransaction(id, gremlinId)
@@ -151,134 +120,65 @@ export default function AccountantForm({ gremlinId, accentColor, lang, onStatsUp
 
   if (loading) return <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>...</div>
 
-  // ── ВНУТРЕННИЕ ЭКРАНЫ ──────────────────────────────────────────────────────
+  const tab = ACCOUNT_TABS.find(t => t.id === activeTab)
 
-  if (screen === 'expenses') {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <ScreenHeader title="Расходы и доходы" color="#fc7c6f" onBack={() => setScreen(null)} />
-        <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px' }}>
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+
+      {/* ТАБЫ */}
+      <div style={{ display: 'flex', gap: 3, padding: '6px 12px', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+        {ACCOUNT_TABS.map(t => (
+          <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
+            flex: 1, padding: '6px 2px', borderRadius: 6, fontFamily: 'inherit',
+            fontSize: 10, fontWeight: 700, cursor: 'pointer',
+            background: activeTab === t.id ? t.color + '25' : 'var(--bg3)',
+            color: activeTab === t.id ? t.color : 'var(--text-muted)',
+            border: 'none', transition: 'all 0.15s', whiteSpace: 'nowrap'
+          }}>{t.label}</button>
+        ))}
+      </div>
+
+      {/* КОНТЕНТ */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px' }}>
+        {activeTab === 'expenses' && (
           <ExpenseIncomeForm
             gremlinId={gremlinId}
             accounts={accounts}
             transactions={[...expenseTx, ...incomeTx].sort((a, b) => new Date(b.date) - new Date(a.date))}
             snapshots={snapshots}
-            onAdd={(tx, stats) => {
-              setTransactions(t => [tx, ...t])
-              if (stats) onStatsUpdate(stats)
-            }}
+            onAdd={(tx, stats) => { setTransactions(t => [tx, ...t]); if (stats) onStatsUpdate(stats) }}
             onDelete={handleDeleteTx}
             onAccountCreated={acc => setAccounts(a => [...a, acc])}
           />
-        </div>
-      </div>
-    )
-  }
-
-  if (screen === 'invest') {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <ScreenHeader title="Вклады и инвестиции" color="#4173a8" onBack={() => setScreen(null)} />
-        <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px' }}>
+        )}
+        {activeTab === 'invest' && (
           <InvestForm
             gremlinId={gremlinId}
             transactions={investTx}
             snapshots={snapshots}
-            onAdd={(tx, stats) => {
-              setTransactions(t => [tx, ...t])
-              if (stats) onStatsUpdate(stats)
-            }}
+            onAdd={(tx, stats) => { setTransactions(t => [tx, ...t]); if (stats) onStatsUpdate(stats) }}
             onDelete={handleDeleteTx}
           />
-        </div>
-      </div>
-    )
-  }
-
-  if (screen === 'accounts') {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <ScreenHeader title="Счета и переводы" color="#b09767" onBack={() => setScreen(null)} />
-        <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px' }}>
+        )}
+        {activeTab === 'accounts' && (
           <AccountsForm
             gremlinId={gremlinId}
             accounts={accounts}
             transfers={transferTx}
             onAddAccount={acc => setAccounts(a => [...a, acc])}
-            onDeleteAccount={async (id) => {
-              await deleteAccount(id)
-              setAccounts(a => a.filter(x => x.id !== id))
-            }}
-            onAddTransfer={(tx, stats) => {
-              setTransactions(t => [tx, ...t])
-              if (stats) onStatsUpdate(stats)
-            }}
+            onDeleteAccount={async (id) => { await deleteAccount(id); setAccounts(a => a.filter(x => x.id !== id)) }}
+            onAddTransfer={(tx, stats) => { setTransactions(t => [tx, ...t]); if (stats) onStatsUpdate(stats) }}
           />
-        </div>
-      </div>
-    )
-  }
-
-  if (screen === 'debts') {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <ScreenHeader title="Долги" color="#849cff" onBack={() => setScreen(null)} />
-        <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px' }}>
+        )}
+        {activeTab === 'debts' && (
           <DebtsForm
             gremlinId={gremlinId}
             debts={debts}
             onAdd={debt => setDebts(d => [debt, ...d])}
-            onSettle={async (id) => {
-              await updateDebt(id, { status: 'settled' })
-              setDebts(d => d.map(x => x.id === id ? { ...x, status: 'settled' } : x))
-            }}
-            onDelete={async (id) => {
-              await deleteDebt(id)
-              setDebts(d => d.filter(x => x.id !== id))
-            }}
+            onSettle={async (id) => { await updateDebt(id, { status: 'settled' }); setDebts(d => d.map(x => x.id === id ? { ...x, status: 'settled' } : x)) }}
+            onDelete={async (id) => { await deleteDebt(id); setDebts(d => d.filter(x => x.id !== id)) }}
           />
-        </div>
-      </div>
-    )
-  }
-
-  // ── ГЛАВНЫЙ ЭКРАН — 4 ЯЧЕЙКИ ───────────────────────────────────────────────
-
-  return (
-    <div style={{ padding: '12px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
-        <NavCell
-          label="↕ Расходы и доходы"
-          color="#fc7c6f"
-          meta={expenseTx.length + incomeTx.length > 0
-            ? '−' + totalExpense.toLocaleString('ru-RU')
-            : undefined}
-          metaSub={incomeTx.length > 0 ? '+' + totalIncome.toLocaleString('ru-RU') + ' доход' : (expenseTx.length + incomeTx.length) === 0 ? 'нет записей' : expenseTx.length + ' записей'}
-          onClick={() => setScreen('expenses')}
-        />
-        <NavCell
-          label="📈 Вклады"
-          color="#4173a8"
-          meta={investTx.length > 0 ? investTx.length + ' вкл.' : undefined}
-          metaSub={totalInvest > 0 ? totalInvest.toLocaleString('ru-RU') : 'нет вкладов'}
-          onClick={() => setScreen('invest')}
-        />
-        <NavCell
-          label="⇄ Счета"
-          color="#b09767"
-          meta={accounts.length > 0 ? accounts.length + ' счёт.' : undefined}
-          metaSub={accounts.length > 0
-            ? accounts.slice(0, 2).map(a => a.name).join(', ')
-            : 'нет счетов'}
-          onClick={() => setScreen('accounts')}
-        />
-        <NavCell
-          label="🤝 Долги"
-          color="#849cff"
-          meta={activeDebts.length > 0 ? activeDebts.length + ' актив.' : undefined}
-          metaSub={activeDebts.length === 0 ? 'нет активных' : activeDebts.slice(0, 2).map(d => d.person).join(', ')}
-          onClick={() => setScreen('debts')}
-        />
+        )}
       </div>
     </div>
   )
@@ -286,8 +186,9 @@ export default function AccountantForm({ gremlinId, accentColor, lang, onStatsUp
 
 // ── SUB-FORMS ──────────────────────────────────────────────────────────────────
 
+const CAT_ICON = { 'еда': 5, 'кафе': 1, 'транспорт': 3, 'жильё': 7, 'здоровье': 9, 'одежда': 10, 'развлечения': 11, 'связь': 8 }
+
 function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd, onDelete, onAccountCreated }) {
-  const [formOpen, setFormOpen] = useState(false)
   const [showAll, setShowAll] = useState(false)
   const [amount, setAmount] = useState('')
   const [currency, setCurrency] = useState('THB')
@@ -390,7 +291,7 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
       })
       if (result?.transaction) onAdd(result.transaction, result.stats)
       setAmount(''); setNote(''); setDate(todayStr())
-      setFormOpen(false); setCurrencyConflict(null); setConvertedAmount(null)
+      setCurrencyConflict(null); setConvertedAmount(null)
       setManualAmount(''); setConflictMode(null); setError(null)
     } catch { setError('Ошибка сохранения') }
     setSaving(false)
@@ -421,15 +322,8 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
         </div>
       )}
 
-      {/* Кнопка + / форма */}
-      <button
-        onClick={() => setFormOpen(v => !v)}
-        style={{ width: '100%', marginBottom: 8, background: formOpen ? '#fc7c6f20' : 'var(--bg3)', border: '1px dashed #fc7c6f50', borderRadius: 8, padding: '9px', fontSize: 12, color: '#fc7c6f', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }}>
-        {formOpen ? '− закрыть' : '+ добавить запись'}
-      </button>
-
-      {formOpen && (
-        <div style={{ background: 'var(--bg3)', borderRadius: 8, padding: 10, marginBottom: 10 }}>
+      {/* Форма — всегда открыта */}
+      <div style={{ background: 'var(--bg3)', borderRadius: 8, padding: 10, marginBottom: 10 }}>
 
           {/* Сумма + валюта */}
           <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
@@ -451,7 +345,8 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
           {txType === 'expense' && (
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 6 }}>
               {EXPENSE_CATS.map(cat => (
-                <button key={cat} onClick={() => setCategory(cat)} style={{ padding: '4px 9px', borderRadius: 20, fontFamily: 'inherit', fontSize: 10, cursor: 'pointer', background: category === cat ? '#fc7c6f25' : 'var(--bg2)', border: '1px solid ' + (category === cat ? '#fc7c6f60' : 'var(--border)'), color: category === cat ? '#fc7c6f' : 'var(--text-muted)' }}>
+                <button key={cat} onClick={() => setCategory(cat)} style={{ padding: '4px 9px', borderRadius: 20, fontFamily: 'inherit', fontSize: 10, cursor: 'pointer', background: category === cat ? '#fc7c6f25' : 'var(--bg2)', border: '1px solid ' + (category === cat ? '#fc7c6f60' : 'var(--border)'), color: category === cat ? '#fc7c6f' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 3 }}>
+                  {CAT_ICON[cat] && <img src={`/Icons/${CAT_ICON[cat]}.png`} style={{ width: 11, height: 11 }} />}
                   {cat}
                 </button>
               ))}
@@ -490,7 +385,7 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
           {currencyConflict && (
             <div style={{ background: '#da934c15', border: '1px solid #da934c50', borderRadius: 8, padding: '10px 12px', marginBottom: 6 }}>
               <div style={{ fontSize: 11, color: '#da934c', fontWeight: 700, marginBottom: 8 }}>
-                ⚠️ Валюты не совпадают
+                ! Валюты не совпадают
               </div>
               <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 8 }}>
                 Счёт: {currencyConflict.account.name} ({currencyConflict.account.currency}), сумма: {amount} {SYM[currencyConflict.txCurrency] || currencyConflict.txCurrency}
@@ -508,7 +403,7 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
                   </button>
                   <button onClick={autoConvert} disabled={converting || !amount}
                     style={{ width: '100%', background: '#da934c20', border: '1px solid #da934c50', borderRadius: 7, padding: '8px', fontSize: 11, color: '#da934c', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
-                    {converting ? '⏳ считаю курс...' : 'Конвертировать авто (AI)'}
+                    {converting ? '... считаю курс' : 'Конвертировать авто (AI)'}
                   </button>
                 </div>
               )}
@@ -552,7 +447,7 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
 
           {error && <div style={{ fontSize: 11, color: '#fc7c6f', marginBottom: 5 }}>{error}</div>}
 
-          {/* Кнопка записать — только если нет активного конфликта или это расход */}
+          {/* Кнопка записать */}
           {(!currencyConflict || txType === 'expense') && (
             <button onClick={() => handleSave()} disabled={saving || (txType === 'income' && accounts.length === 0)}
               style={{ width: '100%', background: '#fc7c6f25', border: '1px solid #fc7c6f70', color: '#fc7c6f', borderRadius: 8, padding: '10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: (txType === 'income' && accounts.length === 0) ? 0.4 : 1 }}>
@@ -560,7 +455,6 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
             </button>
           )}
         </div>
-      )}
 
       {/* Список — 3 последних + раскрыть */}
       {transactions.length > 0 && (
@@ -626,7 +520,6 @@ function QuickCreateAccount({ gremlinId, onCreated }) {
 }
 
 function InvestForm({ gremlinId, transactions, snapshots, onAdd, onDelete }) {
-  const [formOpen, setFormOpen] = useState(false)
   const [amount, setAmount] = useState('')
   const [currency, setCurrency] = useState('RUB')
   const [note, setNote] = useState('')
@@ -641,7 +534,7 @@ function InvestForm({ gremlinId, transactions, snapshots, onAdd, onDelete }) {
     try {
       const result = await addTransaction(gremlinId, { amount: num, currency, type: 'investment', note: note.trim() || null, rate: rate ? parseFloat(rate) : null, end_date: endDate || null, date: todayStr() })
       if (result?.transaction) onAdd(result.transaction, result.stats)
-      setAmount(''); setNote(''); setRate(''); setEndDate(''); setFormOpen(false)
+      setAmount(''); setNote(''); setRate(''); setEndDate('')
     } catch {}
     setSaving(false)
   }
@@ -664,31 +557,24 @@ function InvestForm({ gremlinId, transactions, snapshots, onAdd, onDelete }) {
         )
       })}
 
-      <button onClick={() => setFormOpen(v => !v)}
-        style={{ width: '100%', marginBottom: 8, background: formOpen ? '#4173a820' : 'var(--bg3)', border: '1px dashed #4173a850', borderRadius: 8, padding: '9px', fontSize: 12, color: '#4173a8', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }}>
-        {formOpen ? '− закрыть' : '+ добавить вклад'}
-      </button>
-
-      {formOpen && (
-        <div style={{ background: 'var(--bg3)', borderRadius: 8, padding: 10, marginBottom: 8 }}>
-          <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-            <input type="text" inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} placeholder="сумма"
-              style={{ flex: 2, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 7, padding: '8px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 15, outline: 'none' }} />
-            <CurrencySelect value={currency} onChange={setCurrency} style={{ flex: 1 }} />
-          </div>
-          <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-            <input type="text" inputMode="decimal" value={rate} onChange={e => setRate(e.target.value)} placeholder="% год."
-              style={{ flex: 1, background: 'var(--bg2)', border: '1px solid #4173a840', borderRadius: 7, padding: '8px 9px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 13, outline: 'none' }} />
-            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-              style={{ flex: 1, background: 'var(--bg2)', border: '1px solid #4173a840', borderRadius: 7, padding: '8px 8px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 11, outline: 'none' }} />
-          </div>
-          <input value={note} onChange={e => setNote(e.target.value)} placeholder="название вклада/инвестиции..."
-            style={{ width: '100%', boxSizing: 'border-box', marginBottom: 6, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 7, padding: '8px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, outline: 'none' }} />
-          <button onClick={handleSave} disabled={saving} style={{ width: '100%', background: '#4173a825', border: '1px solid #4173a870', color: '#4173a8', borderRadius: 8, padding: '10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-            {saving ? '...' : 'ДОБАВИТЬ ВКЛАД'}
-          </button>
+      <div style={{ background: 'var(--bg3)', borderRadius: 8, padding: 10, marginBottom: 8 }}>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+          <input type="text" inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} placeholder="сумма"
+            style={{ flex: 2, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 7, padding: '8px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 15, outline: 'none' }} />
+          <CurrencySelect value={currency} onChange={setCurrency} style={{ flex: 1 }} />
         </div>
-      )}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+          <input type="text" inputMode="decimal" value={rate} onChange={e => setRate(e.target.value)} placeholder="% год."
+            style={{ flex: 1, background: 'var(--bg2)', border: '1px solid #4173a840', borderRadius: 7, padding: '8px 9px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 13, outline: 'none' }} />
+          <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
+            style={{ flex: 1, background: 'var(--bg2)', border: '1px solid #4173a840', borderRadius: 7, padding: '8px 8px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 11, outline: 'none' }} />
+        </div>
+        <input value={note} onChange={e => setNote(e.target.value)} placeholder="название вклада/инвестиции..."
+          style={{ width: '100%', boxSizing: 'border-box', marginBottom: 6, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 7, padding: '8px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, outline: 'none' }} />
+        <button onClick={handleSave} disabled={saving} style={{ width: '100%', background: '#4173a825', border: '1px solid #4173a870', color: '#4173a8', borderRadius: 8, padding: '10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+          {saving ? '...' : 'ДОБАВИТЬ ВКЛАД'}
+        </button>
+      </div>
 
       {transactions.map(tx => (
         <div key={tx.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg3)', borderRadius: 7, padding: '7px 10px', marginBottom: 4 }}>
@@ -710,7 +596,6 @@ function InvestForm({ gremlinId, transactions, snapshots, onAdd, onDelete }) {
 }
 
 function AccountsForm({ gremlinId, accounts, transfers, onAddAccount, onDeleteAccount, onAddTransfer }) {
-  const [formOpen, setFormOpen] = useState(false)
   const [newName, setNewName] = useState('')
   const [newCurrency, setNewCurrency] = useState('RUB')
   const [newBalance, setNewBalance] = useState('')
@@ -765,13 +650,7 @@ function AccountsForm({ gremlinId, accounts, transfers, onAddAccount, onDeleteAc
         </div>
       ))}
 
-      <button onClick={() => setFormOpen(v => !v)}
-        style={{ width: '100%', marginBottom: 8, background: formOpen ? '#b0976720' : 'var(--bg3)', border: '1px dashed #b0976750', borderRadius: 8, padding: '9px', fontSize: 12, color: '#b09767', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }}>
-        {formOpen ? '− закрыть' : '+ добавить счёт или перевод'}
-      </button>
-
-      {formOpen && (
-        <div style={{ background: 'var(--bg3)', borderRadius: 8, padding: 10, marginBottom: 8 }}>
+      <div style={{ background: 'var(--bg3)', borderRadius: 8, padding: 10, marginBottom: 8 }}>
           <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
             {[['account', '+ счёт'], ['transfer', '⇄ перевод']].map(([id, label]) => (
               <button key={id} onClick={() => setMode(id)} style={{ flex: 1, padding: '7px', borderRadius: 7, fontFamily: 'inherit', fontSize: 11, fontWeight: 700, cursor: 'pointer', background: mode === id ? '#b0976725' : 'var(--bg2)', border: '1px solid ' + (mode === id ? '#b0976770' : 'var(--border)'), color: mode === id ? '#b09767' : 'var(--text-muted)' }}>
@@ -820,7 +699,7 @@ function AccountsForm({ gremlinId, accounts, transfers, onAddAccount, onDeleteAc
             </>
           )}
         </div>
-      )}
+      </div>
 
       {transfers.map(tx => (
         <div key={tx.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg3)', borderRadius: 7, padding: '7px 10px', marginBottom: 4 }}>
@@ -834,7 +713,6 @@ function AccountsForm({ gremlinId, accounts, transfers, onAddAccount, onDeleteAc
 }
 
 function DebtsForm({ gremlinId, debts, onAdd, onSettle, onDelete }) {
-  const [formOpen, setFormOpen] = useState(false)
   const [direction, setDirection] = useState('gave')
   const [person, setPerson] = useState('')
   const [amount, setAmount] = useState('')
@@ -861,34 +739,27 @@ function DebtsForm({ gremlinId, debts, onAdd, onSettle, onDelete }) {
 
   return (
     <>
-      <button onClick={() => setFormOpen(v => !v)}
-        style={{ width: '100%', marginBottom: 8, background: formOpen ? '#849cff20' : 'var(--bg3)', border: '1px dashed #849cff50', borderRadius: 8, padding: '9px', fontSize: 12, color: '#849cff', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }}>
-        {formOpen ? '− закрыть' : '+ записать долг'}
-      </button>
-
-      {formOpen && (
-        <div style={{ background: 'var(--bg3)', borderRadius: 8, padding: 10, marginBottom: 8 }}>
-          <div style={{ display: 'flex', gap: 5, marginBottom: 6 }}>
-            {[['gave', '→ дал', '#849cff'], ['took', '← взял', '#da934c']].map(([id, label, col]) => (
-              <button key={id} onClick={() => setDirection(id)} style={{ flex: 1, padding: '8px', borderRadius: 7, fontFamily: 'inherit', fontSize: 11, fontWeight: 700, cursor: 'pointer', background: direction === id ? col + '25' : 'var(--bg2)', border: '1px solid ' + (direction === id ? col + '70' : 'var(--border)'), color: direction === id ? col : 'var(--text-muted)' }}>
-                {label}
-              </button>
-            ))}
-          </div>
-          <input value={person} onChange={e => setPerson(e.target.value)} placeholder={direction === 'gave' ? 'кому...' : 'от кого...'}
-            style={{ width: '100%', boxSizing: 'border-box', marginBottom: 6, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 7, padding: '8px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 13, outline: 'none' }} />
-          <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-            <input type="text" inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} placeholder="сумма"
-              style={{ flex: 2, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 7, padding: '8px 9px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 14, outline: 'none' }} />
-            <CurrencySelect value={currency} onChange={setCurrency} style={{ flex: 1 }} />
-          </div>
-          <input value={note} onChange={e => setNote(e.target.value)} placeholder="заметка..."
-            style={{ width: '100%', boxSizing: 'border-box', marginBottom: 6, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 7, padding: '7px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, outline: 'none' }} />
-          <button onClick={handleSave} disabled={saving} style={{ width: '100%', background: dirColor + '25', border: '1px solid ' + dirColor + '70', color: dirColor, borderRadius: 8, padding: '10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-            {saving ? '...' : 'ЗАПИСАТЬ'}
-          </button>
+      <div style={{ background: 'var(--bg3)', borderRadius: 8, padding: 10, marginBottom: 8 }}>
+        <div style={{ display: 'flex', gap: 5, marginBottom: 6 }}>
+          {[['gave', '→ дал', '#849cff'], ['took', '← взял', '#da934c']].map(([id, label, col]) => (
+            <button key={id} onClick={() => setDirection(id)} style={{ flex: 1, padding: '8px', borderRadius: 7, fontFamily: 'inherit', fontSize: 11, fontWeight: 700, cursor: 'pointer', background: direction === id ? col + '25' : 'var(--bg2)', border: '1px solid ' + (direction === id ? col + '70' : 'var(--border)'), color: direction === id ? col : 'var(--text-muted)' }}>
+              {label}
+            </button>
+          ))}
         </div>
-      )}
+        <input value={person} onChange={e => setPerson(e.target.value)} placeholder={direction === 'gave' ? 'кому...' : 'от кого...'}
+          style={{ width: '100%', boxSizing: 'border-box', marginBottom: 6, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 7, padding: '8px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 13, outline: 'none' }} />
+        <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+          <input type="text" inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} placeholder="сумма"
+            style={{ flex: 2, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 7, padding: '8px 9px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 14, outline: 'none' }} />
+          <CurrencySelect value={currency} onChange={setCurrency} style={{ flex: 1 }} />
+        </div>
+        <input value={note} onChange={e => setNote(e.target.value)} placeholder="заметка..."
+          style={{ width: '100%', boxSizing: 'border-box', marginBottom: 6, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 7, padding: '7px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, outline: 'none' }} />
+        <button onClick={handleSave} disabled={saving} style={{ width: '100%', background: dirColor + '25', border: '1px solid ' + dirColor + '70', color: dirColor, borderRadius: 8, padding: '10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+          {saving ? '...' : 'ЗАПИСАТЬ'}
+        </button>
+      </div>
 
       {active.length > 0 && <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 5, letterSpacing: '0.06em' }}>АКТИВНЫЕ</div>}
       {active.map(d => (

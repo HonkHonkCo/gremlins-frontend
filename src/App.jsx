@@ -81,7 +81,7 @@ export default function App() {
               borderRadius: 16, padding: 28, maxWidth: 340, width: '100%',
               textAlign: 'center', fontFamily: 'inherit'
             }}>
-              <div style={{ fontSize: 36, marginBottom: 12 }}>⭐</div>
+              <div style={{ fontSize: 36, marginBottom: 12 }}>★</div>
               <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
                 {lang === 'ru' ? 'PRO доступен в Telegram' : 'PRO available in Telegram'}
               </div>
@@ -155,8 +155,8 @@ export default function App() {
             <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: 12 }}>
               <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 10 }}>{t(lang, 'language')}</div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={() => changeLang('ru')} style={{ flex: 1, padding: '8px', borderRadius: 8, fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: 'pointer', background: lang === 'ru' ? 'var(--gold)' : 'var(--bg3)', color: lang === 'ru' ? '#000' : 'var(--text-dim)', border: `1px solid ${lang === 'ru' ? 'var(--gold)' : 'var(--border)'}` }}>🇷🇺 Русский</button>
-                <button onClick={() => changeLang('en')} style={{ flex: 1, padding: '8px', borderRadius: 8, fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: 'pointer', background: lang === 'en' ? 'var(--gold)' : 'var(--bg3)', color: lang === 'en' ? '#000' : 'var(--text-dim)', border: `1px solid ${lang === 'en' ? 'var(--gold)' : 'var(--border)'}` }}>🇬🇧 English</button>
+                <button onClick={() => changeLang('ru')} style={{ flex: 1, padding: '8px', borderRadius: 8, fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: 'pointer', background: lang === 'ru' ? 'var(--gold)' : 'var(--bg3)', color: lang === 'ru' ? '#000' : 'var(--text-dim)', border: `1px solid ${lang === 'ru' ? 'var(--gold)' : 'var(--border)'}` }}>RU Русский</button>
+                <button onClick={() => changeLang('en')} style={{ flex: 1, padding: '8px', borderRadius: 8, fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: 'pointer', background: lang === 'en' ? 'var(--gold)' : 'var(--bg3)', color: lang === 'en' ? '#000' : 'var(--text-dim)', border: `1px solid ${lang === 'en' ? 'var(--gold)' : 'var(--border)'}` }}>EN English</button>
               </div>
             </div>
 
@@ -168,7 +168,7 @@ export default function App() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: user.plan === 'pro' ? 'var(--gold)' : 'var(--text)' }}>
-                    {user.plan === 'pro' ? '⭐ PRO' : (lang === 'ru' ? 'Бесплатный' : 'Free')}
+                    {user.plan === 'pro' ? 'PRO' : (lang === 'ru' ? 'Бесплатный' : 'Free')}
                   </div>
                   <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 2 }}>
                     {user.plan === 'pro'
@@ -182,9 +182,9 @@ export default function App() {
                     background: 'var(--gold)', color: '#000', border: 'none',
                     borderRadius: 8, padding: '8px 16px', fontSize: 12,
                     fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-                    letterSpacing: '0.04em'
+                    letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: 6
                   }}>
-                    ⭐ PRO
+                    <img src="/Icons/19.png" style={{ width: 14, height: 14 }} /> PRO
                   </button>
                 )}
               </div>

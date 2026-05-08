@@ -141,50 +141,7 @@ function getPriorityStats(stats, role) {
   return result
 }
 
-function CategoriesDropdown({ categories, accentColor, lang }) {
-  const [open, setOpen] = useState(false)
-  const sorted = Object.entries(categories).sort((a, b) => b[1] - a[1])
-  const total = sorted.reduce((s, [, v]) => s + v, 0)
-
-  return (
-    <div style={{ marginTop: 6, padding: '0 12px' }}>
-      <button
-        onClick={() => setOpen(v => !v)}
-        style={{
-          width: '100%', background: accentColor + '10',
-          border: '1px solid ' + accentColor + '30', borderRadius: 8,
-          padding: '7px 12px', display: 'flex', justifyContent: 'space-between',
-          alignItems: 'center', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--text-dim)', fontSize: 11
-        }}
-      >
-        <span>{lang === 'ru' ? '📂 категории расходов' : '📂 expense categories'}</span>
-        <span style={{ color: accentColor }}>{open ? '▲' : '▼'}</span>
-      </button>
-      {open && (
-        <div style={{
-          background: 'var(--bg2)', border: '1px solid ' + accentColor + '20',
-          borderRadius: '0 0 8px 8px', overflow: 'hidden', marginTop: -1
-        }}>
-          {sorted.map(([cat, amount]) => {
-            const pct = total > 0 ? Math.round((amount / total) * 100) : 0
-            return (
-              <div key={cat} style={{ padding: '6px 12px', borderBottom: '1px solid ' + accentColor + '10', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ flex: 1, fontSize: 12, color: 'var(--text)', textTransform: 'capitalize' }}>{cat}</div>
-                <div style={{ width: 60, height: 4, background: 'var(--bg3)', borderRadius: 2, overflow: 'hidden' }}>
-                  <div style={{ width: pct + '%', height: '100%', background: accentColor, borderRadius: 2 }} />
-                </div>
-                <div style={{ fontSize: 11, color: accentColor, minWidth: 32, textAlign: 'right' }}>{pct}%</div>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', minWidth: 60, textAlign: 'right' }}>
-                  {amount.toLocaleString('ru-RU', { maximumFractionDigits: 0 })}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-    </div>
-  )
-}
+// CategoriesDropdown убран — категории показываются в табе Итого
 
 export default function GremlinDetail({ gremlin: initialGremlin, userId, user, lang, onBack }) {
   const [gremlin, setGremlin] = useState(initialGremlin)
@@ -433,8 +390,8 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
           <div style={{ display: 'flex', gap: 6 }}>
             <button
               onClick={() => { setEditing(v => !v); setEditName(gremlin.name); setEditDesc(gremlin.description || ''); setConfirmDelete(false) }}
-              style={{ background: editing ? accentColor + '20' : 'var(--bg3)', border: '1px solid ' + accentColor + '40', borderRadius: 6, padding: '4px 8px', fontSize: 14, color: accentColor, cursor: 'pointer', fontFamily: 'inherit' }}
-            >✏️</button>
+              style={{ background: editing ? accentColor + '20' : 'var(--bg3)', border: '1px solid ' + accentColor + '40', borderRadius: 6, padding: '4px 10px', fontSize: 10, color: accentColor, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, letterSpacing: '0.03em' }}
+            >{lang === 'ru' ? 'Редактировать' : 'Edit'}</button>
             {archiveEntries.length > 0 && (
               <button
                 onClick={() => setShowArchive(v => !v)}
@@ -461,8 +418,8 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
               <button onClick={() => { setEditing(false); setConfirmDelete(false) }} style={{ background: 'var(--bg3)', color: 'var(--text-dim)', border: '1px solid var(--border)', borderRadius: 6, padding: '7px 10px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {t(lang, 'cancel')}
               </button>
-              <button onClick={handleDelete} style={{ background: confirmDelete ? '#e24b4a' : 'var(--bg3)', color: confirmDelete ? '#fff' : '#e24b4a', border: '1px solid #e24b4a', borderRadius: 6, padding: '7px 10px', fontSize: confirmDelete ? 10 : 14, cursor: 'pointer', fontFamily: 'inherit' }}>
-                {confirmDelete ? t(lang, 'confirmDelete') : '🗑'}
+              <button onClick={handleDelete} style={{ background: confirmDelete ? '#e24b4a' : 'var(--bg3)', color: confirmDelete ? '#fff' : '#e24b4a', border: '1px solid #e24b4a', borderRadius: 6, padding: '7px 10px', fontSize: 10, cursor: 'pointer', fontFamily: 'inherit' }}>
+                {confirmDelete ? t(lang, 'confirmDelete') : (lang === 'ru' ? 'Удалить' : 'Delete')}
               </button>
             </div>
             {/* Сброс статистики — только для бухгалтера */}
@@ -537,10 +494,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
                     </div>
                   ))}
                 </div>
-                {/* Категории расходов — выпадающий список */}
-                {stats.categories && Object.keys(stats.categories).length > 0 && (
-                  <CategoriesDropdown categories={stats.categories} accentColor={accentColor} lang={lang} />
-                )}
+                {/* Категории расходов — перенесены в таб Итого */}
               </div>
             )
           })()}
@@ -564,9 +518,9 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
         {hasDataTab && (
           <div style={{ display: 'flex', gap: 3, background: 'var(--bg2)', padding: '4px 12px', flexShrink: 0 }}>
             {[
-              { id: 'data', label: gremlin.role === 'accountant' ? '+ Данные' : gremlin.role === 'trainer' ? '🏋️ Трен.' : gremlin.role === 'chef' ? '🍽️ Еда' : '📋 Задачи' },
-              { id: 'chat', label: '💬 Чат' },
-              ...(gremlin.role === 'accountant' ? [{ id: 'stats', label: '📊 Итого' }] : []),
+              { id: 'data', label: gremlin.role === 'accountant' ? '+ Данные' : gremlin.role === 'trainer' ? '+ Трен.' : gremlin.role === 'chef' ? '+ Еда' : '+ Задачи' },
+              { id: 'chat', label: <><img src="/Icons/2.png" style={{ width: 13, height: 13, verticalAlign: 'middle', marginRight: 4 }} />{lang === 'ru' ? 'Чат' : 'Chat'}</> },
+              ...(gremlin.role === 'accountant' ? [{ id: 'stats', label: lang === 'ru' ? 'Итого' : 'Total' }] : []),
             ].map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
                 flex: 1, padding: '7px 4px', borderRadius: 6, fontFamily: 'inherit',
@@ -765,7 +719,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
             onClick={() => fileRef.current?.click()}
             disabled={sending || fileLoading}
             style={{ background: 'var(--bg3)', border: '1px solid ' + accentColor + '30', borderRadius: 8, width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, cursor: 'pointer', flexShrink: 0, color: accentColor, opacity: sending ? 0.5 : 1 }}
-          >📎</button>
+          ><img src="/Icons/4.png" style={{ width: 18, height: 18 }} /></button>
           <textarea
             rows={2}
             value={input}
