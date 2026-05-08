@@ -86,3 +86,10 @@ export const deleteDebt = (id) =>
 // Снапшоты для графиков
 export const getSnapshots = (gremlin_id, currency) =>
   api.get('/snapshots?gremlin_id=' + gremlin_id + '&currency=' + currency + '&days=90').then(r => r.data)
+
+
+// План тренировок (опционально — можно хранить на бэкенде)
+export const getTrainingPlan = (gremlin_id) =>
+  api.get('/training-plan?gremlin_id=' + gremlin_id).then(r => r.data)
+export const saveTrainingPlan = (gremlin_id, plan) =>
+  api.post('/training-plan', { gremlin_id, plan }).then(r => r.data)

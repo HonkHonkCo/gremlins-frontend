@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { addWorkout, getWorkouts, deleteWorkout, getTrainingPlan, saveTrainingPlan } from '../services/api'
+import { addWorkout, getWorkouts, deleteWorkout } from '../services/api'
 
 function todayStr() { return new Date().toISOString().split('T')[0] }
 function todayDow() { return ['вс','пн','вт','ср','чт','пт','сб'][new Date().getDay()] }
@@ -48,24 +48,17 @@ export default function TrainerForm({ gremlinId, accentColor, lang, onStatsUpdat
 
   useEffect(() => { loadWorkouts(); loadPlan() }, [gremlinId])
 
-  const loadPlan = async () => {
+  const loadPlan = () => {
     try {
-      const data = await getTrainingPlan(gremlinId).catch(() => null)
-      if (data?.plan) setPlan(data.plan)
-      else {
-        // Fallback: localStorage
-        try { const s = localStorage.getItem('plan_' + gremlinId); if (s) setPlan(JSON.parse(s)) } catch {}
-      }
+      const s = localStorage.getItem('plan_' + gremlinId)
+      if (s) setPlan(JSON.parse(s))
     } catch {}
     setPlanLoading(false)
   }
 
-  const handleSavePlan = async (newPlan) => {
+  const handleSavePlan = (newPlan) => {
     setPlan(newPlan)
     try { localStorage.setItem('plan_' + gremlinId, JSON.stringify(newPlan)) } catch {}
-    setPlanSaving(true)
-    try { await saveTrainingPlan(gremlinId, newPlan).catch(() => {}) } catch {}
-    setPlanSaving(false)
   }
 
   const markPlanDone = async (day) => {
