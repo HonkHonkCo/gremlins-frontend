@@ -184,7 +184,7 @@ export default function App() {
                     fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
                     letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: 6
                   }}>
-                    <img src="/Icons/19.png" style={{ width: 14, height: 14 }} /> PRO
+                    <img src="/Icons/27.png" style={{ width: 14, height: 14 }} onError={e => e.target.style.display='none'} /> PRO
                   </button>
                 )}
               </div>

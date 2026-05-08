@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react'
 import { addMeal, getMeals, deleteMeal } from '../services/api'
 
 const MEAL_TYPES = [
-  { id: 'завтрак', label: '🌅 завтрак' },
-  { id: 'обед', label: '☀️ обед' },
-  { id: 'ужин', label: '🌙 ужин' },
-  { id: 'перекус', label: '🍎 перекус' },
+  { id: 'завтрак', label: 'завтрак', icon: 13 },
+  { id: 'обед',    label: 'обед',    icon: 14 },
+  { id: 'ужин',    label: 'ужин',    icon: 15 },
+  { id: 'перекус', label: 'перекус', icon: 16 },
 ]
 
 // Безопасная работа с localStorage — Telegram WebApp может блокировать
@@ -137,6 +137,15 @@ export default function ChefForm({ gremlinId, accentColor, lang, onStatsUpdate }
   const today = meals.filter(m => m.date === date)
   const todayKcal = today.reduce((s, m) => s + (m.calories || 0), 0)
   const todayProtein = today.reduce((s, m) => s + (m.protein || 0), 0)
+  const todayCarbs = today.reduce((s, m) => s + (m.carbs || 0), 0)
+  const todayFat = today.reduce((s, m) => s + (m.fat || 0), 0)
+
+  // Недельные итоги
+  const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 6)
+  const weekStr = weekAgo.toISOString().split('T')[0]
+  const weekMeals = meals.filter(m => m.date >= weekStr)
+  const weekKcal = weekMeals.reduce((s, m) => s + (m.calories || 0), 0)
+  const weekProtein = weekMeals.reduce((s, m) => s + (m.protein || 0), 0)
 
   const addRecipe = () => {
     if (!newRecipeName.trim()) return
@@ -163,10 +172,10 @@ export default function ChefForm({ gremlinId, accentColor, lang, onStatsUpdate }
 
       {/* Табы еда / рецепты */}
       <div style={{ display: 'flex', gap: 3, background: 'var(--bg2)', borderRadius: 8, padding: 3 }}>
-        {[['meal', '🍽️ Приём пищи'], ['recipes', '📖 Рецепты']].map(([id, label]) => (
+      {[['meal', 5, 'Приём пищи'], ['recipes', 12, 'Рецепты']].map(([id, icon, label]) => (
           <button key={id} onClick={() => setTab(id)}
-            style={{ flex: 1, padding: '7px', borderRadius: 6, fontFamily: 'inherit', fontSize: 11, fontWeight: 700, cursor: 'pointer', background: tab === id ? accentColor : 'transparent', color: tab === id ? '#000' : 'var(--text-muted)', border: 'none' }}>
-            {label}
+            style={{ flex: 1, padding: '7px', borderRadius: 6, fontFamily: 'inherit', fontSize: 11, fontWeight: 700, cursor: 'pointer', background: tab === id ? accentColor : 'transparent', color: tab === id ? '#000' : 'var(--text-muted)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+            <img src={`/Icons/${icon}.png`} style={{ width: 13, height: 13 }} />{label}
           </button>
         ))}
       </div>
@@ -215,19 +224,28 @@ export default function ChefForm({ gremlinId, accentColor, lang, onStatsUpdate }
       {/* TAB: ПРИЁМ ПИЩИ */}
       {tab === 'meal' && (<>
       {todayKcal > 0 && (
-        <div style={{ display: 'flex', gap: 8, padding: '8px 12px', background: accentColor + '10', borderRadius: 8, border: '1px solid ' + accentColor + '20' }}>
-          <div style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: accentColor }}>{todayKcal}</div>
-            <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>ккал сегодня</div>
+        <div style={{ background: accentColor + '10', borderRadius: 8, border: '1px solid ' + accentColor + '20', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', gap: 0 }}>
+            {[
+              { val: todayKcal, label: 'ккал сегодня' },
+              { val: Math.round(todayProtein) + 'г', label: 'белок' },
+              { val: Math.round(todayCarbs) + 'г', label: 'углев' },
+              { val: Math.round(todayFat) + 'г', label: 'жир' },
+            ].map((s, i) => (
+              <div key={i} style={{ flex: 1, textAlign: 'center', padding: '8px 4px', borderRight: i < 3 ? '1px solid ' + accentColor + '15' : 'none' }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: accentColor }}>{s.val}</div>
+                <div style={{ fontSize: 8, color: 'var(--text-muted)' }}>{s.label}</div>
+              </div>
+            ))}
           </div>
-          <div style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: accentColor }}>{Math.round(todayProtein)}г</div>
-            <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>белок</div>
-          </div>
-          <div style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: accentColor }}>{today.length}</div>
-            <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>приёмов</div>
-          </div>
+          {weekKcal > 0 && (
+            <div style={{ borderTop: '1px solid ' + accentColor + '15', padding: '5px 12px', display: 'flex', gap: 12, fontSize: 9, color: 'var(--text-muted)' }}>
+              <span>7 дней:</span>
+              <span style={{ color: accentColor }}>{weekKcal} ккал</span>
+              <span>Б {Math.round(weekProtein)}г</span>
+              <span>~{Math.round(weekKcal / 7)} ккал/день</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -245,7 +263,8 @@ export default function ChefForm({ gremlinId, accentColor, lang, onStatsUpdate }
       <div style={{ display: 'flex', gap: 5 }}>
         {MEAL_TYPES.map(mt => (
           <button key={mt.id} onClick={() => setMealType(mt.id)}
-            style={{ flex: 1, padding: '7px 4px', borderRadius: 8, fontFamily: 'inherit', fontSize: 10, fontWeight: 700, cursor: 'pointer', background: mealType === mt.id ? accentColor + '25' : 'var(--bg3)', border: '1px solid ' + (mealType === mt.id ? accentColor + '70' : 'var(--border)'), color: mealType === mt.id ? accentColor : 'var(--text-muted)', fontWeight: mealType === mt.id ? 700 : 400 }}>
+            style={{ flex: 1, padding: '7px 4px', borderRadius: 8, fontFamily: 'inherit', fontSize: 10, fontWeight: 700, cursor: 'pointer', background: mealType === mt.id ? accentColor + '25' : 'var(--bg3)', border: '1px solid ' + (mealType === mt.id ? accentColor + '70' : 'var(--border)'), color: mealType === mt.id ? accentColor : 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+            <img src={`/Icons/${mt.icon}.png`} style={{ width: 13, height: 13 }} />
             {mt.label}
           </button>
         ))}
@@ -279,7 +298,7 @@ export default function ChefForm({ gremlinId, accentColor, lang, onStatsUpdate }
         {kbjuMode === 'auto' ? (
           <button onClick={calcKBJU} disabled={!name.trim() || calcLoading}
             style={{ width: '100%', background: name.trim() ? accentColor + '15' : 'var(--bg3)', border: '1px solid ' + (name.trim() ? accentColor + '40' : 'var(--border)'), borderRadius: 8, padding: '10px', fontSize: 12, color: name.trim() ? accentColor : 'var(--text-muted)', cursor: name.trim() ? 'pointer' : 'default', fontFamily: 'inherit' }}>
-            {calcLoading ? '⏳ считаю...' : calories ? `✓ ${calories} ккал · Б${protein}г · У${carbs}г · Ж${fat}г` : '⚡ рассчитать КБЖУ автоматически'}
+            {calcLoading ? '... считаю' : calories ? `✓ ${calories} ккал · Б${protein}г · У${carbs}г · Ж${fat}г` : <><img src="/Icons/18.png" style={{ width: 13, height: 13, verticalAlign: 'middle', marginRight: 4 }} />рассчитать КБЖУ автоматически</>}
           </button>
         ) : (
           <div style={{ display: 'flex', gap: 6 }}>
@@ -323,13 +342,13 @@ export default function ChefForm({ gremlinId, accentColor, lang, onStatsUpdate }
         : meals.length === 0 ? <div style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', padding: 12 }}>Пока нет записей</div>
         : meals.slice(0, 30).map(m => (
           <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--bg2)', borderRadius: 8, padding: '9px 12px' }}>
-            <div style={{ fontSize: 16 }}>
-              {m.meal_type === 'завтрак' ? '🌅' : m.meal_type === 'обед' ? '☀️' : m.meal_type === 'ужин' ? '🌙' : '🍎'}
+            <div style={{ flexShrink: 0 }}>
+              <img src={`/Icons/${m.meal_type === 'завтрак' ? 13 : m.meal_type === 'обед' ? 14 : m.meal_type === 'ужин' ? 15 : 16}.png`} style={{ width: 16, height: 16 }} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 12, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</div>
               <div style={{ fontSize: 10, color: 'var(--text-muted)', display: 'flex', gap: 6 }}>
-                {m.calories ? <span>🔥{m.calories}</span> : null}
+                {m.calories ? <span style={{ color: accentColor }}>{m.calories} ккал</span> : null}
                 {m.protein ? <span>Б{Math.round(m.protein)}г</span> : null}
                 {m.date && <span>{m.date}</span>}
               </div>

@@ -44,8 +44,8 @@ const SKIP_KEYS = new Set([
 const HOME_STAT_KEYS = {
   accountant: ['balance_thb', 'balance_usd', 'balance_rub', 'expense_thb', 'expense_usd', 'expense_rub'],
   trainer: ['last_distance_km', 'last_duration_min', 'last_pushups', 'total_calories', 'weight_kg'],
-  chef: ['last_calories', 'last_protein'],
-  secretary: ['pending_tasks', 'next_deadline'],
+  chef: ['today_calories', 'today_protein', 'today_carbs', 'last_calories', 'last_protein'],
+  secretary: ['next_task_title', 'next_deadline', 'pending_tasks'],
 }
 
 function humanLabel(k) {
@@ -77,7 +77,89 @@ function getHomeStats(g) {
   return null
 }
 
-export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
+function formatDeadline(dateStr) {
+  if (!dateStr) return null
+  const diff = Math.ceil((new Date(dateStr) - new Date()) / 86400000)
+  if (diff < 0) return { text: 'просрочено', color: '#e24b4a' }
+  if (diff === 0) return { text: 'сегодня!', color: '#e24b4a' }
+  if (diff === 1) return { text: 'завтра', color: '#d4a017' }
+  return { text: `через ${diff} д.`, color: 'var(--text-muted)' }
+}
+
+// Рендер статуса в карточке гремлина на главном экране
+function GremlinStatusLine({ g, color, statLabel }) {
+  const stats = g.stats || {}
+
+  if (g.role === 'secretary') {
+    const pending = stats.pending_tasks || 0
+    const title = stats.next_task_title || stats.last_task
+    const deadline = stats.next_deadline
+    const dl = formatDeadline(deadline)
+    if (!pending && !title) return null
+    return (
+      <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2, display: 'flex', gap: 6, alignItems: 'center', minWidth: 0 }}>
+        {pending > 0 && <span style={{ color, flexShrink: 0 }}>{pending} задач</span>}
+        {title && (
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>
+            {title}
+          </span>
+        )}
+        {dl && <span style={{ color: dl.color, flexShrink: 0, fontWeight: 700 }}>{dl.text}</span>}
+      </div>
+    )
+  }
+
+  if (g.role === 'chef') {
+    const kcal = stats.today_calories || stats.last_calories
+    const protein = stats.today_protein
+    const carbs = stats.today_carbs
+    if (!kcal) return null
+    return (
+      <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2, display: 'flex', gap: 6 }}>
+        <span style={{ color, fontWeight: 700 }}>{kcal} ккал</span>
+        {protein > 0 && <span>Б{Math.round(protein)}г</span>}
+        {carbs > 0 && <span>У{Math.round(carbs)}г</span>}
+      </div>
+    )
+  }
+
+  if (g.role === 'trainer') {
+    const type = stats.last_workout_type
+    const dist = stats.last_distance_km
+    const dur = stats.last_duration_min
+    const todayPlan = stats.today_plan // название тренировки по плану на сегодня
+    const planDone = stats.today_plan_done
+    if (todayPlan && !planDone) {
+      return (
+        <div style={{ fontSize: 9, color: '#e24b4a', marginTop: 2, fontWeight: 700 }}>
+          сегодня: {todayPlan}
+        </div>
+      )
+    }
+    if (!type && !dist) return null
+    return (
+      <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2, display: 'flex', gap: 5, alignItems: 'center' }}>
+        {type && <img src={`/Icons/${
+          type === 'бег' ? 19 : type === 'отжимания' ? 20 : type === 'подтягивания' ? 21 :
+          type === 'велосипед' ? 22 : type === 'плавание' ? 23 : type === 'йога' ? 24 : 25
+        }.png`} style={{ width: 11, height: 11 }} />}
+        {dist && <span style={{ color }}>{dist} км</span>}
+        {dur && <span>{dur} мин</span>}
+      </div>
+    )
+  }
+
+  // Дефолт для бухгалтера
+  const firstStat = getHomeStats(g)
+  if (!firstStat) return null
+  return (
+    <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>
+      {statLabel(firstStat[0])}: <span style={{ color, textShadow: `0 0 6px ${color}60` }}>{String(firstStat[1])}</span>
+    </div>
+  )
+}
+
+
   const [gremlins, setGremlins] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -145,8 +227,6 @@ export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {gremlins.map(g => {
           const color = getAccentColor(g.role, g.id)
-          const stats = g.stats || {}
-          const firstStat = getHomeStats(g)
           return (
             <div key={g.id} className="card"
               style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', borderColor: `${color}30`, background: 'rgba(26, 25, 22, 0.6)', backdropFilter: 'blur(8px)' }}
@@ -157,11 +237,7 @@ export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>{g.name}</div>
                 <div style={{ fontSize: 10, color, marginTop: 2 }}>{t(lang, g.role) || g.role}</div>
-                {firstStat && (
-                  <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>
-                    {statLabel(firstStat[0])}: <span style={{ color, textShadow: `0 0 6px ${color}60` }}>{String(firstStat[1])}</span>
-                  </div>
-                )}
+                <GremlinStatusLine g={g} color={color} statLabel={statLabel} />
               </div>
               <div style={{ fontSize: 16, color: 'var(--text-muted)' }}>›</div>
             </div>
