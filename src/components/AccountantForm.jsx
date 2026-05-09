@@ -12,7 +12,7 @@ const ALL_CURRENCIES = [
   { code: 'BTC', symbol: '₿' }, { code: 'USDT', symbol: '₮' },
 ]
 const SYM = Object.fromEntries(ALL_CURRENCIES.map(c => [c.code, c.symbol]))
-const EXPENSE_CATS = ['еда', 'кафе', 'транспорт', 'жильё', 'здоровье', 'одежда', 'развлечения', 'связь', 'другое']
+const DEFAULT_CATS = ['еда', 'кафе', 'транспорт', 'жильё', 'здоровье', 'одежда', 'развлечения', 'связь']
 const CAT_ICON = { 'еда': 5, 'кафе': 1, 'транспорт': 3, 'жильё': 7, 'здоровье': 9, 'одежда': 10, 'развлечения': 11, 'связь': 8 }
 
 function todayStr() { return new Date().toISOString().split('T')[0] }
@@ -89,10 +89,10 @@ function DeleteConfirm({ onConfirm, onCancel, label, lang }) {
 }
 
 const ACCOUNT_TABS = [
-  { id: 'expenses', label: '↕ Расходы', color: '#fc7c6f' },
-  { id: 'invest',   label: 'Вклады',    color: '#4173a8' },
-  { id: 'accounts', label: 'Счета',     color: '#b09767' },
-  { id: 'debts',    label: 'Долги',     color: '#849cff' },
+  { id: 'expenses', labelRu: '↕ Расходы', labelEn: '↕ Expenses', color: '#fc7c6f' },
+  { id: 'invest',   labelRu: 'Вклады',    labelEn: 'Invest',      color: '#4173a8' },
+  { id: 'accounts', labelRu: 'Счета',     labelEn: 'Accounts',    color: '#b09767' },
+  { id: 'debts',    labelRu: 'Долги',     labelEn: 'Debts',       color: '#849cff' },
 ]
 
 export default function AccountantForm({ gremlinId, accentColor, lang, onStatsUpdate }) {
@@ -161,7 +161,7 @@ export default function AccountantForm({ gremlinId, accentColor, lang, onStatsUp
             background: activeTab === t.id ? t.color + '25' : 'var(--bg3)',
             color: activeTab === t.id ? t.color : 'var(--text-muted)',
             border: 'none', transition: 'all 0.15s', whiteSpace: 'nowrap'
-          }}>{t.label}</button>
+          }}>{lang === 'ru' ? t.labelRu : t.labelEn}</button>
         ))}
       </div>
 
@@ -249,8 +249,10 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
   const [amount, setAmount] = useState('')
   const [currency, setCurrency] = useState(accounts[0]?.currency || 'THB')
   const [txType, setTxType] = useState('expense')
+  const [customCats, setCustomCats] = useState(() => { try { return JSON.parse(localStorage.getItem('custom_cats_' + gremlinId) || '[]') } catch { return [] } })
   const [category, setCategory] = useState('еда')
-  const [customCat, setCustomCat] = useState('')
+  const [newCatInput, setNewCatInput] = useState('')
+  const [showNewCat, setShowNewCat] = useState(false)
   const [note, setNote] = useState('')
   const [date, setDate] = useState(todayStr())
   const [saving, setSaving] = useState(false)
@@ -310,7 +312,7 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
     if (txType === 'income' && currencyConflict && !overrideAmount) { setError(lang === 'ru' ? 'Реши валютный конфликт' : 'Resolve conflict'); return }
     setSaving(true)
     try {
-      const cat = txType === 'expense' ? (category === 'другое' ? (customCat.trim() || 'другое') : category) : null
+      const cat = txType === 'expense' ? category : null
       const result = await addTransaction(gremlinId, {
         amount: num, currency: overrideCurrency ?? currency, type: txType,
         category: cat, note: note.trim() || null, date, account_id: accountId
@@ -368,26 +370,6 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
 
   return (
     <>
-      {currencies.length > 0 && (
-        <div style={{ marginBottom: 10 }}>
-          {currencies.slice(0, 3).map(cur => {
-            const data = snapshots[cur] || []
-            if (data.length < 2) return null
-            const last = data[data.length - 1]?.balance || 0
-            const color = last >= 0 ? '#68b281' : '#fc7c6f'
-            return (
-              <div key={cur} style={{ background: 'var(--bg3)', borderRadius: 8, padding: '8px 10px', marginBottom: 5 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text-muted)' }}>
-                  <span>{cur}</span>
-                  <span style={{ color, fontWeight: 700 }}>{last >= 0 ? '+' : ''}{last.toLocaleString('ru-RU')}</span>
-                </div>
-                <MiniChart data={data} color={color} />
-              </div>
-            )
-          })}
-        </div>
-      )}
-
       <div style={{ background: 'var(--bg3)', borderRadius: 8, padding: 10, marginBottom: 10 }}>
         {/* Счёт — первый, обязателен */}
         <div style={{ marginBottom: 8 }}>
@@ -413,18 +395,45 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
         </div>
 
         {txType === 'expense' && (
-          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 6 }}>
-            {EXPENSE_CATS.map(cat => (
-              <button key={cat} onClick={() => setCategory(cat)} style={{ padding: '4px 9px', borderRadius: 20, fontFamily: 'inherit', fontSize: 10, cursor: 'pointer', background: category === cat ? '#fc7c6f25' : 'var(--bg2)', border: '1px solid ' + (category === cat ? '#fc7c6f60' : 'var(--border)'), color: category === cat ? '#fc7c6f' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 3 }}>
-                {CAT_ICON[cat] && <img src={`/Icons/${CAT_ICON[cat]}.png`} style={{ width: 11, height: 11 }} />}
-                {cat}
+          <div style={{ marginBottom: 6 }}>
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 4 }}>
+              {[...DEFAULT_CATS, ...customCats].map(cat => (
+                <button key={cat} onClick={() => { setCategory(cat); setShowNewCat(false) }} style={{ padding: '4px 9px', borderRadius: 20, fontFamily: 'inherit', fontSize: 10, cursor: 'pointer', background: category === cat ? '#fc7c6f25' : 'var(--bg2)', border: '1px solid ' + (category === cat ? '#fc7c6f60' : 'var(--border)'), color: category === cat ? '#fc7c6f' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 3 }}>
+                  {CAT_ICON[cat] && <img src={`/Icons/${CAT_ICON[cat]}.png`} style={{ width: 11, height: 11 }} />}
+                  {cat}
+                </button>
+              ))}
+              <button onClick={() => setShowNewCat(v => !v)} style={{ padding: '4px 9px', borderRadius: 20, fontFamily: 'inherit', fontSize: 10, cursor: 'pointer', background: showNewCat ? '#fc7c6f25' : 'var(--bg2)', border: '1px solid ' + (showNewCat ? '#fc7c6f60' : 'var(--border)'), color: showNewCat ? '#fc7c6f' : 'var(--text-muted)' }}>
+                + {lang === 'ru' ? 'новая' : 'new'}
               </button>
-            ))}
+            </div>
+            {showNewCat && (
+              <div style={{ display: 'flex', gap: 6 }}>
+                <input value={newCatInput} onChange={e => setNewCatInput(e.target.value)}
+                  placeholder={lang === 'ru' ? 'название категории...' : 'category name...'}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && newCatInput.trim()) {
+                      const nc = newCatInput.trim().toLowerCase()
+                      const updated = [...customCats.filter(c => c !== nc), nc]
+                      setCustomCats(updated)
+                      try { localStorage.setItem('custom_cats_' + gremlinId, JSON.stringify(updated)) } catch {}
+                      setCategory(nc); setNewCatInput(''); setShowNewCat(false)
+                    }
+                  }}
+                  style={{ flex: 1, background: 'var(--bg2)', border: '1px solid #fc7c6f40', borderRadius: 7, padding: '6px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, outline: 'none' }} />
+                <button onClick={() => {
+                  if (!newCatInput.trim()) return
+                  const nc = newCatInput.trim().toLowerCase()
+                  const updated = [...customCats.filter(c => c !== nc), nc]
+                  setCustomCats(updated)
+                  try { localStorage.setItem('custom_cats_' + gremlinId, JSON.stringify(updated)) } catch {}
+                  setCategory(nc); setNewCatInput(''); setShowNewCat(false)
+                }} style={{ background: '#fc7c6f25', border: '1px solid #fc7c6f60', color: '#fc7c6f', borderRadius: 7, padding: '6px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  OK
+                </button>
+              </div>
+            )}
           </div>
-        )}
-        {category === 'другое' && txType === 'expense' && (
-          <input value={customCat} onChange={e => setCustomCat(e.target.value)} placeholder={lang === 'ru' ? 'своя категория...' : 'custom category...'}
-            style={{ width: '100%', boxSizing: 'border-box', marginBottom: 6, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 7, padding: '7px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, outline: 'none' }} />
         )}
 
         <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
@@ -551,12 +560,9 @@ function InvestForm({ gremlinId, accounts, transactions, snapshots, onAdd, onDel
   return (
     <>
       {Object.entries(byCurrency).map(([cur, total]) => (
-        <div key={cur} style={{ background: 'var(--bg3)', borderRadius: 8, padding: '8px 10px', marginBottom: 6 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text-muted)', marginBottom: 2 }}>
-            <span>{lang === 'ru' ? 'Вклады' : 'Investments'} {cur}</span>
-            <span style={{ color: '#4173a8', fontWeight: 700 }}>{total.toLocaleString('ru-RU')} {SYM[cur] || cur}</span>
-          </div>
-          <MiniChart data={snapshots[cur] || []} color="#4173a8" />
+        <div key={cur} style={{ display: 'flex', justifyContent: 'space-between', background: 'var(--bg3)', borderRadius: 8, padding: '8px 12px', marginBottom: 6, fontSize: 12 }}>
+          <span style={{ color: 'var(--text-muted)' }}>{lang === 'ru' ? 'Вклады' : 'Investments'} {cur}</span>
+          <span style={{ color: '#4173a8', fontWeight: 700 }}>{total.toLocaleString('ru-RU')} {SYM[cur] || cur}</span>
         </div>
       ))}
 

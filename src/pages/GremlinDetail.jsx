@@ -719,7 +719,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
             onClick={() => fileRef.current?.click()}
             disabled={sending || fileLoading}
             style={{ background: 'var(--bg3)', border: '1px solid ' + accentColor + '30', borderRadius: 8, width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, cursor: 'pointer', flexShrink: 0, color: accentColor, opacity: sending ? 0.5 : 1 }}
-          ><img src="/Icons/4.png" style={{ width: 18, height: 18 }} /></button>
+          ><img src="/Icons/4.png" style={{ width: 24, height: 24 }} /></button>
           <textarea
             rows={2}
             value={input}
