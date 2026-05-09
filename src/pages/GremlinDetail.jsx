@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { getEntries, sendChat, updateGremlin, deleteGremlin, getGremlin } from '../services/api'
+import { getEntries, sendChat, updateGremlin, deleteGremlin, getGremlin, getSnapshots } from '../services/api'
 import { t } from '../i18n'
 import Upgrade from './Upgrade'
 import GremlinAnimation from '../components/GremlinAnimation'
@@ -7,6 +7,37 @@ import AccountantForm from '../components/AccountantForm'
 import TrainerForm from '../components/TrainerForm'
 import ChefForm from '../components/ChefForm'
 import SecretaryForm from '../components/SecretaryForm'
+
+function MiniChart({ data, color, height = 48 }) {
+  if (!data || data.length < 2) return null
+  const vals = data.map(d => d.balance)
+  const min = Math.min(...vals), max = Math.max(...vals)
+  const range = max - min || 1
+  const id = 'gc_' + color.replace('#', '')
+  return (
+    <svg width="100%" height={height} style={{ display: 'block' }}>
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {(() => {
+        const w = 100 / (vals.length - 1)
+        const pts = vals.map((v, i) => [i * w, (height - 4) - ((v - min) / range) * (height - 8)])
+        const pathD = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0] + '% ' + p[1]).join(' ')
+        return (
+          <>
+            <path d={pathD + ` L100% ${height} L0% ${height} Z`} fill={`url(#${id})`} />
+            <path d={pathD} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+            <text x="2%" y={height - 3} fontSize="8" fill={color} opacity="0.7">{vals[0] >= 0 ? '+' : ''}{vals[0].toLocaleString('ru-RU', { maximumFractionDigits: 0 })}</text>
+            <text x="98%" y={height - 3} fontSize="8" fill={color} textAnchor="end">{vals[vals.length-1] >= 0 ? '+' : ''}{vals[vals.length-1].toLocaleString('ru-RU', { maximumFractionDigits: 0 })}</text>
+          </>
+        )
+      })()}
+    </svg>
+  )
+}
 
 const ROLE_COLOR_VARIANTS = {
   accountant: ['#3ecf70', '#00ddaa', '#aaff44', '#00ffcc'],
@@ -161,10 +192,33 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
   const hasDataTab = ['accountant', 'trainer', 'chef', 'secretary'].includes(gremlin.role)
   const [activeTab, setActiveTab] = useState(hasDataTab ? 'data' : 'chat')
   const [talking, setTalking] = useState(false)
+  const [snapshots, setSnapshots] = useState({})
   const bottomRef = useRef(null)
   const fileRef = useRef(null)
 
   const accentColor = getAccentColor(gremlin.role, gremlin.id)
+
+  const loadSnapshots = async () => {
+    if (gremlin.role !== 'accountant') return
+    const stats = gremlin.stats || {}
+    const currencies = [...new Set(
+      Object.keys(stats)
+        .filter(k => k.startsWith('balance_') || k.startsWith('expense_') || k.startsWith('income_'))
+        .map(k => k.split('_').slice(1).join('_').toUpperCase())
+        .filter(Boolean)
+    )]
+    if (!currencies.length) return
+    try {
+      const results = await Promise.all(currencies.map(cur => getSnapshots(gremlin.id, cur).catch(() => [])))
+      const snap = {}
+      currencies.forEach((cur, i) => { snap[cur] = results[i] || [] })
+      setSnapshots(snap)
+    } catch {}
+  }
+
+  useEffect(() => {
+    if (activeTab === 'stats') loadSnapshots()
+  }, [activeTab])
 
   const refreshGremlin = async () => {
     try {
@@ -565,10 +619,13 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
               const totalExp = Object.entries(stats).filter(([k]) => k.startsWith('expense_')).reduce((s,[,v])=>s+v,0)
               return (
                 <>
-                  {currencyRows.length === 0 && <div style={{textAlign:'center',color:'var(--text-muted)',fontSize:12,marginTop:20}}>Добавь первую запись</div>}
-                  {currencyRows.map(c => (
-                    <div key={c.code} style={{ marginBottom: 6 }}>
-                      <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+                  {currencyRows.length === 0 && <div style={{textAlign:'center',color:'var(--text-muted)',fontSize:12,marginTop:20}}>{lang==='ru'?'Добавь первую запись':'Add your first entry'}</div>}
+                  {currencyRows.map(c => {
+                    const snapData = snapshots[c.code] || []
+                    const chartColor = c.bal >= 0 ? accentColor : '#e24b4a'
+                    return (
+                    <div key={c.code} style={{ marginBottom: 10, background: 'var(--bg2)', borderRadius: 10, padding: '8px 10px', border: '1px solid var(--border)' }}>
+                      <div style={{ display: 'flex', gap: 5, alignItems: 'center', marginBottom: 6 }}>
                         <div style={{ width: 32, fontSize: 12, color: 'var(--text-muted)', textAlign: 'right', flexShrink: 0 }}>
                           {c.symbol}
                         </div>
@@ -578,7 +635,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
                             { val: c.inc, label: lang==='ru'?'доход':'income', color: accentColor },
                             { val: c.bal, label: lang==='ru'?'баланс':'balance', color: c.bal>=0?accentColor:'#e24b4a', sign: true },
                           ].map(cell => (
-                            <div key={cell.label} style={{ flex:1, background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:6, padding:'4px 6px', textAlign:'center' }}>
+                            <div key={cell.label} style={{ flex:1, background:'var(--bg3)', borderRadius:6, padding:'4px 6px', textAlign:'center' }}>
                               <div style={{ fontSize:12, fontWeight:700, color: cell.color }}>
                                 {cell.sign && cell.val>=0?'+':''}{(cell.val||0).toLocaleString('ru-RU',{maximumFractionDigits:2})}
                               </div>
@@ -587,8 +644,14 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
                           ))}
                         </div>
                       </div>
+                      {snapData.length >= 2 && (
+                        <div style={{ marginTop: 4 }}>
+                          <MiniChart data={snapData} color={chartColor} height={52} />
+                        </div>
+                      )}
                     </div>
-                  ))}
+                    )
+                  })}
                   {investments.length > 0 && (
                     <>
                       <div style={{fontSize:10,color:'var(--text-muted)',margin:'10px 0 5px',letterSpacing:'0.06em'}}>{lang==='ru'?'ВКЛАДЫ':'INVESTMENTS'}</div>

@@ -524,6 +524,35 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
 
 // ── INVEST ────────────────────────────────────────────────────────────────────
 
+function MiniChartLocal({ data, color }) {
+  if (!data || data.length < 2) return null
+  const vals = data.map(d => d.balance)
+  const min = Math.min(...vals), max = Math.max(...vals)
+  const range = max - min || 1
+  const id = 'lc_' + color.replace('#', '')
+  return (
+    <svg width="100%" height="44" style={{ display: 'block', marginTop: 4 }}>
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {(() => {
+        const w = 100 / (vals.length - 1)
+        const pts = vals.map((v, i) => [i * w, 40 - ((v - min) / range) * 36])
+        const pathD = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0] + '% ' + p[1]).join(' ')
+        return (
+          <>
+            <path d={pathD + ' L100% 44 L0% 44 Z'} fill={`url(#${id})`} />
+            <path d={pathD} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+          </>
+        )
+      })()}
+    </svg>
+  )
+}
+
 function InvestForm({ gremlinId, accounts, transactions, snapshots, onAdd, onDelete, lang }) {
   const [accountId, setAccountId] = useState(accounts[0]?.id || '')
   const [amount, setAmount] = useState('')
@@ -559,12 +588,19 @@ function InvestForm({ gremlinId, accounts, transactions, snapshots, onAdd, onDel
 
   return (
     <>
-      {Object.entries(byCurrency).map(([cur, total]) => (
-        <div key={cur} style={{ display: 'flex', justifyContent: 'space-between', background: 'var(--bg3)', borderRadius: 8, padding: '8px 12px', marginBottom: 6, fontSize: 12 }}>
-          <span style={{ color: 'var(--text-muted)' }}>{lang === 'ru' ? 'Вклады' : 'Investments'} {cur}</span>
-          <span style={{ color: '#4173a8', fontWeight: 700 }}>{total.toLocaleString('ru-RU')} {SYM[cur] || cur}</span>
-        </div>
-      ))}
+      {Object.entries(byCurrency).map(([cur, total]) => {
+        const data = snapshots[cur] || []
+        const color = '#4173a8'
+        return (
+          <div key={cur} style={{ background: 'var(--bg3)', borderRadius: 8, padding: '8px 10px', marginBottom: 6 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text-muted)', marginBottom: 2 }}>
+              <span>{lang === 'ru' ? 'Вклады' : 'Investments'} {cur}</span>
+              <span style={{ color, fontWeight: 700 }}>{total.toLocaleString('ru-RU')} {SYM[cur] || cur}</span>
+            </div>
+            <MiniChartLocal data={data} color={color} />
+          </div>
+        )
+      })}
 
       <div style={{ background: 'var(--bg3)', borderRadius: 8, padding: 10, marginBottom: 8 }}>
         <div style={{ marginBottom: 8 }}>
