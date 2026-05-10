@@ -77,48 +77,74 @@ function getHomeStats(g) {
   return null
 }
 
+const PRI_COLOR = { high: '#e24b4a', medium: '#d4a017', low: '#68b281' }
+
 function formatDeadline(dateStr) {
   if (!dateStr) return null
   const diff = Math.ceil((new Date(dateStr) - new Date()) / 86400000)
   if (diff < 0) return { text: 'просрочено', color: '#e24b4a' }
   if (diff === 0) return { text: 'сегодня!', color: '#e24b4a' }
   if (diff === 1) return { text: 'завтра', color: '#d4a017' }
-  return { text: `через ${diff} д.`, color: 'var(--text-muted)' }
+  return { text: `${diff}д.`, color: 'var(--text-muted)' }
 }
 
-// Рендер статуса в карточке гремлина на главном экране
 function GremlinStatusLine({ g, color, statLabel }) {
   const stats = g.stats || {}
 
   if (g.role === 'secretary') {
-    const pending = stats.pending_tasks || 0
-    const title = stats.next_task_title || stats.last_task
-    const deadline = stats.next_deadline
-    const dl = formatDeadline(deadline)
-    if (!pending && !title) return null
+    // Берём топ-3 задачи из stats (бэкенд должен класть их в next_tasks)
+    const tasks = stats.next_tasks || []
+    // Fallback если нет next_tasks — показываем старый формат
+    if (!tasks.length) {
+      const pending = stats.pending_tasks || 0
+      const title = stats.next_task_title || stats.last_task
+      const deadline = stats.next_deadline
+      const dl = formatDeadline(deadline)
+      if (!pending && !title) return null
+      return (
+        <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2, display: 'flex', gap: 4, alignItems: 'center', minWidth: 0 }}>
+          {pending > 0 && <span style={{ color, flexShrink: 0 }}>{pending} задач</span>}
+          {title && <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{title}</span>}
+          {dl && <span style={{ color: dl.color, flexShrink: 0, fontWeight: 700 }}>{dl.text}</span>}
+        </div>
+      )
+    }
+    // 3 ячейки с задачами
     return (
-      <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2, display: 'flex', gap: 6, alignItems: 'center', minWidth: 0 }}>
-        {pending > 0 && <span style={{ color, flexShrink: 0 }}>{pending} задач</span>}
-        {title && (
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>
-            {title}
-          </span>
-        )}
-        {dl && <span style={{ color: dl.color, flexShrink: 0, fontWeight: 700 }}>{dl.text}</span>}
+      <div style={{ display: 'flex', gap: 4, marginTop: 4, minWidth: 0 }}>
+        {tasks.slice(0, 3).map((task, i) => {
+          const dl = formatDeadline(task.deadline)
+          const priColor = PRI_COLOR[task.priority] || color
+          return (
+            <div key={i} style={{ flex: 1, minWidth: 0, background: priColor + '15', border: '1px solid ' + priColor + '40', borderRadius: 6, padding: '4px 5px' }}>
+              <div style={{ fontSize: 9, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
+                {task.title}
+              </div>
+              {dl && (
+                <div style={{ fontSize: 8, color: dl.color, marginTop: 1, fontWeight: 700 }}>{dl.text}</div>
+              )}
+            </div>
+          )
+        })}
       </div>
     )
   }
 
   if (g.role === 'chef') {
-    const kcal = stats.today_calories || stats.last_calories
+    // today_calories пишется бэкендом в stats при добавлении приёма пищи
+    const kcal = stats.today_calories
+    const weekKcal = stats.week_calories
     const protein = stats.today_protein
     const carbs = stats.today_carbs
-    if (!kcal) return null
+    // Fallback на last_calories если сегодня ещё нет данных
+    const displayKcal = kcal || stats.last_calories
+    if (!displayKcal) return null
     return (
-      <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2, display: 'flex', gap: 6 }}>
-        <span style={{ color, fontWeight: 700 }}>{kcal} ккал</span>
+      <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2, display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+        <span style={{ color, fontWeight: 700 }}>{displayKcal} ккал{kcal ? ' сег.' : ''}</span>
         {protein > 0 && <span>Б{Math.round(protein)}г</span>}
         {carbs > 0 && <span>У{Math.round(carbs)}г</span>}
+        {weekKcal > 0 && <span style={{ color: 'var(--text-muted)' }}>·7д:{Math.round(weekKcal/7)}/д</span>}
       </div>
     )
   }
@@ -127,7 +153,7 @@ function GremlinStatusLine({ g, color, statLabel }) {
     const type = stats.last_workout_type
     const dist = stats.last_distance_km
     const dur = stats.last_duration_min
-    const todayPlan = stats.today_plan // название тренировки по плану на сегодня
+    const todayPlan = stats.today_plan
     const planDone = stats.today_plan_done
     if (todayPlan && !planDone) {
       return (
@@ -149,7 +175,7 @@ function GremlinStatusLine({ g, color, statLabel }) {
     )
   }
 
-  // Дефолт для бухгалтера
+  // Бухгалтер
   const firstStat = getHomeStats(g)
   if (!firstStat) return null
   return (
