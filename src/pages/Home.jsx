@@ -131,20 +131,36 @@ function GremlinStatusLine({ g, color, statLabel }) {
   }
 
   if (g.role === 'chef') {
-    // today_calories пишется бэкендом в stats при добавлении приёма пищи
-    const kcal = stats.today_calories
-    const weekKcal = stats.week_calories
-    const protein = stats.today_protein
-    const carbs = stats.today_carbs
-    // Fallback на last_calories если сегодня ещё нет данных
-    const displayKcal = kcal || stats.last_calories
-    if (!displayKcal) return null
+    const dayLog = stats.day_log || []
+    // Fallback если day_log ещё не появился
+    if (!dayLog.length) {
+      const kcal = stats.today_calories || stats.last_calories
+      if (!kcal) return null
+      return (
+        <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+          <div style={{ flex: 1, background: color + '15', border: '1px solid ' + color + '40', borderRadius: 6, padding: '4px 5px' }}>
+            <div style={{ fontSize: 9, color, fontWeight: 700 }}>{kcal} ккал</div>
+            {stats.today_protein > 0 && <div style={{ fontSize: 8, color: 'var(--text-muted)' }}>Б{Math.round(stats.today_protein)}г</div>}
+          </div>
+        </div>
+      )
+    }
+    // Показываем 3 последних дня
+    const shown = dayLog.slice(0, 3)
     return (
-      <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2, display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-        <span style={{ color, fontWeight: 700 }}>{displayKcal} ккал{kcal ? ' сег.' : ''}</span>
-        {protein > 0 && <span>Б{Math.round(protein)}г</span>}
-        {carbs > 0 && <span>У{Math.round(carbs)}г</span>}
-        {weekKcal > 0 && <span style={{ color: 'var(--text-muted)' }}>·7д:{Math.round(weekKcal/7)}/д</span>}
+      <div style={{ display: 'flex', gap: 4, marginTop: 4, minWidth: 0 }}>
+        {shown.map((day, i) => {
+          const isToday = day.date === new Date().toISOString().split('T')[0]
+          const label = isToday ? 'сегодня' : day.date.slice(5) // MM-DD
+          return (
+            <div key={i} style={{ flex: 1, minWidth: 0, background: color + '15', border: '1px solid ' + color + '30', borderRadius: 6, padding: '4px 5px' }}>
+              <div style={{ fontSize: 9, color, fontWeight: 700 }}>{day.calories} ккал</div>
+              <div style={{ fontSize: 8, color: 'var(--text-muted)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {day.protein > 0 ? `Б${day.protein}г` : ''} {label}
+              </div>
+            </div>
+          )
+        })}
       </div>
     )
   }
