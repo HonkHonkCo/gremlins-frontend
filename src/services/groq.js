@@ -186,6 +186,24 @@ type может быть: expense, income, investment`,
   }
 }
 
+export async function calcKBJU(name, weight_g) {
+  const prompt = weight_g
+    ? `Блюдо: "${name}", порция: ${weight_g}г. Дай точные КБЖУ на эту порцию.`
+    : `Блюдо: "${name}". Дай среднее КБЖУ на стандартную порцию (укажи граммовку).`
+
+  const response = await groq.chat.completions.create({
+    model: MODEL,
+    messages: [{
+      role: 'user',
+      content: prompt + '\nВерни ТОЛЬКО JSON без лишнего текста: {"calories":300,"protein":25,"carbs":40,"fat":10,"weight_g":200}'
+    }],
+    max_tokens: 150
+  })
+
+  const text = response.choices[0].message.content.trim().replace(/```json|```/g, '').trim()
+  return JSON.parse(text)
+}
+
 export async function generateWeeklyReport(userOrObj, gremlinsWithEntries) {
   let context
 

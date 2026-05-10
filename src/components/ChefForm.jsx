@@ -59,35 +59,22 @@ export default function ChefForm({ gremlinId, accentColor, lang, onStatsUpdate }
     setLoading(false)
   }
 
-  // Авто-расчёт КБЖУ через Anthropic API
+  // Авто-расчёт КБЖУ через бэкенд (Groq)
   const calcKBJU = async () => {
     if (!name.trim()) return
     setCalcLoading(true)
     try {
-      const prompt = weight
-        ? `Блюдо: "${name}", порция: ${weight}г. Дай точные КБЖУ на эту порцию.`
-        : `Блюдо: "${name}". Дай среднее КБЖУ на стандартную порцию (укажи граммовку).`
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/meals/calc-kbju`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 200,
-          messages: [{
-            role: 'user',
-            content: prompt + '\nВерни ТОЛЬКО JSON: {"calories":300,"protein":25,"carbs":40,"fat":10,"weight_g":200}'
-          }]
-        })
+        body: JSON.stringify({ name: name.trim(), weight_g: weight ? parseInt(weight) : null })
       })
-      const data = await response.json()
-      const text = data.content?.[0]?.text || ''
-      const clean = text.replace(/```json\n?/i, '').replace(/```/g, '').trim()
-      const parsed = JSON.parse(clean)
-      if (parsed.calories) setCalories(String(parsed.calories))
-      if (parsed.protein) setProtein(String(parsed.protein))
-      if (parsed.carbs) setCarbs(String(parsed.carbs))
-      if (parsed.fat) setFat(String(parsed.fat))
-      if (parsed.weight_g && !weight) setWeight(String(parsed.weight_g))
+      const data = await res.json()
+      if (data.calories) setCalories(String(data.calories))
+      if (data.protein)  setProtein(String(data.protein))
+      if (data.carbs)    setCarbs(String(data.carbs))
+      if (data.fat)      setFat(String(data.fat))
+      if (data.weight_g && !weight) setWeight(String(data.weight_g))
     } catch (e) {
       console.error('KBJU calc error:', e)
     }
