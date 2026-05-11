@@ -110,8 +110,8 @@ const STAT_LABELS_EN = {
 // Приоритет показа статов — для не-бухгалтеров
 const STAT_PRIORITY = {
   trainer: ['last_workout', 'last_distance_km', 'last_pushups', 'weight_kg', 'last_calories', 'steps'],
-  secretary: [], // рендерится отдельным блоком
-  chef: [], // рендерится отдельным блоком
+  secretary: ['pending_tasks', 'next_deadline', 'last_task'],
+  chef: ['today_calories', 'today_protein', 'today_carbs', 'avg_day_calories'],
 }
 
 function getAccentColor(role, gremlinId) {
@@ -553,104 +553,8 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
             )
           })()}
 
-          {/* СЕКРЕТАРЬ — карточки задач */}
-          {gremlin.role === 'secretary' && (() => {
-            const nextTasks = Array.isArray(stats.next_tasks) ? stats.next_tasks : []
-            const pending = stats.pending_tasks || 0
-            const PRI_COLOR = { high: '#e24b4a', medium: '#d4a017', low: '#68b281' }
-            if (!pending && !nextTasks.length) return null
-            return (
-              <div style={{ padding: '4px 12px 2px' }}>
-                {pending > 0 && (
-                  <div style={{ fontSize: 10, color: 'var(--text-muted)', textAlign: 'center', marginBottom: 5 }}>
-                    <span style={{ color: accentColor, fontWeight: 700 }}>{pending}</span>
-                    {' '}{lang === 'ru' ? 'задач в работе' : 'tasks pending'}
-                  </div>
-                )}
-                {nextTasks.length > 0 && (
-                  <div style={{ display: 'flex', gap: 5 }}>
-                    {nextTasks.slice(0, 3).map((task, i) => {
-                      const diff = task.deadline
-                        ? Math.ceil((new Date(task.deadline) - new Date()) / 86400000)
-                        : null
-                      const dlText = diff === null ? null
-                        : diff < 0 ? (lang === 'ru' ? 'просрочено' : 'overdue')
-                        : diff === 0 ? (lang === 'ru' ? 'сегодня!' : 'today!')
-                        : diff === 1 ? (lang === 'ru' ? 'завтра' : 'tomorrow')
-                        : `${diff}${lang === 'ru' ? 'д.' : 'd.'}`
-                      const dlColor = diff !== null && diff <= 0 ? '#e24b4a' : diff === 1 ? '#d4a017' : 'var(--text-muted)'
-                      const priColor = PRI_COLOR[task.priority] || accentColor
-                      return (
-                        <div key={i} style={{
-                          flex: 1, minWidth: 0,
-                          background: priColor + '15',
-                          border: '1px solid ' + priColor + '40',
-                          borderRadius: 8, padding: '6px 8px'
-                        }}>
-                          <div style={{
-                            fontSize: 11, fontWeight: 700, color: 'var(--text)',
-                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-                          }}>
-                            {task.title}
-                          </div>
-                          {task.deadline && (
-                            <div style={{ fontSize: 9, color: dlColor, marginTop: 3, fontWeight: 600 }}>
-                              {task.deadline}
-                            </div>
-                          )}
-                          {dlText && (
-                            <div style={{ fontSize: 9, color: dlColor, fontWeight: 700 }}>
-                              {dlText}
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            )
-          })()}
-
-          {/* ШЕФ — дневные КБЖУ */}
-          {gremlin.role === 'chef' && (() => {
-            const kcal = stats.today_calories || stats.last_calories
-            const protein = stats.today_protein
-            const carbs = stats.today_carbs
-            const fat = stats.today_fat
-            const weekKcal = stats.week_calories
-            const avgDay = stats.avg_day_calories
-            if (!kcal) return null
-            const isToday = !!stats.today_calories
-            return (
-              <div style={{ padding: '4px 12px 2px' }}>
-                <div style={{ background: accentColor + '10', border: '1px solid ' + accentColor + '20', borderRadius: 8, overflow: 'hidden' }}>
-                  <div style={{ display: 'flex' }}>
-                    {[
-                      { val: kcal, label: isToday ? (lang === 'ru' ? 'ккал сег.' : 'kcal today') : 'ккал' },
-                      { val: protein > 0 ? Math.round(protein) + 'г' : '—', label: lang === 'ru' ? 'белок' : 'protein' },
-                      { val: carbs > 0 ? Math.round(carbs) + 'г' : '—', label: lang === 'ru' ? 'углев' : 'carbs' },
-                      { val: fat > 0 ? Math.round(fat) + 'г' : '—', label: lang === 'ru' ? 'жир' : 'fat' },
-                    ].map((s, i) => (
-                      <div key={i} style={{ flex: 1, textAlign: 'center', padding: '7px 4px', borderRight: i < 3 ? '1px solid ' + accentColor + '15' : 'none' }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: accentColor, textShadow: '0 0 8px ' + accentColor + '60' }}>{s.val}</div>
-                        <div style={{ fontSize: 8, color: 'var(--text-muted)', marginTop: 1 }}>{s.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                  {(weekKcal > 0 || avgDay > 0) && (
-                    <div style={{ borderTop: '1px solid ' + accentColor + '15', padding: '4px 10px', fontSize: 9, color: 'var(--text-muted)', display: 'flex', gap: 10 }}>
-                      {avgDay > 0 && <span>~{avgDay} {lang === 'ru' ? 'ккал/день' : 'kcal/day'}</span>}
-                      {weekKcal > 0 && <span style={{ color: accentColor }}>{weekKcal} {lang === 'ru' ? 'за 7 дней' : 'last 7d'}</span>}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )
-          })()}
-
           {/* ОСТАЛЬНЫЕ РОЛИ — обычные плитки */}
-          {gremlin.role !== 'accountant' && gremlin.role !== 'secretary' && gremlin.role !== 'chef' && hasStats && (
+          {gremlin.role !== 'accountant' && hasStats && (
             <div style={{ display: 'flex', gap: 6, padding: '6px 12px', flexWrap: 'wrap', justifyContent: 'center' }}>
               {priorityStats.map(([k, v]) => (
                 <div key={k} style={{ background: accentColor + '15', border: '1px solid ' + accentColor + '30', borderRadius: 6, padding: '5px 10px', textAlign: 'center', minWidth: 60 }}>
