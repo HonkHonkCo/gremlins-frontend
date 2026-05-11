@@ -95,22 +95,30 @@ function GremlinStatusLine({ g, color, statLabel }) {
     const tasks = stats.next_tasks || []
     const PC = { high: '#e24b4a', medium: '#d4a017', low: '#68b281' }
 
-    if (!tasks.length) {
-      const pending = stats.pending_tasks || 0
+    const sorted = [...tasks].sort((a, b) => ({ high: 0, medium: 1, low: 2 }[a.priority] || 1) - ({ high: 0, medium: 1, low: 2 }[b.priority] || 1))
+
+    // Fallback — показываем из старых полей если next_tasks пусто
+    if (!sorted.length) {
       const title = stats.next_task_title || stats.last_task
       const deadline = stats.next_deadline
       const dl = formatDeadline(deadline)
-      if (!pending && !title) return null
+      const pending = stats.pending_tasks || 0
+      if (!title && !pending) return null
       return (
-        <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2, display: 'flex', gap: 4, alignItems: 'center', minWidth: 0 }}>
-          {pending > 0 && <span style={{ color, flexShrink: 0 }}>{pending} задач</span>}
-          {title && <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{title}</span>}
-          {dl && <span style={{ color: dl.color, flexShrink: 0, fontWeight: 700 }}>{dl.text}</span>}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 4 }}>
+          {title && (
+            <div style={{ background: color + '15', border: '1px solid ' + color + '35', borderRadius: 6, padding: '3px 7px', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <div style={{ flex: 1, fontSize: 9, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>{title}</div>
+              {dl && <div style={{ fontSize: 8, color: dl.color, fontWeight: 700, flexShrink: 0 }}>{dl.text}</div>}
+            </div>
+          )}
+          {!title && pending > 0 && (
+            <div style={{ fontSize: 9, color, marginTop: 2 }}>{pending} {lang === 'ru' ? 'задач' : 'tasks'}</div>
+          )}
         </div>
       )
     }
 
-    const sorted = [...tasks].sort((a, b) => ({ high: 0, medium: 1, low: 2 }[a.priority] || 1) - ({ high: 0, medium: 1, low: 2 }[b.priority] || 1))
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 4, minWidth: 0 }}>
         {sorted.slice(0, 2).map((task, i) => {
