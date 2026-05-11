@@ -86,12 +86,33 @@ export default function ChefForm({ gremlinId, accentColor, lang, onStatsUpdate }
     if (!name.trim()) { setError('Укажи название блюда'); return }
     setSaving(true)
     try {
+      // Авто-расчёт КБЖУ если режим авто и ещё не рассчитано
+      let finalCalories = calories ? parseInt(calories) : null
+      let finalProtein  = protein  ? parseFloat(protein)  : null
+      let finalCarbs    = carbs    ? parseFloat(carbs)    : null
+      let finalFat      = fat      ? parseFloat(fat)      : null
+
+      if (kbjuMode === 'auto' && !finalCalories) {
+        try {
+          const res = await fetch(`${import.meta.env.VITE_API_URL}/meals/calc-kbju`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name.trim(), weight_g: weight ? parseInt(weight) : null })
+          })
+          const data = await res.json()
+          if (data.calories) { finalCalories = data.calories; setCalories(String(data.calories)) }
+          if (data.protein)  { finalProtein  = data.protein;  setProtein(String(data.protein))   }
+          if (data.carbs)    { finalCarbs    = data.carbs;    setCarbs(String(data.carbs))        }
+          if (data.fat)      { finalFat      = data.fat;      setFat(String(data.fat))            }
+        } catch {}
+      }
+
       const result = await addMeal(gremlinId, {
         name: name.trim(), meal_type: mealType,
-        calories: calories ? parseInt(calories) : null,
-        protein: protein ? parseFloat(protein) : null,
-        carbs: carbs ? parseFloat(carbs) : null,
-        fat: fat ? parseFloat(fat) : null,
+        calories: finalCalories,
+        protein:  finalProtein,
+        carbs:    finalCarbs,
+        fat:      finalFat,
         weight_g: weight ? parseInt(weight) : null,
         note: note.trim() || null, date,
       })

@@ -92,9 +92,9 @@ function GremlinStatusLine({ g, color, statLabel }) {
   const stats = g.stats || {}
 
   if (g.role === 'secretary') {
-    // Берём топ-3 задачи из stats (бэкенд должен класть их в next_tasks)
     const tasks = stats.next_tasks || []
-    // Fallback если нет next_tasks — показываем старый формат
+    const PC = { high: '#e24b4a', medium: '#d4a017', low: '#68b281' }
+
     if (!tasks.length) {
       const pending = stats.pending_tasks || 0
       const title = stats.next_task_title || stats.last_task
@@ -109,20 +109,17 @@ function GremlinStatusLine({ g, color, statLabel }) {
         </div>
       )
     }
-    // 3 ячейки с задачами
+
+    const sorted = [...tasks].sort((a, b) => ({ high: 0, medium: 1, low: 2 }[a.priority] || 1) - ({ high: 0, medium: 1, low: 2 }[b.priority] || 1))
     return (
-      <div style={{ display: 'flex', gap: 4, marginTop: 4, minWidth: 0 }}>
-        {tasks.slice(0, 3).map((task, i) => {
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 4, minWidth: 0 }}>
+        {sorted.slice(0, 2).map((task, i) => {
           const dl = formatDeadline(task.deadline)
-          const priColor = PRI_COLOR[task.priority] || color
+          const col = PC[task.priority] || color
           return (
-            <div key={i} style={{ flex: 1, minWidth: 0, background: priColor + '15', border: '1px solid ' + priColor + '40', borderRadius: 6, padding: '4px 5px' }}>
-              <div style={{ fontSize: 9, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
-                {task.title}
-              </div>
-              {dl && (
-                <div style={{ fontSize: 8, color: dl.color, marginTop: 1, fontWeight: 700 }}>{dl.text}</div>
-              )}
+            <div key={i} style={{ background: col + '15', border: '1px solid ' + col + '35', borderRadius: 6, padding: '3px 7px', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <div style={{ flex: 1, fontSize: 9, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>{task.title}</div>
+              {dl && <div style={{ fontSize: 8, color: dl.color, fontWeight: 700, flexShrink: 0 }}>{dl.text}</div>}
             </div>
           )
         })}
