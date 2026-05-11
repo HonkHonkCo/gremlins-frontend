@@ -559,8 +559,89 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
             )
           })()}
 
-          {/* ОСТАЛЬНЫЕ РОЛИ — обычные плитки */}
-          {gremlin.role !== 'accountant' && hasStats && (
+          {/* ШЕФ — окошки по дням */}
+          {gremlin.role === 'chef' && (() => {
+            const dayLog = stats.day_log || []
+            if (!dayLog.length) {
+              const kcal = stats.today_calories || stats.last_calories
+              if (!kcal) return null
+              return (
+                <div style={{ display: 'flex', gap: 6, padding: '6px 12px' }}>
+                  <div style={{ background: accentColor + '15', border: '1px solid ' + accentColor + '30', borderRadius: 6, padding: '5px 10px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: accentColor }}>{kcal}</div>
+                    <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>ккал</div>
+                  </div>
+                </div>
+              )
+            }
+            const today = new Date().toISOString().split('T')[0]
+            return (
+              <div style={{ display: 'flex', gap: 5, padding: '6px 12px' }}>
+                {dayLog.slice(0, 3).map((day, i) => {
+                  const isToday = day.date === today
+                  const label = isToday ? (lang === 'ru' ? 'сегодня' : 'today') : day.date.slice(5)
+                  return (
+                    <div key={i} style={{ flex: 1, background: accentColor + '15', border: '1px solid ' + accentColor + '30', borderRadius: 6, padding: '5px 7px', textAlign: 'center' }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: accentColor }}>{day.calories}</div>
+                      <div style={{ fontSize: 8, color: accentColor, opacity: 0.7 }}>ккал</div>
+                      {day.protein > 0 && <div style={{ fontSize: 8, color: 'var(--text-muted)' }}>Б{day.protein}г</div>}
+                      <div style={{ fontSize: 8, color: 'var(--text-muted)', marginTop: 1 }}>{label}</div>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })()}
+
+          {/* СЕКРЕТАРЬ — задачи плитками */}
+          {gremlin.role === 'secretary' && (() => {
+            const nextTasks = Array.isArray(stats.next_tasks) ? stats.next_tasks : []
+            const pending = stats.pending_tasks || 0
+            if (!pending && !nextTasks.length) return null
+            const priColor = { high: '#e24b4a', medium: '#d4a017', low: '#68b281' }
+            const today = new Date().toISOString().split('T')[0]
+            const formatDl = (d) => {
+              if (!d) return null
+              const diff = Math.ceil((new Date(d) - new Date()) / 86400000)
+              if (diff < 0) return { text: lang === 'ru' ? 'просрочено' : 'overdue', color: '#e24b4a' }
+              if (diff === 0) return { text: lang === 'ru' ? 'сегодня' : 'today', color: '#e24b4a' }
+              if (diff === 1) return { text: lang === 'ru' ? 'завтра' : 'tomorrow', color: '#d4a017' }
+              return { text: d.slice(5), color: 'var(--text-muted)' }
+            }
+            if (!nextTasks.length) {
+              return (
+                <div style={{ display: 'flex', gap: 6, padding: '6px 12px' }}>
+                  <div style={{ background: accentColor + '15', border: '1px solid ' + accentColor + '30', borderRadius: 6, padding: '5px 10px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: accentColor }}>{pending}</div>
+                    <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>{lang === 'ru' ? 'задач' : 'tasks'}</div>
+                  </div>
+                  {stats.next_deadline && (() => { const dl = formatDl(stats.next_deadline); return dl ? (
+                    <div style={{ background: dl.color + '15', border: '1px solid ' + dl.color + '30', borderRadius: 6, padding: '5px 10px', textAlign: 'center' }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: dl.color }}>{stats.next_deadline}</div>
+                      <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>deadline</div>
+                    </div>
+                  ) : null })()}
+                </div>
+              )
+            }
+            return (
+              <div style={{ display: 'flex', gap: 5, padding: '6px 12px' }}>
+                {nextTasks.slice(0, 3).map((task, i) => {
+                  const col = priColor[task.priority] || accentColor
+                  const dl = formatDl(task.deadline)
+                  return (
+                    <div key={i} style={{ flex: 1, minWidth: 0, background: col + '15', border: '1px solid ' + col + '35', borderRadius: 6, padding: '5px 6px' }}>
+                      <div style={{ fontSize: 9, color: 'var(--text)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{task.title}</div>
+                      {dl && <div style={{ fontSize: 8, color: dl.color, marginTop: 2, fontWeight: 700 }}>{dl.text}</div>}
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })()}
+
+          {/* ТРЕНЕР и остальные — обычные плитки */}
+          {gremlin.role !== 'accountant' && gremlin.role !== 'chef' && gremlin.role !== 'secretary' && hasStats && (
             <div style={{ display: 'flex', gap: 6, padding: '6px 12px', flexWrap: 'wrap', justifyContent: 'center' }}>
               {priorityStats.map(([k, v]) => (
                 <div key={k} style={{ background: accentColor + '15', border: '1px solid ' + accentColor + '30', borderRadius: 6, padding: '5px 10px', textAlign: 'center', minWidth: 60 }}>
