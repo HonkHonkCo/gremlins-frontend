@@ -150,21 +150,27 @@ function getAccountantStatRows(stats) {
   return rows
 }
 
+const SKIP_STAT_KEYS = new Set([
+  'last_updated', 'today_date', 'day_log', 'week_log',
+  'categories', 'next_tasks', 'last_parsed_task',
+])
+
 function getPriorityStats(stats, role) {
   const priority = STAT_PRIORITY[role] || []
   const result = []
   for (const key of priority) {
     const val = stats[key]
-    if (val !== undefined && val !== null && val !== 0 && val !== '') {
+    if (val !== undefined && val !== null && val !== 0 && val !== '' && typeof val !== 'object') {
       result.push([key, val])
     }
     if (result.length >= 4) break
   }
   if (result.length < 4) {
     for (const [k, v] of Object.entries(stats)) {
-      if (k === 'last_updated') continue
+      if (SKIP_STAT_KEYS.has(k)) continue
       if (result.find(([rk]) => rk === k)) continue
       if (v === null || v === undefined || v === 0 || v === '') continue
+      if (typeof v === 'object') continue
       result.push([k, v])
       if (result.length >= 4) break
     }
