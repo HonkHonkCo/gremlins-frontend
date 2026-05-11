@@ -45,7 +45,7 @@ const HOME_STAT_KEYS = {
   accountant: ['balance_thb', 'balance_usd', 'balance_rub', 'expense_thb', 'expense_usd', 'expense_rub'],
   trainer: ['last_distance_km', 'last_duration_min', 'last_pushups', 'total_calories', 'weight_kg'],
   chef: ['today_calories', 'today_protein', 'today_carbs', 'last_calories', 'last_protein'],
-  secretary: ['next_task_title', 'next_deadline', 'pending_tasks'],
+  secretary: ['pending_tasks'],
 }
 
 function humanLabel(k) {
