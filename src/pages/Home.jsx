@@ -32,6 +32,9 @@ const STAT_LABELS = {
   weight_kg: 'вес кг', steps: 'шаги', last_pushups: 'отжимания', last_distance_km: 'км',
   pending_tasks: 'задач', last_task: 'задача', next_deadline: 'дедлайн',
   last_meal: 'блюдо', last_protein: 'белок г',
+  today_calories: 'ккал сегодня', today_protein: 'белок г', today_carbs: 'углев г', today_fat: 'жиры г',
+  avg_day_calories: 'ккал/день ср.', week_calories: 'ккал неделя',
+  last_distance_km: 'км', last_duration_min: 'мин', last_pushups: 'отжиманий',
 }
 
 // Ключи которые не нужно показывать на главном экране
@@ -88,7 +91,7 @@ function formatDeadline(dateStr) {
   return { text: `${diff}д.`, color: 'var(--text-muted)' }
 }
 
-function GremlinStatusLine({ g, color, statLabel }) {
+function GremlinStatusLine({ g, color, statLabel, lang = 'ru' }) {
   const stats = g.stats || {}
 
   if (g.role === 'secretary') {
@@ -101,7 +104,7 @@ function GremlinStatusLine({ g, color, statLabel }) {
     if (!sorted.length) {
       const title = stats.next_task_title || stats.last_task
       const deadline = stats.next_deadline
-      const dl = formatDeadline(deadline)
+      const dl = formatDeadline(deadline, lang)
       const pending = stats.pending_tasks || 0
       if (!title && !pending) return null
       return (
@@ -122,7 +125,7 @@ function GremlinStatusLine({ g, color, statLabel }) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 4, minWidth: 0 }}>
         {sorted.slice(0, 2).map((task, i) => {
-          const dl = formatDeadline(task.deadline)
+          const dl = formatDeadline(task.deadline, lang)
           const col = PC[task.priority] || color
           return (
             <div key={i} style={{ background: col + '15', border: '1px solid ' + col + '35', borderRadius: 6, padding: '3px 7px', display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -284,7 +287,7 @@ export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>{g.name}</div>
                 <div style={{ fontSize: 10, color, marginTop: 2 }}>{t(lang, g.role) || g.role}</div>
-                <GremlinStatusLine g={g} color={color} statLabel={statLabel} />
+                <GremlinStatusLine g={g} color={color} statLabel={statLabel} lang={lang} />
               </div>
               <div style={{ fontSize: 16, color: 'var(--text-muted)' }}>›</div>
             </div>

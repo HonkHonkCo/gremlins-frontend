@@ -81,6 +81,10 @@ export const translations = {
       balance_usd: 'баланс $', investment_rub: 'инвест ₽', investment_usd: 'инвест $',
       weight_kg: 'вес кг', steps: 'шаги', next_deadline: 'дедлайн',
       last_meal: 'блюдо', last_protein: 'белок г',
+      today_calories: 'ккал сегодня', today_protein: 'белок г',
+      today_carbs: 'углев г', today_fat: 'жиры г',
+      avg_day_calories: 'ккал/день', week_calories: 'ккал нед.',
+      last_distance_km: 'км', last_duration_min: 'мин',
     },
 
     // Settings
