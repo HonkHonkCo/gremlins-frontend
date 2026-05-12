@@ -13,28 +13,36 @@ function MiniChart({ data, color, height = 48 }) {
   const vals = data.map(d => d.balance)
   const min = Math.min(...vals), max = Math.max(...vals)
   const range = max - min || 1
-  const id = 'gc_' + color.replace('#', '')
+  const uid = 'gc_' + color.replace('#', '') + '_' + Math.random().toString(36).slice(2, 6)
+  const W = 300
+  const pts = vals.map((v, i) => [
+    (i / (vals.length - 1)) * W,
+    (height - 4) - ((v - min) / range) * (height - 12)
+  ])
+  const pathD = pts.map((p, i) => (i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`)).join(' ')
+  const areaD = pathD + ` L${W},${height} L0,${height} Z`
+  const isPositive = vals[vals.length - 1] >= vals[0]
+  const lineColor = isPositive ? color : '#e24b4a'
   return (
-    <svg width="100%" height={height} style={{ display: 'block' }}>
+    <svg viewBox={`0 0 ${W} ${height}`} width="100%" height={height} style={{ display: 'block' }} preserveAspectRatio="none">
       <defs>
-        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        <linearGradient id={uid} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={lineColor} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={lineColor} stopOpacity="0" />
         </linearGradient>
       </defs>
-      {(() => {
-        const w = 100 / (vals.length - 1)
-        const pts = vals.map((v, i) => [i * w, (height - 4) - ((v - min) / range) * (height - 8)])
-        const pathD = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0] + '% ' + p[1]).join(' ')
-        return (
-          <>
-            <path d={pathD + ` L100% ${height} L0% ${height} Z`} fill={`url(#${id})`} />
-            <path d={pathD} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-            <text x="2%" y={height - 3} fontSize="8" fill={color} opacity="0.7">{vals[0] >= 0 ? '+' : ''}{vals[0].toLocaleString('ru-RU', { maximumFractionDigits: 0 })}</text>
-            <text x="98%" y={height - 3} fontSize="8" fill={color} textAnchor="end">{vals[vals.length-1] >= 0 ? '+' : ''}{vals[vals.length-1].toLocaleString('ru-RU', { maximumFractionDigits: 0 })}</text>
-          </>
-        )
-      })()}
+      <path d={areaD} fill={`url(#${uid})`} />
+      <path d={pathD} fill="none" stroke={lineColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <animate attributeName="stroke-dasharray"
+          from={`0 ${W * 2}`} to={`${W * 2} 0`}
+          dur="0.8s" fill="freeze" />
+      </path>
+      <text x="4" y={height - 3} fontSize="9" fill={lineColor} opacity="0.8">
+        {vals[0] >= 0 ? '+' : ''}{vals[0].toLocaleString('ru-RU', { maximumFractionDigits: 0 })}
+      </text>
+      <text x={W - 4} y={height - 3} fontSize="9" fill={lineColor} textAnchor="end">
+        {vals[vals.length-1] >= 0 ? '+' : ''}{vals[vals.length-1].toLocaleString('ru-RU', { maximumFractionDigits: 0 })}
+      </text>
     </svg>
   )
 }
@@ -750,16 +758,31 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
                       ))}
                     </>
                   )}
-                  {cats.length > 0 && (
+                  {cats.length > 0 && (() => {
+                    // БАГ 2.3: конвертируем все суммы категорий в доминирующую валюту
+                    // Курсы: 1 USD ≈ 90 RUB ≈ 33 THB; используем THB как базу
+                    const RATES_TO_THB = { THB: 1, RUB: 0.33, USD: 33, EUR: 36, GBP: 42, AED: 9, CNY: 4.5, JPY: 0.22, KRW: 0.024, SGD: 24, MYR: 7, IDR: 0.002, GEL: 12, AMD: 0.08, KZT: 0.07, TRY: 0.9, CAD: 24, AUD: 21, CHF: 37, PLN: 8, UAH: 0.8 }
+                    // Находим доминирующую валюту (по сумме расходов)
+                    const expByCur = Object.entries(stats).filter(([k]) => k.startsWith('expense_')).map(([k,v]) => [k.replace('expense_','').toUpperCase(), v])
+                    const domCur = expByCur.length ? expByCur.reduce((a,b) => a[1]>=b[1]?a:b)[0] : 'THB'
+                    const domSym = CURRENCY_SYMBOLS[domCur] || domCur
+                    const domRate = RATES_TO_THB[domCur] || 1
+                    // stats.categories хранит суммы без валюты — берём доминирующую валюту как есть
+                    // (категории всегда пишутся в валюте счёта, поэтому просто показываем с пометкой)
+                    const totalCats = cats.reduce((s,[,v])=>s+v, 0)
+                    return (
                     <>
-                      <div style={{fontSize:10,color:'var(--text-muted)',margin:'10px 0 5px',letterSpacing:'0.06em'}}>{lang==='ru'?'КАТЕГОРИИ РАСХОДОВ':'EXPENSE CATEGORIES'}</div>
+                      <div style={{fontSize:10,color:'var(--text-muted)',margin:'10px 0 5px',letterSpacing:'0.06em',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                        <span>{lang==='ru'?'КАТЕГОРИИ РАСХОДОВ':'EXPENSE CATEGORIES'}</span>
+                        <span style={{opacity:0.6,fontWeight:400}}>~{domSym}</span>
+                      </div>
                       {cats.map(([cat, val]) => {
-                        const pct = totalExp > 0 ? Math.round((val/totalExp)*100) : 0
+                        const pct = totalCats > 0 ? Math.round((val/totalCats)*100) : 0
                         return (
                           <div key={cat} style={{display:'flex',alignItems:'center',gap:8,background:'var(--bg2)',borderRadius:8,padding:'7px 12px',marginBottom:4}}>
                             <div style={{flex:1,fontSize:12,color:'var(--text)',textTransform:'capitalize'}}>{cat}</div>
                             <div style={{width:60,height:4,background:'var(--bg3)',borderRadius:2,overflow:'hidden'}}>
-                              <div style={{width:pct+'%',height:'100%',background:accentColor,borderRadius:2}}/>
+                              <div style={{width:pct+'%',height:'100%',background:accentColor,borderRadius:2,transition:'width 0.4s'}}/>
                             </div>
                             <div style={{fontSize:10,color:accentColor,minWidth:28,textAlign:'right'}}>{pct}%</div>
                             <div style={{fontSize:10,color:'var(--text-muted)',minWidth:50,textAlign:'right'}}>{val.toLocaleString('ru-RU',{maximumFractionDigits:0})}</div>
@@ -767,7 +790,8 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
                         )
                       })}
                     </>
-                  )}
+                    )
+                  })()}
                 </>
               )
             })()}

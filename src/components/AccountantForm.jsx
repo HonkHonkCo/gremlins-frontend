@@ -29,25 +29,33 @@ function MiniChart({ data, color }) {
   const vals = data.map(d => d.balance)
   const min = Math.min(...vals), max = Math.max(...vals)
   const range = max - min || 1
+  const uid = 'mc_' + color.replace('#', '') + '_' + Math.random().toString(36).slice(2, 6)
+  const W = 300, H = 44
+  const pts = vals.map((v, i) => [
+    (i / (vals.length - 1)) * W,
+    H - 6 - ((v - min) / range) * (H - 10)
+  ])
+  const pathD = pts.map((p, i) => (i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`)).join(' ')
+  const areaD = pathD + ` L${W},${H} L0,${H} Z`
+  const isPositive = vals[vals.length - 1] >= vals[0]
+  const lineColor = isPositive ? color : '#fc7c6f'
   return (
-    <svg width="100%" height="40" style={{ display: 'block', marginTop: 4 }}>
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="44" style={{ display: 'block', marginTop: 4 }} preserveAspectRatio="none">
       <defs>
-        <linearGradient id={'g_' + color.replace('#', '')} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.3" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        <linearGradient id={uid} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={lineColor} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={lineColor} stopOpacity="0" />
         </linearGradient>
       </defs>
-      {(() => {
-        const w = 100 / (vals.length - 1)
-        const pts = vals.map((v, i) => [i * w, 36 - ((v - min) / range) * 32])
-        const pathD = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0] + '% ' + p[1]).join(' ')
-        return (
-          <>
-            <path d={pathD + ' L100% 40 L0% 40 Z'} fill={'url(#g_' + color.replace('#', '') + ')'} />
-            <path d={pathD} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-          </>
-        )
-      })()}
+      <path d={areaD} fill={`url(#${uid})`} />
+      <path d={pathD} fill="none" stroke={lineColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <animate attributeName="stroke-dasharray"
+          from={`0 ${W * 2}`} to={`${W * 2} 0`}
+          dur="0.8s" fill="freeze" />
+      </path>
+      {pts.length <= 30 && pts.map((p, i) => (
+        <circle key={i} cx={p[0]} cy={p[1]} r="2" fill={lineColor} opacity="0.7" />
+      ))}
     </svg>
   )
 }
@@ -121,6 +129,13 @@ export default function AccountantForm({ gremlinId, accentColor, lang, onStatsUp
     }).finally(() => setLoading(false))
   }, [gremlinId])
 
+  // БАГ 2.1: перезагружаем счета с сервера после любой операции затрагивающей баланс
+  const refreshAccounts = () => {
+    getAccounts(gremlinId).catch(() => []).then(acc => {
+      setAccounts(Array.isArray(acc) ? acc : [])
+    })
+  }
+
   const expenseTx = transactions.filter(t => t.type === 'expense')
   const incomeTx = transactions.filter(t => t.type === 'income')
   const investTx = transactions.filter(t => t.type === 'investment')
@@ -130,6 +145,7 @@ export default function AccountantForm({ gremlinId, accentColor, lang, onStatsUp
     const result = await deleteTransaction(id, gremlinId).catch(() => null)
     setTransactions(t => t.filter(x => x.id !== id))
     if (result?.stats) onStatsUpdate(result.stats)
+    refreshAccounts()
   }
 
   if (loading) return <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>...</div>
@@ -170,7 +186,7 @@ export default function AccountantForm({ gremlinId, accentColor, lang, onStatsUp
           <ExpenseIncomeForm gremlinId={gremlinId} accounts={accounts} lang={lang}
             transactions={[...expenseTx, ...incomeTx].sort((a, b) => new Date(b.date) - new Date(a.date))}
             snapshots={snapshots}
-            onAdd={(tx, stats) => { setTransactions(t => [tx, ...t]); if (stats) onStatsUpdate(stats) }}
+            onAdd={(tx, stats) => { setTransactions(t => [tx, ...t]); if (stats) onStatsUpdate(stats); refreshAccounts() }}
             onDelete={handleDeleteTx}
             onAccountCreated={acc => setAccounts(a => [...a, acc])}
           />
@@ -178,7 +194,7 @@ export default function AccountantForm({ gremlinId, accentColor, lang, onStatsUp
         {activeTab === 'invest' && (
           <InvestForm gremlinId={gremlinId} accounts={accounts} lang={lang}
             transactions={investTx} snapshots={snapshots}
-            onAdd={(tx, stats) => { setTransactions(t => [tx, ...t]); if (stats) onStatsUpdate(stats) }}
+            onAdd={(tx, stats) => { setTransactions(t => [tx, ...t]); if (stats) onStatsUpdate(stats); refreshAccounts() }}
             onDelete={handleDeleteTx}
           />
         )}
@@ -187,15 +203,15 @@ export default function AccountantForm({ gremlinId, accentColor, lang, onStatsUp
             transfers={transferTx}
             onAddAccount={acc => setAccounts(a => [...a, acc])}
             onDeleteAccount={async (id) => { await deleteAccount(id); setAccounts(a => a.filter(x => x.id !== id)) }}
-            onAddTransfer={(tx, stats) => { setTransactions(t => [tx, ...t]); if (stats) onStatsUpdate(stats) }}
+            onAddTransfer={(tx, stats) => { setTransactions(t => [tx, ...t]); if (stats) onStatsUpdate(stats); refreshAccounts() }}
           />
         )}
         {activeTab === 'debts' && (
           <DebtsForm gremlinId={gremlinId} accounts={accounts} lang={lang}
             debts={debts}
-            onAdd={debt => setDebts(d => [debt, ...d])}
-            onSettle={async (id) => { await updateDebt(id, { status: 'settled' }); setDebts(d => d.map(x => x.id === id ? { ...x, status: 'settled' } : x)) }}
-            onDelete={async (id) => { await deleteDebt(id); setDebts(d => d.filter(x => x.id !== id)) }}
+            onAdd={debt => { setDebts(d => [debt, ...d]); refreshAccounts() }}
+            onSettle={async (id) => { await updateDebt(id, { status: 'settled' }); setDebts(d => d.map(x => x.id === id ? { ...x, status: 'settled' } : x)); refreshAccounts() }}
+            onDelete={async (id) => { await deleteDebt(id); setDebts(d => d.filter(x => x.id !== id)); refreshAccounts() }}
           />
         )}
       </div>
@@ -529,26 +545,28 @@ function MiniChartLocal({ data, color }) {
   const vals = data.map(d => d.balance)
   const min = Math.min(...vals), max = Math.max(...vals)
   const range = max - min || 1
-  const id = 'lc_' + color.replace('#', '')
+  const uid = 'mcl_' + color.replace('#', '') + '_' + Math.random().toString(36).slice(2, 6)
+  const W = 300, H = 44
+  const pts = vals.map((v, i) => [
+    (i / (vals.length - 1)) * W,
+    H - 6 - ((v - min) / range) * (H - 10)
+  ])
+  const pathD = pts.map((p, i) => (i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`)).join(' ')
+  const areaD = pathD + ` L${W},${H} L0,${H} Z`
   return (
-    <svg width="100%" height="44" style={{ display: 'block', marginTop: 4 }}>
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="44" style={{ display: 'block', marginTop: 4 }} preserveAspectRatio="none">
       <defs>
-        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={uid} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity="0.25" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
-      {(() => {
-        const w = 100 / (vals.length - 1)
-        const pts = vals.map((v, i) => [i * w, 40 - ((v - min) / range) * 36])
-        const pathD = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0] + '% ' + p[1]).join(' ')
-        return (
-          <>
-            <path d={pathD + ' L100% 44 L0% 44 Z'} fill={`url(#${id})`} />
-            <path d={pathD} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-          </>
-        )
-      })()}
+      <path d={areaD} fill={`url(#${uid})`} />
+      <path d={pathD} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <animate attributeName="stroke-dasharray"
+          from={`0 ${W * 2}`} to={`${W * 2} 0`}
+          dur="0.8s" fill="freeze" />
+      </path>
     </svg>
   )
 }

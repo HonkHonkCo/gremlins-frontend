@@ -224,10 +224,10 @@ export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
   if (loading) return <div className="loading">{t(lang, 'loading')}</div>
 
   const allStats = gremlins.flatMap(g => {
+    if (g.role === 'secretary') return [] // секретарь показывается в карточке ниже
     const color = getAccentColor(g.role, g.id)
     const stats = g.stats || {}
     const priority = HOME_STAT_KEYS[g.role] || []
-    // Берём до 2 важных стата по приоритету
     const result = []
     for (const k of priority) {
       if (stats[k] !== undefined && stats[k] !== null && stats[k] !== 0 && stats[k] !== '' && typeof stats[k] !== 'object') {
