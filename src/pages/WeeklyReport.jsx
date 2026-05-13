@@ -84,22 +84,32 @@ function getNextMonday(lang) {
   }
 }
 
-export default function WeeklyReport({ userId, lang }) {
+export default function WeeklyReport({ userId, telegramId, lang }) {
   const [reports, setReports] = useState([])
   const [selected, setSelected] = useState(null)
   const [loading, setLoading] = useState(true)
   const next = getNextMonday(lang)
 
   useEffect(() => {
-    if (!userId) return
-    getWeeklyReport(userId)
+    const id = telegramId || userId
+    if (!id) return
+    getWeeklyReport(id)
       .then(data => {
-        if (data && data.report) { setReports([data.report]); setSelected(data.report) }
-        else if (Array.isArray(data)) { setReports(data); setSelected(data[0] || null) }
+        // Бэкенд возвращает {ok, reports:[...]} или {ok, report:{...}}
+        if (data?.reports?.length) {
+          setReports(data.reports)
+          setSelected(data.reports[0])
+        } else if (data?.report) {
+          setReports([data.report])
+          setSelected(data.report)
+        } else if (Array.isArray(data)) {
+          setReports(data)
+          setSelected(data[0] || null)
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [userId])
+  }, [userId, telegramId])
 
   if (loading) return <div className="loading">{t(lang, 'loading')}</div>
 
@@ -137,55 +147,92 @@ export default function WeeklyReport({ userId, lang }) {
             {t(lang, 'reportHistory')}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {reports.map((r, i) => (
-              <button key={r.id || i} onClick={() => setSelected(r)} style={{
-                background: selected?.id === r.id ? 'var(--bg3)' : 'var(--bg2)',
-                border: `1px solid ${selected?.id === r.id ? 'var(--gold-dim)' : 'var(--border)'}`,
-                borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center',
-                justifyContent: 'space-between', cursor: 'pointer', fontFamily: 'inherit', width: '100%'
-              }}>
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: 11, color: 'var(--text)', fontWeight: selected?.id === r.id ? 700 : 400 }}>
-                    {t(lang, 'weekFrom')} {r.week_start || '—'}
-                  </div>
-                  <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>
-                    {r.summary ? r.summary.slice(0, 40) + '...' : t(lang, 'noData')}
-                  </div>
-                </div>
-                <div style={{ fontSize: 12, color: selected?.id === r.id ? 'var(--gold)' : 'var(--text-muted)' }}>
-                  {selected?.id === r.id ? '▾' : '›'}
-                </div>
-              </button>
-            ))}
-          </div>
+            {reports.map((r, i) => {
+              const isOpen = selected?.id === r.id
+              const weekEnd = r.week_start
+                ? new Date(new Date(r.week_start).getTime() + 6 * 86400000).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short' })
+                : '—'
+              const weekStartFmt = r.week_start
+                ? new Date(r.week_start).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short' })
+                : '—'
 
-          {selected && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-              <div className="card" style={{ borderColor: 'var(--gold-dim)' }}>
-                <div style={{ fontSize: 9, color: 'var(--gold)', letterSpacing: '0.1em', marginBottom: 8 }}>
-                  {t(lang, 'summary')}
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
-                  {selected.summary || selected.body || t(lang, 'noData')}
-                </div>
-              </div>
-              {selected.all_stats && Object.keys(selected.all_stats).length > 0 && (
-                <div className="card">
-                  <div style={{ fontSize: 9, color: 'var(--gold-dim)', letterSpacing: '0.1em', marginBottom: 8 }}>
-                    {t(lang, 'numbers')}
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                    {Object.entries(selected.all_stats).slice(0, 6).map(([k, v]) => (
-                      <div key={k} style={{ background: 'var(--bg3)', borderRadius: 6, padding: '8px' }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--gold)', textShadow: '0 0 8px #d4a01760' }}>{String(v)}</div>
-                        <div style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 2 }}>{t(lang, 'stats')?.[k] || k}</div>
+              // Иконки статы для превью
+              const s = r.all_stats || {}
+              const previewChips = []
+              const expKey = Object.keys(s).find(k => k.startsWith('expense_'))
+              if (expKey) {
+                const cur = expKey.split('_')[1].toUpperCase()
+                previewChips.push({ icon: '💸', val: s[expKey].toLocaleString('ru-RU') + ' ' + cur })
+              }
+              if (s.workouts_count) previewChips.push({ icon: '🏋️', val: s.workouts_count })
+              if (s.tasks_done) previewChips.push({ icon: '✅', val: s.tasks_done })
+
+              const STAT_LABELS = {
+                expense_thb: 'Расходы ฿', expense_rub: 'Расходы ₽', expense_usd: 'Расходы $',
+                income_thb: 'Доходы ฿', income_rub: 'Доходы ₽', income_usd: 'Доходы $',
+                workouts_count: 'Тренировок', workouts_minutes: 'Минут', workouts_calories: 'Сожжено ккал',
+                workout_types: 'Виды', tasks_done: 'Задач закрыто', tasks_high: 'Срочных',
+                meals_count: 'Приёмов пищи', avg_calories: 'Ср. ккал', avg_protein: 'Ср. белок г',
+              }
+
+              return (
+                <div key={r.id || i} style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${isOpen ? 'var(--gold)' : 'var(--border)'}`, transition: 'border-color 0.2s' }}>
+                  {/* Заголовок — всегда виден, клик открывает/закрывает */}
+                  <button onClick={() => setSelected(isOpen ? null : r)} style={{
+                    background: isOpen ? 'var(--bg3)' : 'var(--bg2)',
+                    border: 'none', padding: '10px 12px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    cursor: 'pointer', fontFamily: 'inherit', width: '100%', transition: 'background 0.2s'
+                  }}>
+                    <div style={{ textAlign: 'left' }}>
+                      <div style={{ fontSize: 11, color: isOpen ? 'var(--gold)' : 'var(--text)', fontWeight: isOpen ? 700 : 400 }}>
+                        {weekStartFmt} — {weekEnd}
                       </div>
-                    ))}
-                  </div>
+                      {!isOpen && (
+                        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                          {previewChips.map((c, j) => (
+                            <span key={j} style={{ fontSize: 9, color: 'var(--text-muted)' }}>{c.icon} {c.val}</span>
+                          ))}
+                          {previewChips.length === 0 && (
+                            <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>
+                              {r.summary?.slice(0, 35) || '—'}...
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 14, color: isOpen ? 'var(--gold)' : 'var(--text-muted)', transition: 'transform 0.2s', transform: isOpen ? 'rotate(90deg)' : 'none' }}>›</div>
+                  </button>
+
+                  {/* Раскрытое содержимое */}
+                  {isOpen && (
+                    <div style={{ padding: '0 12px 12px', display: 'flex', flexDirection: 'column', gap: 8, background: 'var(--bg2)' }}>
+                      {/* Числовые показатели */}
+                      {s && Object.keys(s).length > 0 && (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, paddingTop: 10 }}>
+                          {Object.entries(s).filter(([k, v]) => v && v !== '').slice(0, 6).map(([k, v]) => (
+                            <div key={k} style={{ background: 'var(--bg3)', borderRadius: 8, padding: '8px 10px' }}>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--gold)', textShadow: '0 0 8px #d4a01760' }}>{String(v)}</div>
+                              <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>{STAT_LABELS[k] || k}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {/* Текст отчёта */}
+                      <div style={{ background: 'var(--bg3)', borderRadius: 8, padding: '10px 12px', borderLeft: '2px solid var(--gold)' }}>
+                        <div style={{ fontSize: 9, color: 'var(--gold)', letterSpacing: '0.1em', marginBottom: 6 }}>
+                          {lang === 'ru' ? 'КОНСИЛИУМ ГРЕМЛИНОВ' : 'GREMLIN COUNCIL'}
+                        </div>
+                        <div style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                          {r.summary || r.body || '—'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          )}
+              )
+            })}
+          </div>
         </>
       )}
     </div>

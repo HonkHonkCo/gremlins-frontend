@@ -27,8 +27,10 @@ export const getEntries = (gremlin_id) =>
 
 export const sendChat = (user_id, gremlin_id, text, is_file = false, parsedTotals = null, fileName = null) =>
   api.post('/entries/chat', { gremlin_id, content: text, is_file, parsed_totals: parsedTotals, file_name: fileName }).then(r => r.data)
-export const getWeeklyReport = (user_id) =>
-  api.get(`/reports/weekly?user_id=${user_id}`).then(r => r.data)
+export const getWeeklyReports = (telegram_id) =>
+  api.get(`/reports/weekly?telegram_id=${telegram_id}&all=true`).then(r => r.data)
+
+export const getWeeklyReport = getWeeklyReports
 
 export const getTransactions = (gremlin_id) =>
   api.get('/transactions?gremlin_id=' + gremlin_id).then(r => r.data)
