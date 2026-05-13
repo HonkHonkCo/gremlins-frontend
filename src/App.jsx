@@ -10,7 +10,6 @@ import Onboarding from './pages/Onboarding'
 import Upgrade from './pages/Upgrade'
 import { themes, THEME_GROUPS, getTheme, setTheme, isFairyTheme } from './themes.js'
 import BgAnimation from './components/BgAnimation'
-import FairyMusic from './components/FairyMusic'
 
 export default function App() {
   const [user, setUser] = useState(null)
@@ -71,7 +70,6 @@ export default function App() {
   return (
     <div className={`app${isFairyTheme(theme) ? ' theme-fairy' : ''}`}>
       <BgAnimation theme={isFairyTheme(theme) ? 'fairy' : theme} />
-      <FairyMusic active={theme === 'fairy'} />
       {showUpgrade && (
         user?.via === 'browser' ? (
           // Браузерный пользователь — предлагаем перейти в телеграм для оплаты
