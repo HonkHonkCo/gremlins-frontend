@@ -3,6 +3,7 @@ import { getEntries, sendChat, updateGremlin, deleteGremlin, getGremlin, getSnap
 import { t } from '../i18n'
 import Upgrade from './Upgrade'
 import GremlinAnimation from '../components/GremlinAnimation'
+import { getTheme } from '../themes.js'
 import AccountantForm from '../components/AccountantForm'
 import TrainerForm from '../components/TrainerForm'
 import ChefForm from '../components/ChefForm'
@@ -211,6 +212,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
   const fileRef = useRef(null)
 
   const accentColor = getAccentColor(gremlin.role, gremlin.id)
+  const theme = getTheme()
 
   const loadSnapshots = async () => {
     if (gremlin.role !== 'accountant') return
@@ -438,7 +440,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
         width: '100%', maxWidth: 480,
         height: '100vh',
         display: 'flex', flexDirection: 'column',
-        background: 'var(--bg)',
+        background: theme === 'fairy' ? 'transparent' : 'var(--bg)',
         zIndex: 50,
       }}>
 
@@ -512,7 +514,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
 
         {/* PORTRAIT + STATS */}
         <div style={{ flexShrink: 0, marginTop: 5 }}>
-          <GremlinAnimation role={gremlin.role} accentColor={accentColor} talking={talking} size={220} />
+          <GremlinAnimation role={gremlin.role} accentColor={accentColor} talking={talking} size={220} theme={theme} />
 
           {/* БУХГАЛТЕР — таблица по валютам */}
           {gremlin.role === 'accountant' && (() => {

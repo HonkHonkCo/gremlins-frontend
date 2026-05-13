@@ -89,6 +89,29 @@ export const themes = {
       '--red': '#ff4444',
       '--red-bg': '#2a0808',
     }
+  },
+
+  fairy: {
+    name: 'PERSONAL FAIRIES',
+    nameRu: 'МИР ФЕЙ',
+    preview: '#c97fd4',
+    vars: {
+      '--gold': '#e8a0c8',
+      '--gold-dim': '#a0608a',
+      '--bg': '#0d0f1a',
+      '--bg2': '#13152280',
+      '--bg3': '#1e1f3099',
+      '--border': '#3d2d5a',
+      '--text': '#e8dff0',
+      '--text-dim': '#c8b8e0',
+      '--text-muted': '#8a7aaa',
+      '--accent': '#c97fd4',
+      '--accent-glow': '#c97fd450',
+      '--green': '#7be0a0',
+      '--green-bg': '#0d1f18',
+      '--red': '#f07080',
+      '--red-bg': '#2a0e18',
+    }
   }
 }
 

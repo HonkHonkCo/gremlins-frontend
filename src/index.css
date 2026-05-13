@@ -231,3 +231,75 @@ textarea { resize: none; }
   0%, 100% { opacity: 0.3; }
   50% { opacity: 0.8; }
 }
+
+/* ========== FAIRY THEME ========== */
+.theme-fairy .card {
+  background: rgba(19, 21, 34, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-color: #3d2d5a;
+}
+
+.theme-fairy .card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 16px #c97fd440, 0 0 40px #c97fd420;
+}
+
+.theme-fairy .topbar {
+  background: rgba(13, 15, 26, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom-color: #3d2d5a;
+}
+
+.theme-fairy .bottomnav {
+  background: rgba(13, 15, 26, 0.80);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top-color: #3d2d5a;
+}
+
+.theme-fairy input,
+.theme-fairy textarea {
+  background: rgba(30, 31, 48, 0.6);
+  backdrop-filter: blur(8px);
+  border-color: #3d2d5a;
+}
+
+.theme-fairy .btn-gold {
+  background: linear-gradient(135deg, #c97fd4, #a060b0);
+  color: #fff;
+  box-shadow: 0 0 16px #c97fd450;
+}
+
+.theme-fairy .btn-gold:hover {
+  box-shadow: 0 0 28px #c97fd470;
+}
+
+.theme-fairy ::-webkit-scrollbar-thumb { background: #3d2d5a; }
+.theme-fairy ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* Мерцание для фей */
+@keyframes fairy-sparkle {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
+
+.theme-fairy .nav-btn.active {
+  animation: fairy-sparkle 2s ease-in-out infinite;
+}
+
+/* Фоновый оверлей для читаемости текста в теме фей */
+.theme-fairy .app::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(180deg, #0d0f1a44 0%, #0d0f1a88 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes fairy-glow-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(0.95); }
+  50% { opacity: 1; transform: scale(1.05); }
+}

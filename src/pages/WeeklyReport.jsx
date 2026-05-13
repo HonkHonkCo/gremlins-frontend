@@ -1,11 +1,16 @@
 import { useState, useEffect, useRef } from 'react'
 import { getWeeklyReport } from '../services/api'
+import { getTheme } from '../themes.js'
 import { t } from '../i18n'
 
-const REPORT_FRAMES = 5
-const SUPABASE_STORAGE = 'https://gljpqbsslkunuvzfdshd.supabase.co/storage/v1/object/public/gremlins-anim'
+const SUPABASE = 'https://gljpqbsslkunuvzfdshd.supabase.co/storage/v1/object/public'
 
-function ReportAnimation() {
+const ANIM_CONFIGS = {
+  default: { total: 5, fps: 6, size: 85, getUrl: (i) => `${SUPABASE}/gremlins-anim/Report/Report_${String(i).padStart(5,'0')}.png` },
+  fairy:   { total: 32, fps: 10, size: 120, getUrl: (i) => `${SUPABASE}/fairies-anim/Report/Report_F_${String(i).padStart(5,'0')}.png` },
+}
+
+function ReportAnimation({ theme = 'default' }) {
   const canvasRef = useRef(null)
   const frames = useRef([])
   const frameIndex = useRef(0)
@@ -13,33 +18,29 @@ function ReportAnimation() {
   const lastTime = useRef(0)
   const [status, setStatus] = useState('loading')
 
+  const cfg = ANIM_CONFIGS[theme] || ANIM_CONFIGS.default
+
   useEffect(() => {
-    let done = 0
-    let ok = 0
-    for (let i = 0; i < REPORT_FRAMES; i++) {
+    cancelAnimationFrame(animRef.current)
+    frames.current = []
+    frameIndex.current = 0
+    setStatus('loading')
+    let done = 0, ok = 0
+    for (let i = 0; i < cfg.total; i++) {
       const img = new Image()
-      const num = String(i).padStart(5, '0')
-      img.src = `${SUPABASE_STORAGE}/Report/Report_${num}.png`
-      img.onload = () => {
-        frames.current[i] = img
-        ok++; done++
-        if (done === REPORT_FRAMES) setStatus(ok > 0 ? 'ready' : 'error')
-      }
-      img.onerror = () => {
-        done++
-        if (done === REPORT_FRAMES) setStatus(ok > 0 ? 'ready' : 'error')
-      }
+      img.src = cfg.getUrl(i)
+      img.onload = () => { frames.current[i] = img; ok++; done++; if (done === cfg.total) setStatus(ok > 0 ? 'ready' : 'error') }
+      img.onerror = () => { done++; if (done === cfg.total) setStatus(ok > 0 ? 'ready' : 'error') }
     }
     return () => cancelAnimationFrame(animRef.current)
-  }, [])
+  }, [theme])
 
   useEffect(() => {
     if (status !== 'ready') return
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
-    const interval = 1000 / 6
-
+    const interval = 1000 / cfg.fps
     function draw(ts) {
       if (ts - lastTime.current >= interval) {
         const frame = frames.current[frameIndex.current]
@@ -47,7 +48,7 @@ function ReportAnimation() {
           ctx.clearRect(0, 0, canvas.width, canvas.height)
           ctx.drawImage(frame, 0, 0, canvas.width, canvas.height)
         }
-        frameIndex.current = (frameIndex.current + 1) % REPORT_FRAMES
+        frameIndex.current = (frameIndex.current + 1) % cfg.total
         lastTime.current = ts
       }
       animRef.current = requestAnimationFrame(draw)
@@ -56,15 +57,10 @@ function ReportAnimation() {
     return () => cancelAnimationFrame(animRef.current)
   }, [status])
 
-  if (status !== 'ready') return <div style={{ width: 140, height: 140, marginBottom: 12 }} />
-
+  if (status !== 'ready') return <div style={{ width: cfg.size, height: cfg.size, marginBottom: 12 }} />
   return (
-    <canvas
-      ref={canvasRef}
-      width={300}
-      height={300}
-      style={{ width: 85, height: 85, marginBottom: 12 }}
-    />
+    <canvas ref={canvasRef} width={300} height={300}
+      style={{ width: cfg.size, height: cfg.size, marginBottom: 12 }} />
   )
 }
 
@@ -88,6 +84,7 @@ export default function WeeklyReport({ userId, telegramId, lang }) {
   const [reports, setReports] = useState([])
   const [selected, setSelected] = useState(null)
   const [loading, setLoading] = useState(true)
+  const theme = getTheme()
   const next = getNextMonday(lang)
 
   useEffect(() => {
@@ -134,7 +131,7 @@ export default function WeeklyReport({ userId, telegramId, lang }) {
 
       {reports.length === 0 && (
         <div style={{ padding: '20px 0', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <ReportAnimation />
+          <ReportAnimation theme={theme} />
           <div style={{ fontSize: 12, color: 'var(--text-dim)', lineHeight: 1.7 }}>
             {t(lang, 'noReports')}<br />{t(lang, 'noReportsSub')}
           </div>

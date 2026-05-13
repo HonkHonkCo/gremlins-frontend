@@ -9,6 +9,7 @@ import WeeklyReport from './pages/WeeklyReport'
 import Onboarding from './pages/Onboarding'
 import Upgrade from './pages/Upgrade'
 import { themes, getTheme, setTheme } from './themes.js'
+import BgAnimation from './components/BgAnimation'
 
 export default function App() {
   const [user, setUser] = useState(null)
@@ -67,7 +68,8 @@ export default function App() {
   if (showOnboarding) return <Onboarding lang={lang} onDone={finishOnboarding} />
 
   return (
-    <div className="app">
+    <div className={`app${theme === 'fairy' ? ' theme-fairy' : ''}`}>
+      <BgAnimation theme={theme} />
       {showUpgrade && (
         user?.via === 'browser' ? (
           // Браузерный пользователь — предлагаем перейти в телеграм для оплаты
@@ -146,7 +148,7 @@ export default function App() {
         {page === 'add' && (
           <AddGremlin userId={user.id} user={user} lang={lang} onBack={() => setPage('home')} onCreated={goHome} />
         )}
-        {page === 'report' && <WeeklyReport userId={user.id} lang={lang} />}
+        {page === 'report' && <WeeklyReport userId={user.id} telegramId={user.telegram_id} lang={lang} />}
         {page === 'settings' && (
           <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.1em' }}>{t(lang, 'settings')}</div>
