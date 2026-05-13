@@ -121,7 +121,7 @@ function SteampunkAnimation({ role, accentColor, talking }) {
 }
 
 // ── Фея-компонент ──────────────────────────────────────────────────────────
-function FairyAnimation({ role, accentColor, talking, size = 220 }) {
+function FairyAnimation({ role, accentColor, talking, size = 110 }) {
   const canvasRef = useRef(null)
   const frames = useRef([])
   const frameIndex = useRef(0)
@@ -194,8 +194,8 @@ function FairyAnimation({ role, accentColor, talking, size = 220 }) {
       )}
       <canvas
         ref={canvasRef}
-        width={300}
-        height={300}
+        width={120}
+        height={120}
         style={{ width: size, height: size, display: loaded ? 'block' : 'none', background: 'transparent', position: 'relative', zIndex: 1 }}
       />
       {talking && (
