@@ -233,70 +233,79 @@ textarea { resize: none; }
 }
 
 /* ========== FAIRY THEME ========== */
-.theme-fairy .card {
-  background: rgba(19, 21, 34, 0.55);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-color: #3d2d5a;
-}
 
+/* Glassmorphism только на карточках — bg/bg2/bg3 непрозрачные */
+.theme-fairy .card {
+  background: rgba(19, 21, 42, 0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-color: var(--border);
+}
 .theme-fairy .card:hover {
   border-color: var(--accent);
-  box-shadow: 0 0 16px #c97fd440, 0 0 40px #c97fd420;
+  box-shadow: 0 0 16px var(--accent-glow), 0 0 40px var(--accent-glow);
 }
 
+/* Кнопки в теме фей — 40% прозрачные с чёткой обводкой */
+.theme-fairy .fairy-card {
+  background: rgba(19, 21, 42, 0.40) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border) !important;
+}
+.theme-fairy .fairy-card:hover {
+  background: rgba(19, 21, 42, 0.55) !important;
+  border-color: var(--accent) !important;
+}
+
+/* Топбар и навбар — чёткие, непрозрачные */
 .theme-fairy .topbar {
-  background: rgba(13, 15, 26, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom-color: #3d2d5a;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
 }
-
 .theme-fairy .bottomnav {
-  background: rgba(13, 15, 26, 0.80);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-top-color: #3d2d5a;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
 }
 
+/* Инпуты — чёткие */
 .theme-fairy input,
 .theme-fairy textarea {
-  background: rgba(30, 31, 48, 0.6);
-  backdrop-filter: blur(8px);
-  border-color: #3d2d5a;
+  background: var(--bg3);
+  border-color: var(--border);
+}
+.theme-fairy input:focus,
+.theme-fairy textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
 }
 
+/* Кнопка-акцент */
 .theme-fairy .btn-gold {
-  background: linear-gradient(135deg, #c97fd4, #a060b0);
+  background: linear-gradient(135deg, var(--accent), var(--gold-dim));
   color: #fff;
-  box-shadow: 0 0 16px #c97fd450;
+  box-shadow: 0 0 16px var(--accent-glow);
 }
-
 .theme-fairy .btn-gold:hover {
-  box-shadow: 0 0 28px #c97fd470;
+  box-shadow: 0 0 28px var(--accent-glow);
 }
 
-.theme-fairy ::-webkit-scrollbar-thumb { background: #3d2d5a; }
+/* Скроллбар */
+.theme-fairy ::-webkit-scrollbar-thumb { background: var(--border); }
 .theme-fairy ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
-/* Мерцание для фей */
+/* Мерцание активной иконки навигации */
 @keyframes fairy-sparkle {
-  0%, 100% { opacity: 0.6; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.08); }
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
 }
-
 .theme-fairy .nav-btn.active {
   animation: fairy-sparkle 2s ease-in-out infinite;
 }
 
-/* Фоновый оверлей для читаемости текста в теме фей */
-.theme-fairy .app::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: linear-gradient(180deg, #0d0f1a44 0%, #0d0f1a88 100%);
-  pointer-events: none;
-  z-index: 1;
+@keyframes fairy-glow-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(0.95); }
+  50% { opacity: 1; transform: scale(1.05); }
 }
 
 @keyframes fairy-glow-pulse {

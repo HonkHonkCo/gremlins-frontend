@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getGremlins } from '../services/api'
 import { t } from '../i18n'
-import BgAnimation from '../components/BgAnimation'
+import { getTheme, isFairyTheme } from '../themes.js'
 
 const ROLE_COLOR_VARIANTS = {
   accountant: ['#3ecf70', '#00ddaa', '#aaff44', '#00ffcc'],
@@ -209,9 +209,11 @@ function GremlinStatusLine({ g, color, statLabel, lang = 'ru' }) {
   )
 }
 
-export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
+export default function Home({ userId, lang, onSelect, onAdd, onReport, theme: themeProp }) {
   const [gremlins, setGremlins] = useState([])
   const [loading, setLoading] = useState(true)
+  const theme = themeProp || getTheme()
+  const isFairy = isFairyTheme(theme)
 
   useEffect(() => {
     if (!userId) return
@@ -242,7 +244,6 @@ export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
 
   return (
     <div style={{ padding: '0 12px 12px', position: 'relative' }}>
-      <BgAnimation />
       <div style={{ position: 'relative', zIndex: 1 }}>
       {allStats.length > 0 && (
         <div style={{ margin: '12px 0 8px' }}>
@@ -251,7 +252,7 @@ export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
             {allStats.map((s, i) => (
-              <div key={i} style={{ background: 'rgba(26, 25, 22, 0.6)', backdropFilter: 'blur(8px)', border: `1px solid ${s.color}30`, borderRadius: 8, padding: '8px' }}>
+              <div key={i} style={{ background: isFairy ? 'rgba(19, 21, 42, 0.40)' : 'rgba(26, 25, 22, 0.6)', backdropFilter: 'blur(8px)', border: `1px solid ${isFairy ? 'var(--border)' : s.color + '30'}`, borderRadius: 8, padding: '8px' }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: s.color, textShadow: `0 0 10px ${s.color}80` }}>
                   {typeof s.value === 'number' ? s.value.toLocaleString() : String(s.value).slice(0, 8)}
                 </div>
@@ -263,7 +264,7 @@ export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
         </div>
       )}
 
-      <div className="card" style={{ margin: '0 0 8px', borderColor: '#9a7310', cursor: 'pointer', background: 'rgba(26, 25, 22, 0.6)', backdropFilter: 'blur(8px)' }} onClick={onReport}>
+      <div className={`card${isFairy ? ' fairy-card' : ''}`} style={{ margin: '0 0 8px', borderColor: isFairy ? 'var(--border)' : '#9a7310', cursor: 'pointer', background: isFairy ? 'rgba(19, 21, 42, 0.40)' : 'rgba(26, 25, 22, 0.6)', backdropFilter: 'blur(8px)' }} onClick={onReport}>
         <div style={{ fontSize: 9, color: 'var(--gold)', letterSpacing: '0.12em', marginBottom: 4 }}>
           {t(lang, 'weeklyBanner')}
         </div>
@@ -278,11 +279,14 @@ export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
         {gremlins.map(g => {
           const color = getAccentColor(g.role, g.id)
           return (
-            <div key={g.id} className="card"
-              style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', borderColor: `${color}30`, background: 'rgba(26, 25, 22, 0.6)', backdropFilter: 'blur(8px)' }}
+            <div key={g.id} className={`card${isFairy ? ' fairy-card' : ''}`}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', borderColor: isFairy ? 'var(--border)' : `${color}30`, background: isFairy ? 'rgba(19, 21, 42, 0.40)' : 'rgba(26, 25, 22, 0.6)', backdropFilter: 'blur(8px)' }}
               onClick={() => onSelect(g)}>
-              <div style={{ width: 44, height: 44, borderRadius: 10, border: `2px solid ${color}60`, boxShadow: `0 0 8px ${color}30`, flexShrink: 0, overflow: 'hidden', background: 'var(--bg3)' }}>
-                <img src={`/gremlins/${g.role}.png`} alt={g.role} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display='none' }} />
+              <div style={{ width: 44, height: 44, borderRadius: 10, border: `2px solid ${color}60`, boxShadow: `0 0 8px ${color}30`, flexShrink: 0, overflow: 'hidden', background: 'var(--bg3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {isFairy
+                  ? <div style={{ fontSize: 22 }}>{ROLE_ICONS[g.role] || '✦'}</div>
+                  : <img src={`/gremlins/${g.role}.png`} alt={g.role} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display='none' }} />
+                }
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>{g.name}</div>
@@ -294,7 +298,7 @@ export default function Home({ userId, lang, onSelect, onAdd, onReport }) {
           )
         })}
 
-        <button onClick={onAdd} style={{ background: 'rgba(26, 25, 22, 0.6)', backdropFilter: 'blur(8px)', border: '1px dashed var(--border)', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text-dim)', fontSize: 11, width: '100%', fontFamily: 'inherit', cursor: 'pointer' }}>
+        <button onClick={onAdd} style={{ background: isFairy ? 'rgba(19, 21, 42, 0.40)' : 'rgba(26, 25, 22, 0.6)', backdropFilter: 'blur(8px)', border: `1px dashed ${isFairy ? 'var(--accent)' : 'var(--border)'}`, borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text-dim)', fontSize: 11, width: '100%', fontFamily: 'inherit', cursor: 'pointer' }}>
           <div style={{ width: 40, height: 40, borderRadius: 8, background: 'var(--bg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: 'var(--text-muted)', flexShrink: 0 }}>+</div>
           <span>{t(lang, 'addGremlin')}</span>
         </button>

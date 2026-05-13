@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { getTheme } from '../themes.js'
+import { getTheme, isFairyTheme } from '../themes.js'
 
 // ── Стимпанк-гремлины (спрайт-лента) ──────────────────────────────────────
 const STEAMPUNK_FRAMES = 50
@@ -121,7 +121,7 @@ function SteampunkAnimation({ role, accentColor, talking }) {
 }
 
 // ── Фея-компонент ──────────────────────────────────────────────────────────
-function FairyAnimation({ role, accentColor, talking, size = 110 }) {
+function FairyAnimation({ role, accentColor, talking, size = 220 }) {
   const canvasRef = useRef(null)
   const frames = useRef([])
   const frameIndex = useRef(0)
@@ -210,7 +210,7 @@ export default function GremlinAnimation({ role, accentColor, talking, size = 22
   // theme prop приоритетен, fallback — читаем из localStorage
   const activeTheme = theme || getTheme()
 
-  if (activeTheme === 'fairy') {
+  if (isFairyTheme(activeTheme)) {
     return <FairyAnimation role={role} accentColor={accentColor} talking={talking} size={size} />
   }
 

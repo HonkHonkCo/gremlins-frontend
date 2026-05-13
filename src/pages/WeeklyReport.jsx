@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { getWeeklyReport } from '../services/api'
-import { getTheme } from '../themes.js'
+import { getTheme, isFairyTheme } from '../themes.js'
 import { t } from '../i18n'
 
 const SUPABASE = 'https://gljpqbsslkunuvzfdshd.supabase.co/storage/v1/object/public'
@@ -84,7 +84,8 @@ export default function WeeklyReport({ userId, telegramId, lang }) {
   const [reports, setReports] = useState([])
   const [selected, setSelected] = useState(null)
   const [loading, setLoading] = useState(true)
-  const theme = getTheme()
+  const themeId = getTheme()
+  const theme = isFairyTheme(themeId) ? 'fairy' : themeId
   const next = getNextMonday(lang)
 
   useEffect(() => {

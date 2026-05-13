@@ -3,7 +3,7 @@ import { getEntries, sendChat, updateGremlin, deleteGremlin, getGremlin, getSnap
 import { t } from '../i18n'
 import Upgrade from './Upgrade'
 import GremlinAnimation from '../components/GremlinAnimation'
-import { getTheme } from '../themes.js'
+import { getTheme, isFairyTheme } from '../themes.js'
 import AccountantForm from '../components/AccountantForm'
 import TrainerForm from '../components/TrainerForm'
 import ChefForm from '../components/ChefForm'
@@ -440,7 +440,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
         width: '100%', maxWidth: 480,
         height: '100vh',
         display: 'flex', flexDirection: 'column',
-        background: theme === 'fairy' ? 'transparent' : 'var(--bg)',
+        background: isFairyTheme(theme) ? 'transparent' : 'var(--bg)',
         zIndex: 50,
       }}>
 

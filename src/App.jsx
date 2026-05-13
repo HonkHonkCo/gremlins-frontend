@@ -8,8 +8,9 @@ import AddGremlin from './pages/AddGremlin'
 import WeeklyReport from './pages/WeeklyReport'
 import Onboarding from './pages/Onboarding'
 import Upgrade from './pages/Upgrade'
-import { themes, getTheme, setTheme } from './themes.js'
+import { themes, THEME_GROUPS, getTheme, setTheme, isFairyTheme } from './themes.js'
 import BgAnimation from './components/BgAnimation'
+import FairyMusic from './components/FairyMusic'
 
 export default function App() {
   const [user, setUser] = useState(null)
@@ -68,8 +69,9 @@ export default function App() {
   if (showOnboarding) return <Onboarding lang={lang} onDone={finishOnboarding} />
 
   return (
-    <div className={`app${theme === 'fairy' ? ' theme-fairy' : ''}`}>
-      <BgAnimation theme={theme} />
+    <div className={`app${isFairyTheme(theme) ? ' theme-fairy' : ''}`}>
+      <BgAnimation theme={isFairyTheme(theme) ? 'fairy' : theme} />
+      <FairyMusic active={theme === 'fairy'} />
       {showUpgrade && (
         user?.via === 'browser' ? (
           // Браузерный пользователь — предлагаем перейти в телеграм для оплаты
@@ -136,7 +138,7 @@ export default function App() {
 
       <div style={{ flex: 1, overflowY: page === 'gremlin' ? 'hidden' : 'auto' }}>
         {page === 'home' && (
-          <Home key={homeKey} userId={user.id} lang={lang}
+          <Home key={homeKey} userId={user.id} lang={lang} theme={theme}
             onSelect={g => { setSelectedGremlin(g); setPage('gremlin') }}
             onAdd={() => setPage('add')}
             onReport={() => setPage('report')}
@@ -197,25 +199,37 @@ export default function App() {
               <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 10 }}>
                 {lang === 'ru' ? 'Тема оформления' : 'Theme'}
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                {Object.entries(themes).map(([id, t]) => (
-                  <button key={id} onClick={() => changeTheme(id)} style={{
-                    background: theme === id ? 'var(--bg3)' : 'var(--bg2)',
-                    border: `2px solid ${theme === id ? t.preview : 'var(--border)'}`,
-                    borderRadius: 8, padding: '10px 8px', cursor: 'pointer',
-                    fontFamily: 'inherit', textAlign: 'left',
-                    boxShadow: theme === id ? `0 0 10px ${t.preview}40` : 'none',
-                    transition: 'all 0.2s'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                      <div style={{ width: 12, height: 12, borderRadius: '50%', background: t.preview, boxShadow: `0 0 6px ${t.preview}`, flexShrink: 0 }} />
-                      <div style={{ fontSize: 10, fontWeight: 700, color: theme === id ? t.preview : 'var(--text-dim)' }}>
-                        {lang === 'ru' ? t.nameRu : t.name}
-                      </div>
+              {Object.entries(THEME_GROUPS).map(([groupId, group]) => {
+                const groupThemes = group.themes.map(id => [id, themes[id]]).filter(([,t]) => t)
+                const isActiveGroup = groupThemes.some(([id]) => id === theme)
+                return (
+                  <div key={groupId} style={{ marginBottom: 10 }}>
+                    <div style={{ fontSize: 9, color: isActiveGroup ? 'var(--accent)' : 'var(--text-muted)', letterSpacing: '0.12em', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: isActiveGroup ? 'var(--accent)' : 'var(--border)', boxShadow: isActiveGroup ? '0 0 6px var(--accent)' : 'none', flexShrink: 0 }} />
+                      {lang === 'ru' ? group.labelRu : group.label}
                     </div>
-                  </button>
-                ))}
-              </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                      {groupThemes.map(([id, th]) => (
+                        <button key={id} onClick={() => changeTheme(id)} style={{
+                          background: theme === id ? 'var(--bg3)' : 'transparent',
+                          border: `1.5px solid ${theme === id ? th.preview : 'var(--border)'}`,
+                          borderRadius: 8, padding: '8px 10px', cursor: 'pointer',
+                          fontFamily: 'inherit', textAlign: 'left',
+                          boxShadow: theme === id ? `0 0 10px ${th.preview}40` : 'none',
+                          transition: 'all 0.2s'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: th.preview, boxShadow: `0 0 5px ${th.preview}`, flexShrink: 0 }} />
+                            <div style={{ fontSize: 9, fontWeight: 700, color: theme === id ? th.preview : 'var(--text-muted)' }}>
+                              {lang === 'ru' ? th.nameRu : th.name}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
 
             {/* Onboarding */}
