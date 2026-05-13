@@ -180,7 +180,7 @@ function FairyAnimation({ role, accentColor, talking, size = 110 }) {
       {/* Мерцающий ореол за феей */}
       <div style={{
         position: 'absolute',
-        width: size * 0.85, height: size * 0.85,
+        width: size * 0.35, height: size * 0.35,
         borderRadius: '50%',
         background: `radial-gradient(circle, ${accentColor}28 0%, transparent 70%)`,
         filter: 'blur(18px)',
