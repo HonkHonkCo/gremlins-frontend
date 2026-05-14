@@ -1,7 +1,7 @@
 export const translations = {
   ru: {
     // App
-    appName: 'PERSONAL GREMLINS',
+    appName: 'POCKET SPIRITS',
     loading: 'ЗАГРУЗКА...',
     openInTelegram: 'Открой приложение через Telegram',
     openButton: 'ОТКРЫТЬ В TELEGRAM',
@@ -14,8 +14,11 @@ export const translations = {
     // Home
     weeklyBanner: '▸ ЕЖЕНЕДЕЛЬНЫЙ ОТЧЁТ',
     weeklyBannerSub: 'Нажми чтобы увидеть сводку от всех гремлинов',
+    weeklyBannerSubFairy: 'Нажми чтобы увидеть сводку от всех фей',
     myGremlins: 'мои гремлины',
+    myFairies: 'мои феи',
     addGremlin: 'добавить гремлина',
+    addFairy: 'добавить фею',
     globalStatus: 'ОБЩИЙ СТАТУС',
 
     // Gremlin roles
@@ -43,13 +46,13 @@ export const translations = {
     errorChat: 'Что-то пошло не так...',
 
     // AddGremlin
-    newGremlin: 'НОВЫЙ ГРЕМЛИН',
+    newGremlin: 'НОВЫЙ ДУХ',
     chooseRole: 'ВЫБЕРИ РОЛЬ',
-    gremlinName: 'ИМЯ ГРЕМЛИНА',
+    gremlinName: 'ИМЯ ДУХА',
     description: 'ОПИСАНИЕ (необязательно)',
-    createButton: '◈ СОЗДАТЬ ГРЕМЛИНА',
+    createButton: '◈ СОЗДАТЬ ДУХА',
     creating: 'СОЗДАЁМ...',
-    nameRequired: 'Введи имя гремлина',
+    nameRequired: 'Введи имя духа',
     errorCreate: 'Ошибка создания. Попробуй снова.',
 
     // Role descriptions
@@ -67,6 +70,7 @@ export const translations = {
     weekFrom: 'Неделя от',
     noReports: 'Отчёт генерируется раз в неделю.',
     noReportsSub: 'Добавь данные гремлинам — и в понедельник увидишь сводку.',
+    noReportsSubFairy: 'Добавь данные феям — и в понедельник увидишь сводку.',
     summary: '▸ ОБЩЕЕ РЕЗЮМЕ',
     numbers: '▸ ЦИФРЫ',
     noData: 'Нет данных',
@@ -95,7 +99,7 @@ export const translations = {
   },
 
   en: {
-    appName: 'PERSONAL GREMLINS',
+    appName: 'POCKET SPIRITS',
     loading: 'LOADING...',
     openInTelegram: 'Open the app via Telegram',
     openButton: 'OPEN IN TELEGRAM',
@@ -106,8 +110,11 @@ export const translations = {
 
     weeklyBanner: '▸ WEEKLY REPORT',
     weeklyBannerSub: 'Tap to see a summary from all gremlins',
+    weeklyBannerSubFairy: 'Tap to see a summary from all fairies',
     myGremlins: 'my gremlins',
+    myFairies: 'my fairies',
     addGremlin: 'add a gremlin',
+    addFairy: 'add a fairy',
     globalStatus: 'OVERALL STATUS',
 
     accountant: 'Accountant',
@@ -132,13 +139,13 @@ export const translations = {
     errorDelete: 'Delete error',
     errorChat: 'Something went wrong...',
 
-    newGremlin: 'NEW GREMLIN',
+    newGremlin: 'NEW SPIRIT',
     chooseRole: 'CHOOSE ROLE',
-    gremlinName: 'GREMLIN NAME',
+    gremlinName: 'SPIRIT NAME',
     description: 'DESCRIPTION (optional)',
-    createButton: '◈ CREATE GREMLIN',
+    createButton: '◈ CREATE SPIRIT',
     creating: 'CREATING...',
-    nameRequired: 'Enter gremlin name',
+    nameRequired: 'Enter spirit name',
     errorCreate: 'Creation error. Try again.',
 
     accountantDesc: 'expenses and income',
@@ -154,6 +161,7 @@ export const translations = {
     weekFrom: 'Week from',
     noReports: 'Report is generated once a week.',
     noReportsSub: 'Add data to your gremlins — and on Monday you\'ll see a summary.',
+    noReportsSubFairy: 'Add data to your fairies — and on Monday you\'ll see a summary.',
     summary: '▸ SUMMARY',
     numbers: '▸ NUMBERS',
     noData: 'No data',

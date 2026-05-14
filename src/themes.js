@@ -8,7 +8,7 @@ export const THEME_GROUPS = {
   fairies: {
     label: 'FAIRIES',
     labelRu: 'ФЕИ',
-    themes: ['fairy_lilac', 'fairy_pink', 'fairy_green', 'fairy_violet', 'fairy_gold']
+    themes: ['fairy_lilac', 'fairy_pink', 'fairy_green', 'fairy_gold']
   }
 }
 
@@ -83,52 +83,39 @@ export const themes = {
   },
   fairy_pink: {
     name: 'PINK FAIRY', nameRu: 'РОЗОВАЯ',
-    group: 'fairies', preview: '#f09ab0',
+    group: 'fairies', preview: '#ffa5c6',
     vars: {
-      '--gold': '#f09ab0', '--gold-dim': '#b06070',
+      '--gold': '#ffa5c6', '--gold-dim': '#c06080',
       '--bg': '#160d12', '--bg2': '#221018', '--bg3': '#301520',
       '--border': '#5a2d3d',
       '--text': '#f0e0e8', '--text-dim': '#d8b8c8', '--text-muted': '#aa7a8a',
-      '--accent': '#f09ab0', '--accent-glow': '#f09ab050',
+      '--accent': '#ffa5c6', '--accent-glow': '#ffa5c650',
       '--green': '#80e0b0', '--green-bg': '#0d1f18',
       '--red': '#f07070', '--red-bg': '#2a0e18',
     }
   },
   fairy_green: {
     name: 'FOREST FAIRY', nameRu: 'ЛЕСНАЯ',
-    group: 'fairies', preview: '#7be0a0',
+    group: 'fairies', preview: '#84a16d',
     vars: {
-      '--gold': '#a0e8b8', '--gold-dim': '#60a870',
+      '--gold': '#84a16d', '--gold-dim': '#4a6a38',
       '--bg': '#0a1410', '--bg2': '#101e14', '--bg3': '#162a1c',
       '--border': '#2d5a3d',
       '--text': '#dff0e4', '--text-dim': '#b8d8c0', '--text-muted': '#7aaa88',
-      '--accent': '#7be0a0', '--accent-glow': '#7be0a050',
-      '--green': '#7be0a0', '--green-bg': '#0d1f12',
+      '--accent': '#84a16d', '--accent-glow': '#84a16d50',
+      '--green': '#84a16d', '--green-bg': '#0d1f12',
       '--red': '#f08070', '--red-bg': '#2a0e0e',
-    }
-  },
-  fairy_violet: {
-    name: 'VIOLET FAIRY', nameRu: 'ФИОЛЕТОВАЯ',
-    group: 'fairies', preview: '#8860d4',
-    vars: {
-      '--gold': '#b090e8', '--gold-dim': '#7050a8',
-      '--bg': '#0e0a1a', '--bg2': '#150e28', '--bg3': '#1e1438',
-      '--border': '#3a2860',
-      '--text': '#e0d8f8', '--text-dim': '#c0b0e8', '--text-muted': '#8870b8',
-      '--accent': '#8860d4', '--accent-glow': '#8860d450',
-      '--green': '#80d0b0', '--green-bg': '#0d1820',
-      '--red': '#e07080', '--red-bg': '#2a0e18',
     }
   },
   fairy_gold: {
     name: 'GOLDEN FAIRY', nameRu: 'ЗОЛОТАЯ',
-    group: 'fairies', preview: '#e8c86a',
+    group: 'fairies', preview: '#e0c987',
     vars: {
-      '--gold': '#e8c86a', '--gold-dim': '#a88830',
+      '--gold': '#e0c987', '--gold-dim': '#a08830',
       '--bg': '#140f04', '--bg2': '#201608', '--bg3': '#2c1e0e',
       '--border': '#5a4420',
       '--text': '#f8f0d8', '--text-dim': '#e0d0a8', '--text-muted': '#b89860',
-      '--accent': '#e8c86a', '--accent-glow': '#e8c86a50',
+      '--accent': '#e0c987', '--accent-glow': '#e0c98750',
       '--green': '#90d880', '--green-bg': '#0d1a08',
       '--red': '#f07060', '--red-bg': '#2a0e08',
     }

@@ -64,7 +64,12 @@ export default function App() {
   const goHome = () => { setPage('home'); setSelectedGremlin(null); setHomeKey(k => k + 1) }
   const finishOnboarding = () => { setShowOnboarding(false); setPage('add') }
 
-  if (!user) return <div className="loading">{t(lang, 'loading')}</div>
+  if (!user) return (
+    <div className="loading" style={{ flexDirection: 'column', gap: 16 }}>
+      <img src="/logo.png" alt="Pocket Spirits" style={{ width: 80, height: 80, objectFit: 'contain', opacity: 0.9 }} onError={e => e.target.style.display='none'} />
+      <div>{t(lang, 'loading')}</div>
+    </div>
+  )
   if (showOnboarding) return <Onboarding lang={lang} onDone={finishOnboarding} />
 
   return (
@@ -126,7 +131,7 @@ export default function App() {
 
       {(page === 'home' || page === 'report' || page === 'settings') && (
         <div className="topbar">
-          <span style={{ fontSize: 14 }}>◈</span>
+          <span style={{ fontSize: 14 }}>{isFairyTheme(theme) ? '✦' : '◈'}</span>
           <span className="topbar-title">{t(lang, 'appName')}</span>
           <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
             {new Date().toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short' })}
@@ -148,9 +153,13 @@ export default function App() {
         {page === 'add' && (
           <AddGremlin userId={user.id} user={user} lang={lang} onBack={() => setPage('home')} onCreated={goHome} />
         )}
-        {page === 'report' && <WeeklyReport userId={user.id} telegramId={user.telegram_id} lang={lang} />}
+        {page === 'report' && (
+          <div style={{ background: isFairyTheme(theme) ? 'var(--bg)' : 'transparent', minHeight: '100%' }}>
+            <WeeklyReport userId={user.id} telegramId={user.telegram_id} lang={lang} />
+          </div>
+        )}
         {page === 'settings' && (
-          <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12, background: isFairyTheme(theme) ? 'var(--bg)' : 'transparent', minHeight: '100%' }}>
             <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.1em' }}>{t(lang, 'settings')}</div>
 
             {/* Language */}
@@ -174,8 +183,8 @@ export default function App() {
                   </div>
                   <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 2 }}>
                     {user.plan === 'pro'
-                      ? (lang === 'ru' ? '12 гремлинов · безлимит' : '12 gremlins · unlimited')
-                      : (lang === 'ru' ? '3 гремлина · 20 сообщений/день' : '3 gremlins · 20 messages/day')
+                      ? (lang === 'ru' ? (isFairyTheme(theme) ? '12 духов · безлимит' : '12 гремлинов · безлимит') : (isFairyTheme(theme) ? '12 spirits · unlimited' : '12 gremlins · unlimited'))
+                      : (lang === 'ru' ? (isFairyTheme(theme) ? '3 феи · 20 сообщений/день' : '3 гремлина · 20 сообщений/день') : (isFairyTheme(theme) ? '3 fairies · 20 messages/day' : '3 gremlins · 20 messages/day'))
                     }
                   </div>
                 </div>

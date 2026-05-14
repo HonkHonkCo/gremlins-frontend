@@ -269,11 +269,11 @@ export default function Home({ userId, lang, onSelect, onAdd, onReport, theme: t
           {t(lang, 'weeklyBanner')}
         </div>
         <div style={{ fontSize: 11, color: 'var(--text)', lineHeight: 1.6 }}>
-          {t(lang, 'weeklyBannerSub')}
+          {isFairy ? t(lang, 'weeklyBannerSubFairy') : t(lang, 'weeklyBannerSub')}
         </div>
       </div>
 
-      <div className="section-label">{t(lang, 'myGremlins')}</div>
+      <div className="section-label">{isFairy ? t(lang, 'myFairies') : t(lang, 'myGremlins')}</div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {gremlins.map(g => {
@@ -284,7 +284,7 @@ export default function Home({ userId, lang, onSelect, onAdd, onReport, theme: t
               onClick={() => onSelect(g)}>
               <div style={{ width: 44, height: 44, borderRadius: 10, border: `2px solid ${color}60`, boxShadow: `0 0 8px ${color}30`, flexShrink: 0, overflow: 'hidden', background: 'var(--bg3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {isFairy
-                  ? <div style={{ fontSize: 22 }}>{ROLE_ICONS[g.role] || '✦'}</div>
+                  ? <img src={`https://gljpqbsslkunuvzfdshd.supabase.co/storage/v1/object/public/fairies-anim/Avatars/${g.role}.png`} alt={g.role} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display='none' }} />
                   : <img src={`/gremlins/${g.role}.png`} alt={g.role} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display='none' }} />
                 }
               </div>
@@ -300,7 +300,7 @@ export default function Home({ userId, lang, onSelect, onAdd, onReport, theme: t
 
         <button onClick={onAdd} style={{ background: isFairy ? 'rgba(19, 21, 42, 0.40)' : 'rgba(26, 25, 22, 0.6)', backdropFilter: 'blur(8px)', border: `1px dashed ${isFairy ? 'var(--accent)' : 'var(--border)'}`, borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text-dim)', fontSize: 11, width: '100%', fontFamily: 'inherit', cursor: 'pointer' }}>
           <div style={{ width: 40, height: 40, borderRadius: 8, background: 'var(--bg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: 'var(--text-muted)', flexShrink: 0 }}>+</div>
-          <span>{t(lang, 'addGremlin')}</span>
+          <span>{isFairy ? t(lang, 'addFairy') : t(lang, 'addGremlin')}</span>
         </button>
       </div>
       </div>
