@@ -282,7 +282,7 @@ export default function Home({ userId, lang, onSelect, onAdd, onReport, theme: t
             <div key={g.id} className={`card${isFairy ? ' fairy-card' : ''}`}
               style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', borderColor: isFairy ? 'var(--border)' : `${color}30`, background: isFairy ? 'rgba(19, 21, 42, 0.40)' : 'rgba(26, 25, 22, 0.6)', backdropFilter: 'blur(8px)' }}
               onClick={() => onSelect(g)}>
-              <div style={{ width: 44, height: 44, borderRadius: 10, border: `2px solid ${color}60`, boxShadow: `0 0 8px ${color}30`, flexShrink: 0, overflow: 'hidden', background: 'var(--bg3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div className={isFairy ? 'fairy-avatar' : ''} style={{ width: 44, height: 44, borderRadius: 10, border: `${isFairy ? '1px' : '2px'} solid ${color}${isFairy ? '90' : '60'}`, boxShadow: isFairy ? 'none' : `0 0 8px ${color}30`, flexShrink: 0, overflow: 'hidden', background: isFairy ? 'transparent' : 'var(--bg3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {isFairy
                   ? <img src={`https://gljpqbsslkunuvzfdshd.supabase.co/storage/v1/object/public/fairies-anim/Avatars/${g.role}.png`} alt={g.role} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display='none' }} />
                   : <img src={`/gremlins/${g.role}.png`} alt={g.role} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display='none' }} />

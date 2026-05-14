@@ -154,12 +154,12 @@ export default function App() {
           <AddGremlin userId={user.id} user={user} lang={lang} onBack={() => setPage('home')} onCreated={goHome} />
         )}
         {page === 'report' && (
-          <div style={{ background: isFairyTheme(theme) ? 'var(--bg)' : 'transparent', minHeight: '100%' }}>
+          <div style={{ background: isFairyTheme(theme) ? 'var(--bg)' : 'transparent', minHeight: '100%' }} className={isFairyTheme(theme) ? 'page-solid' : ''}>
             <WeeklyReport userId={user.id} telegramId={user.telegram_id} lang={lang} />
           </div>
         )}
         {page === 'settings' && (
-          <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12, background: isFairyTheme(theme) ? 'var(--bg)' : 'transparent', minHeight: '100%' }}>
+          <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12, background: isFairyTheme(theme) ? 'var(--bg)' : 'transparent', minHeight: '100%', position: 'relative', zIndex: 2 }}>
             <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.1em' }}>{t(lang, 'settings')}</div>
 
             {/* Language */}

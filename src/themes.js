@@ -86,8 +86,8 @@ export const themes = {
     group: 'fairies', preview: '#ffa5c6',
     vars: {
       '--gold': '#ffa5c6', '--gold-dim': '#c06080',
-      '--bg': '#160d12', '--bg2': '#221018', '--bg3': '#301520',
-      '--border': '#5a2d3d',
+      '--bg': '#0e0a0d', '--bg2': '#16111a', '--bg3': '#1e1622',
+      '--border': '#4a2840',
       '--text': '#f0e0e8', '--text-dim': '#d8b8c8', '--text-muted': '#aa7a8a',
       '--accent': '#ffa5c6', '--accent-glow': '#ffa5c650',
       '--green': '#80e0b0', '--green-bg': '#0d1f18',
@@ -99,8 +99,8 @@ export const themes = {
     group: 'fairies', preview: '#84a16d',
     vars: {
       '--gold': '#84a16d', '--gold-dim': '#4a6a38',
-      '--bg': '#0a1410', '--bg2': '#101e14', '--bg3': '#162a1c',
-      '--border': '#2d5a3d',
+      '--bg': '#090e0a', '--bg2': '#0f1610', '--bg3': '#151e16',
+      '--border': '#2d4a35',
       '--text': '#dff0e4', '--text-dim': '#b8d8c0', '--text-muted': '#7aaa88',
       '--accent': '#84a16d', '--accent-glow': '#84a16d50',
       '--green': '#84a16d', '--green-bg': '#0d1f12',
@@ -112,8 +112,8 @@ export const themes = {
     group: 'fairies', preview: '#e0c987',
     vars: {
       '--gold': '#e0c987', '--gold-dim': '#a08830',
-      '--bg': '#140f04', '--bg2': '#201608', '--bg3': '#2c1e0e',
-      '--border': '#5a4420',
+      '--bg': '#0e0c08', '--bg2': '#161410', '--bg3': '#1e1c14',
+      '--border': '#4a3e20',
       '--text': '#f8f0d8', '--text-dim': '#e0d0a8', '--text-muted': '#b89860',
       '--accent': '#e0c987', '--accent-glow': '#e0c98750',
       '--green': '#90d880', '--green-bg': '#0d1a08',

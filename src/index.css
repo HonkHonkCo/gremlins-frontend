@@ -236,7 +236,7 @@ textarea { resize: none; }
 
 /* Glassmorphism только на карточках — bg/bg2/bg3 непрозрачные */
 .theme-fairy .card {
-  background: rgba(19, 21, 42, 0.55);
+  background: color-mix(in srgb, var(--bg2) 55%, transparent);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-color: var(--border);
@@ -248,13 +248,13 @@ textarea { resize: none; }
 
 /* Кнопки в теме фей — 40% прозрачные с чёткой обводкой */
 .theme-fairy .fairy-card {
-  background: rgba(19, 21, 42, 0.40) !important;
+  background: color-mix(in srgb, var(--bg2) 40%, transparent) !important;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid var(--border) !important;
 }
 .theme-fairy .fairy-card:hover {
-  background: rgba(19, 21, 42, 0.55) !important;
+  background: color-mix(in srgb, var(--bg2) 60%, transparent) !important;
   border-color: var(--accent) !important;
 }
 
@@ -308,7 +308,18 @@ textarea { resize: none; }
   50% { opacity: 1; transform: scale(1.05); }
 }
 
-@keyframes fairy-glow-pulse {
-  0%, 100% { opacity: 0.5; transform: scale(0.95); }
-  50% { opacity: 1; transform: scale(1.05); }
+/* Аватар феи — прозрачный фон */
+.theme-fairy .fairy-avatar {
+  background: transparent !important;
+  border-width: 1px !important;
+  box-shadow: none !important;
+}
+.theme-fairy .fairy-avatar img {
+  object-fit: contain !important;
+}
+
+/* Репорт и настройки — всегда непрозрачный фон */
+.theme-fairy .page-solid {
+  background: var(--bg) !important;
+  min-height: 100%;
 }
