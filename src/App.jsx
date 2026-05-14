@@ -154,7 +154,7 @@ export default function App() {
           <AddGremlin userId={user.id} user={user} lang={lang} onBack={() => setPage('home')} onCreated={goHome} />
         )}
         {page === 'report' && (
-          <div style={{ background: isFairyTheme(theme) ? 'var(--bg)' : 'transparent', minHeight: '100%', position: 'relative', zIndex: 2 }}>
+          <div style={{ position: 'relative', zIndex: 2 }}>
             <WeeklyReport userId={user.id} telegramId={user.telegram_id} lang={lang} />
           </div>
         )}

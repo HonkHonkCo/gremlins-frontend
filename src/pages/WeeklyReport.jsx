@@ -112,7 +112,7 @@ export default function WeeklyReport({ userId, telegramId, lang }) {
   if (loading) return <div className="loading">{t(lang, 'loading')}</div>
 
   return (
-    <div style={{ padding: '12px 12px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div style={{ padding: '12px 12px 20px', display: 'flex', flexDirection: 'column', gap: 10, background: theme === 'fairy' ? 'var(--bg)' : 'transparent' }}>
       <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderLeft: '3px solid var(--gold)', borderRadius: '0 8px 8px 0', padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <div style={{ fontSize: 9, color: 'var(--gold)', letterSpacing: '0.1em', marginBottom: 3 }}>
@@ -134,7 +134,7 @@ export default function WeeklyReport({ userId, telegramId, lang }) {
         <div style={{ padding: '20px 0', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <ReportAnimation theme={theme} />
           <div style={{ fontSize: 12, color: 'var(--text-dim)', lineHeight: 1.7 }}>
-            {t(lang, 'noReports')}<br />{theme === 'fairy' ? t(lang, 'noReportsSubFairy') : t(lang, 'noReportsSub')}
+            {t(lang, 'noReports')}<br />{t(lang, 'noReportsSub')}
           </div>
         </div>
       )}
@@ -219,7 +219,7 @@ export default function WeeklyReport({ userId, telegramId, lang }) {
                       {/* Текст отчёта */}
                       <div style={{ background: 'var(--bg3)', borderRadius: 8, padding: '10px 12px', borderLeft: '2px solid var(--gold)' }}>
                         <div style={{ fontSize: 9, color: 'var(--gold)', letterSpacing: '0.1em', marginBottom: 6 }}>
-                          {lang === 'ru' ? (theme === 'fairy' ? 'СОВЕТ ФЕЙ' : 'КОНСИЛИУМ ГРЕМЛИНОВ') : (theme === 'fairy' ? 'FAIRY COUNCIL' : 'GREMLIN COUNCIL')}
+                          {lang === 'ru' ? 'КОНСИЛИУМ ГРЕМЛИНОВ' : 'GREMLIN COUNCIL'}
                         </div>
                         <div style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
                           {r.summary || r.body || '—'}
