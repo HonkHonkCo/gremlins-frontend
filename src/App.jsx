@@ -20,6 +20,7 @@ export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
   const [theme, setThemeState] = useState(getTheme())
+  const [isFirstTimeOnboarding, setIsFirstTimeOnboarding] = useState(true)
 
   const changeLang = (l) => { setLang(l); setLangState(l) }
   const changeTheme = (id) => { setTheme(id); setThemeState(id) }
@@ -62,7 +63,7 @@ export default function App() {
   }, [])
 
   const goHome = () => { setPage('home'); setSelectedGremlin(null); setHomeKey(k => k + 1) }
-  const finishOnboarding = () => { setShowOnboarding(false); setPage('add') }
+  const finishOnboarding = (chosenTheme) => { setShowOnboarding(false); if (chosenTheme) { setThemeState(chosenTheme) }; setPage('add') }
 
   if (!user) return (
     <div className="loading" style={{ flexDirection: 'column', gap: 16 }}>
@@ -70,7 +71,7 @@ export default function App() {
       <div>{t(lang, 'loading')}</div>
     </div>
   )
-  if (showOnboarding) return <Onboarding lang={lang} onDone={finishOnboarding} />
+  if (showOnboarding) return <Onboarding lang={lang} onDone={finishOnboarding} isFirstTime={isFirstTimeOnboarding} />
 
   return (
     <div className={`app${isFairyTheme(theme) ? ' theme-fairy' : ''}`}>
@@ -154,7 +155,7 @@ export default function App() {
           <AddGremlin userId={user.id} user={user} lang={lang} onBack={() => setPage('home')} onCreated={goHome} />
         )}
         {page === 'report' && (
-          <div style={{ position: 'relative', zIndex: 2 }}>
+          <div style={{ background: isFairyTheme(theme) ? 'var(--bg)' : 'transparent', minHeight: '100%' }} className={isFairyTheme(theme) ? 'page-solid' : ''}>
             <WeeklyReport userId={user.id} telegramId={user.telegram_id} lang={lang} />
           </div>
         )}
@@ -241,7 +242,7 @@ export default function App() {
 
             {/* Onboarding */}
             <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: 12 }}>
-              <button onClick={() => setShowOnboarding(true)} style={{ width: '100%', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px', fontSize: 11, color: 'var(--text-dim)', cursor: 'pointer', fontFamily: 'inherit' }}>
+              <button onClick={() => { setIsFirstTimeOnboarding(false); setShowOnboarding(true) }} style={{ width: '100%', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px', fontSize: 11, color: 'var(--text-dim)', cursor: 'pointer', fontFamily: 'inherit' }}>
                 {lang === 'ru' ? '◈ Посмотреть онбординг снова' : '◈ View onboarding again'}
               </button>
             </div>

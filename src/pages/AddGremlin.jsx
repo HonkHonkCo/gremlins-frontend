@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { getTheme, isFairyTheme } from '../themes.js'
 import { createGremlin } from '../services/api'
 import { t } from '../i18n'
 import Upgrade from './Upgrade'
@@ -17,6 +18,7 @@ export default function AddGremlin({ userId, user, lang, onBack, onCreated }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showUpgrade, setShowUpgrade] = useState(false)
+  const isFairy = isFairyTheme(getTheme())
 
   const create = async () => {
     if (!name.trim()) { setError(t(lang, 'nameRequired')); return }
@@ -62,8 +64,8 @@ export default function AddGremlin({ userId, user, lang, onBack, onCreated }) {
                 border: `1px solid ${role === r.id ? 'var(--gold)' : 'var(--border)'}`,
                 borderRadius: 10, padding: '10px 8px', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit'
               }}>
-                <div style={{ width: 48, height: 48, borderRadius: 10, margin: '0 auto 6px', overflow: 'hidden', border: `1px solid ${role === r.id ? 'var(--gold)' : 'var(--border)'}`, background: 'var(--bg2)' }}>
-                  <img src={`/gremlins/${r.id}.png`} alt={r.id} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display='none'; e.target.parentNode.innerHTML = r.icon }} />
+                <div style={{ width: 48, height: 48, borderRadius: 10, margin: '0 auto 6px', overflow: 'hidden', border: `1px solid ${role === r.id ? 'var(--gold)' : 'var(--border)'}`, background: isFairy ? 'transparent' : 'var(--bg2)' }}>
+                  <img src={isFairy ? `https://gljpqbsslkunuvzfdshd.supabase.co/storage/v1/object/public/fairies-anim/Avatars/${r.id}.png` : `/gremlins/${r.id}.png`} alt={r.id} style={{ width: '100%', height: '100%', objectFit: isFairy ? 'contain' : 'cover' }} onError={e => { e.target.style.display='none'; e.target.parentNode.innerHTML = r.icon }} />
                 </div>
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text)' }}>{t(lang, r.id)}</div>
                 <div style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 2 }}>{t(lang, r.id + 'Desc')}</div>
