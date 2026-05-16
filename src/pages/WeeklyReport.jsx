@@ -112,8 +112,8 @@ export default function WeeklyReport({ userId, telegramId, lang }) {
   if (loading) return <div className="loading">{t(lang, 'loading')}</div>
 
   return (
-    <div style={{ padding: '12px 12px 20px', display: 'flex', flexDirection: 'column', gap: 10, background: theme === 'fairy' ? 'var(--bg)' : 'transparent', minHeight: theme === 'fairy' ? '100vh' : 'auto' }}>
-      <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderLeft: '3px solid var(--gold)', borderRadius: '0 8px 8px 0', padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <div style={{ padding: '12px 12px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ background: theme === 'fairy' ? 'rgba(19,21,42,0.75)' : 'var(--bg2)', backdropFilter: theme === 'fairy' ? 'blur(12px)' : 'none', border: '1px solid var(--border)', borderLeft: '3px solid var(--gold)', borderRadius: '0 8px 8px 0', padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <div style={{ fontSize: 9, color: 'var(--gold)', letterSpacing: '0.1em', marginBottom: 3 }}>
             {t(lang, 'nextReport')}
@@ -134,7 +134,7 @@ export default function WeeklyReport({ userId, telegramId, lang }) {
         <div style={{ padding: '20px 0', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <ReportAnimation theme={theme} />
           <div style={{ fontSize: 12, color: 'var(--text-dim)', lineHeight: 1.7 }}>
-            {t(lang, 'noReports')}<br />{theme === 'fairy' ? t(lang, 'noReportsSubFairy') : t(lang, 'noReportsSub')}
+            {t(lang, 'noReports')}<br />{t(lang, 'noReportsSub')}
           </div>
         </div>
       )}
@@ -177,7 +177,8 @@ export default function WeeklyReport({ userId, telegramId, lang }) {
                 <div key={r.id || i} style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${isOpen ? 'var(--gold)' : 'var(--border)'}`, transition: 'border-color 0.2s' }}>
                   {/* Заголовок — всегда виден, клик открывает/закрывает */}
                   <button onClick={() => setSelected(isOpen ? null : r)} style={{
-                    background: isOpen ? 'var(--bg3)' : 'var(--bg2)',
+                    background: isOpen ? (theme === 'fairy' ? 'rgba(30,31,56,0.85)' : 'var(--bg3)') : (theme === 'fairy' ? 'rgba(19,21,42,0.75)' : 'var(--bg2)'),
+                    backdropFilter: theme === 'fairy' ? 'blur(12px)' : 'none',
                     border: 'none', padding: '10px 12px',
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     cursor: 'pointer', fontFamily: 'inherit', width: '100%', transition: 'background 0.2s'
@@ -204,7 +205,7 @@ export default function WeeklyReport({ userId, telegramId, lang }) {
 
                   {/* Раскрытое содержимое */}
                   {isOpen && (
-                    <div style={{ padding: '0 12px 12px', display: 'flex', flexDirection: 'column', gap: 8, background: 'var(--bg2)' }}>
+                    <div style={{ padding: '0 12px 12px', display: 'flex', flexDirection: 'column', gap: 8, background: theme === 'fairy' ? 'rgba(19,21,42,0.75)' : 'var(--bg2)', backdropFilter: theme === 'fairy' ? 'blur(12px)' : 'none' }}>
                       {/* Числовые показатели */}
                       {s && Object.keys(s).length > 0 && (
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, paddingTop: 10 }}>
@@ -219,7 +220,7 @@ export default function WeeklyReport({ userId, telegramId, lang }) {
                       {/* Текст отчёта */}
                       <div style={{ background: 'var(--bg3)', borderRadius: 8, padding: '10px 12px', borderLeft: '2px solid var(--gold)' }}>
                         <div style={{ fontSize: 9, color: 'var(--gold)', letterSpacing: '0.1em', marginBottom: 6 }}>
-                          {lang === 'ru' ? (theme === 'fairy' ? 'СОВЕТ ФЕЙ' : 'КОНСИЛИУМ ГРЕМЛИНОВ') : (theme === 'fairy' ? 'FAIRY COUNCIL' : 'GREMLIN COUNCIL')}
+                          {lang === 'ru' ? 'КОНСИЛИУМ ГРЕМЛИНОВ' : 'GREMLIN COUNCIL'}
                         </div>
                         <div style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
                           {r.summary || r.body || '—'}

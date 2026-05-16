@@ -264,14 +264,7 @@ export default function Home({ userId, lang, onSelect, onAdd, onReport, theme: t
         </div>
       )}
 
-      <div className={`card${isFairy ? ' fairy-card' : ''}`} style={{ margin: '0 0 8px', borderColor: isFairy ? 'var(--border)' : '#9a7310', cursor: 'pointer', background: isFairy ? 'rgba(19, 21, 42, 0.40)' : 'rgba(26, 25, 22, 0.6)', backdropFilter: 'blur(8px)' }} onClick={onReport}>
-        <div style={{ fontSize: 9, color: 'var(--gold)', letterSpacing: '0.12em', marginBottom: 4 }}>
-          {t(lang, 'weeklyBanner')}
-        </div>
-        <div style={{ fontSize: 11, color: 'var(--text)', lineHeight: 1.6 }}>
-          {isFairy ? t(lang, 'weeklyBannerSubFairy') : t(lang, 'weeklyBannerSub')}
-        </div>
-      </div>
+
 
       <div className="section-label">{isFairy ? t(lang, 'myFairies') : t(lang, 'myGremlins')}</div>
 
