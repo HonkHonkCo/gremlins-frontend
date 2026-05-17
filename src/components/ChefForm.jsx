@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react'
 import { addMeal, getMeals, deleteMeal } from '../services/api'
 
 const MEAL_TYPES = [
-  { id: 'завтрак', label: 'завтрак', icon: 13 },
-  { id: 'обед',    label: 'обед',    icon: 14 },
-  { id: 'ужин',    label: 'ужин',    icon: 15 },
-  { id: 'перекус', label: 'перекус', icon: 16 },
+  { id: lang === 'ru' ? 'завтрак' : 'breakfast', label: lang === 'ru' ? 'завтрак' : 'breakfast', icon: 13 },
+  { id: lang === 'ru' ? 'обед' : 'lunch',    label: lang === 'ru' ? 'обед' : 'lunch',    icon: 14 },
+  { id: lang === 'ru' ? 'ужин' : 'dinner',    label: lang === 'ru' ? 'ужин' : 'dinner',    icon: 15 },
+  { id: lang === 'ru' ? 'перекус' : 'snack', label: lang === 'ru' ? 'перекус' : 'snack', icon: 16 },
 ]
 
 // Безопасная работа с localStorage — Telegram WebApp может блокировать
@@ -34,7 +34,7 @@ export default function ChefForm({ gremlinId, accentColor, lang, onStatsUpdate }
   const [newRecipeText, setNewRecipeText] = useState('')
   const [savingRecipe, setSavingRecipe] = useState(false)
   const [name, setName] = useState('')
-  const [mealType, setMealType] = useState('обед')
+  const [mealType, setMealType] = useState(lang === 'ru' ? 'обед' : 'lunch')
   const [weight, setWeight] = useState('')
   const [calories, setCalories] = useState('')
   const [protein, setProtein] = useState('')
@@ -120,7 +120,7 @@ export default function ChefForm({ gremlinId, accentColor, lang, onStatsUpdate }
       if (result?.stats) onStatsUpdate(result.stats)
       setName(''); setCalories(''); setProtein(''); setCarbs('')
       setFat(''); setWeight(''); setNote(''); setDate(todayStr())
-    } catch (e) { console.error(e); setError('Ошибка сохранения') }
+    } catch (e) { console.error(e); setError(lang === 'ru' ? 'Ошибка сохранения' : 'Save error') }
     setSaving(false)
   }
 
@@ -262,7 +262,7 @@ export default function ChefForm({ gremlinId, accentColor, lang, onStatsUpdate }
         <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 3 }}>БЛЮДО</div>
         <input type="text" value={name} onChange={e => setName(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSave()}
-          placeholder="овсянка, куриная грудка..."
+          placeholder={lang === 'ru' ? 'овсянка, куриная грудка...' : 'oatmeal, chicken breast...'}
           style={{ width: '100%', boxSizing: 'border-box', background: 'var(--bg3)', border: '1px solid ' + accentColor + '40', borderRadius: 8, padding: '10px 12px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 15, outline: 'none' }}
         />
       </div>
@@ -311,9 +311,9 @@ export default function ChefForm({ gremlinId, accentColor, lang, onStatsUpdate }
         ) : (
           <div style={{ display: 'flex', gap: 6 }}>
             {[
-              [calories, setCalories, '300', 'ККАЛ'],
-              [protein, setProtein, '25', 'БЕЛОК'],
-              [carbs, setCarbs, '40', 'УГЛЕВ'],
+              [calories, setCalories, '300', lang === 'ru' ? 'ККАЛ' : 'KCAL'],
+              [protein, setProtein, '25', lang === 'ru' ? 'БЕЛОК' : 'PROTEIN'],
+              [carbs, setCarbs, '40', lang === 'ru' ? 'УГЛЕВ' : 'CARBS'],
               [fat, setFat, '10', 'ЖИР'],
             ].map(([val, set, ph, label]) => (
               <div key={label} style={{ flex: 1 }}>
@@ -341,7 +341,7 @@ export default function ChefForm({ gremlinId, accentColor, lang, onStatsUpdate }
 
       <button onClick={handleSave} disabled={saving || !name.trim()}
         style={{ background: name.trim() ? accentColor : 'var(--bg3)', color: name.trim() ? '#000' : 'var(--text-muted)', border: 'none', borderRadius: 10, padding: '13px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s' }}>
-        {saving ? '...' : 'ЗАПИСАТЬ'}
+        {saving ? '...' : lang === 'ru' ? 'ЗАПИСАТЬ' : 'SAVE'}
       </button>
 
       <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2, letterSpacing: '0.06em' }}>ИСТОРИЯ ПИТАНИЯ</div>
@@ -351,7 +351,7 @@ export default function ChefForm({ gremlinId, accentColor, lang, onStatsUpdate }
         : meals.slice(0, 30).map(m => (
           <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--bg2)', borderRadius: 8, padding: '9px 12px' }}>
             <div style={{ flexShrink: 0 }}>
-              <img src={`/Icons/${m.meal_type === 'завтрак' ? 13 : m.meal_type === 'обед' ? 14 : m.meal_type === 'ужин' ? 15 : 16}.png`} style={{ width: 16, height: 16 }} />
+              <img src={`/Icons/${m.meal_type === lang === 'ru' ? 'завтрак' : 'breakfast' ? 13 : m.meal_type === lang === 'ru' ? 'обед' : 'lunch' ? 14 : m.meal_type === lang === 'ru' ? 'ужин' : 'dinner' ? 15 : 16}.png`} style={{ width: 16, height: 16 }} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 12, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</div>

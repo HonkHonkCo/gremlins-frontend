@@ -2,22 +2,23 @@ import { useState, useEffect } from 'react'
 import { addWorkout, getWorkouts, deleteWorkout } from '../services/api'
 
 function todayStr() { return new Date().toISOString().split('T')[0] }
-function todayDow() { return ['вс','пн','вт','ср','чт','пт','сб'][new Date().getDay()] }
+function todayDow(lang) { return lang === 'ru' ? ['вс','пн','вт','ср','чт','пт','сб'][new Date().getDay()] : ['su','mo','tu','we','th','fr','sa'][new Date().getDay()] }
 
-const DAYS = ['пн','вт','ср','чт','пт','сб','вс']
+const DAYS_RU = ['пн','вт','ср','чт','пт','сб','вс']
+const DAYS_EN = ['mo','tu','we','th','fr','sa','su']
 
 const WORKOUT_ICONS = { бег: 19, отжимания: 20, подтягивания: 21, велосипед: 22, плавание: 23, йога: 24, силовая: 20, ходьба: 25 }
 
 const WORKOUT_TYPES = [
-  { id: 'бег',          label: 'бег',          fields: ['distance_km', 'duration_min', 'calories'] },
-  { id: 'отжимания',    label: 'отжимания',    fields: ['sets', 'reps'] },
-  { id: 'подтягивания', label: 'подтяг.',      fields: ['sets', 'reps'] },
-  { id: 'велосипед',    label: 'вело',         fields: ['distance_km', 'duration_min'] },
-  { id: 'плавание',     label: 'плавание',     fields: ['distance_km', 'duration_min'] },
-  { id: 'йога',         label: 'йога',         fields: ['duration_min'] },
-  { id: 'силовая',      label: 'силовая',      fields: ['sets', 'reps', 'weight_kg', 'duration_min'] },
-  { id: 'ходьба',       label: 'ходьба',       fields: ['distance_km', 'duration_min'] },
-  { id: 'другое',       label: '+ другое',     fields: ['duration_min', 'calories'] },
+  { id: 'бег',          labelRu: 'бег',        labelEn: 'run',        fields: ['distance_km', 'duration_min', 'calories'] },
+  { id: 'отжимания',    labelRu: 'отжимания',  labelEn: 'push-ups',   fields: ['sets', 'reps'] },
+  { id: 'подтягивания', labelRu: 'подтяг.',    labelEn: 'pull-ups',   fields: ['sets', 'reps'] },
+  { id: 'велосипед',    labelRu: 'вело',       labelEn: 'bike',       fields: ['distance_km', 'duration_min'] },
+  { id: 'плавание',     labelRu: 'плавание',   labelEn: 'swim',       fields: ['distance_km', 'duration_min'] },
+  { id: 'йога',         labelRu: 'йога',       labelEn: 'yoga',       fields: ['duration_min'] },
+  { id: 'силовая',      labelRu: 'силовая',    labelEn: 'strength',   fields: ['sets', 'reps', 'weight_kg', 'duration_min'] },
+  { id: 'ходьба',       labelRu: 'ходьба',     labelEn: 'walk',       fields: ['distance_km', 'duration_min'] },
+  { id: 'другое',       labelRu: '+ другое',   labelEn: '+ other',    fields: ['duration_min', 'calories'] },
 ]
 
 // Калории в минуту по типу тренировки (примерно)
@@ -27,6 +28,7 @@ const CAL_PER_MIN = {
 }
 
 export default function TrainerForm({ gremlinId, accentColor, lang, onStatsUpdate }) {
+  const DAYS = lang === 'ru' ? DAYS_RU : DAYS_EN
   const [activeTab, setActiveTab] = useState('log')
   const [plan, setPlan] = useState({}) // { пн: 'бег', вт: '', ... }
   const [planLoading, setPlanLoading] = useState(true)
@@ -71,7 +73,7 @@ export default function TrainerForm({ gremlinId, accentColor, lang, onStatsUpdat
       // Автоматически записываем тренировку
       const type = plan[day]
       if (type && type !== 'отдых') {
-        const result = await addWorkout(gremlinId, { type, date: today, note: 'по плану' })
+        const result = await addWorkout(gremlinId, { type, date: today, note: lang === 'ru' ? 'по плану' : 'as planned' })
         if (result?.workout) setWorkouts(w => [result.workout, ...w])
         if (result?.stats) onStatsUpdate(result.stats)
       }
@@ -101,7 +103,7 @@ export default function TrainerForm({ gremlinId, accentColor, lang, onStatsUpdat
   const handleSave = async () => {
     setError(null)
     const finalType = workoutType === 'другое' ? (customType.trim() || 'другое') : workoutType
-    if (!finalType) { setError('Укажи тип тренировки'); return }
+    if (!finalType) { setError(lang === 'ru' ? 'Укажи тип тренировки' : 'Select workout type'); return }
 
     const cal = calories ? parseInt(calories) : autoCalories()
     setSaving(true)
@@ -122,7 +124,7 @@ export default function TrainerForm({ gremlinId, accentColor, lang, onStatsUpdat
       setDuration(''); setDistance(''); setSets(''); setReps('')
       setWeight(''); setCalories(''); setNote(''); setDate(todayStr())
     } catch (e) {
-      console.error(e); setError('Ошибка сохранения')
+      console.error(e); setError(lang === 'ru' ? 'Ошибка сохранения' : 'Save error')
     }
     setSaving(false)
   }
@@ -151,7 +153,7 @@ export default function TrainerForm({ gremlinId, accentColor, lang, onStatsUpdat
 
       {/* Табы */}
       <div style={{ display: 'flex', gap: 3, background: 'var(--bg2)', borderRadius: 8, padding: 3 }}>
-        {[['log', 'Запись'], ['plan', 'План']].map(([id, label]) => (
+        {[['log', lang === 'ru' ? 'Запись' : 'Log'], ['plan', lang === 'ru' ? 'План' : 'Plan']].map(([id, label]) => (
           <button key={id} onClick={() => setActiveTab(id)}
             style={{ flex: 1, padding: '7px', borderRadius: 6, fontFamily: 'inherit', fontSize: 11, fontWeight: 700, cursor: 'pointer', background: activeTab === id ? accentColor : 'transparent', color: activeTab === id ? '#000' : 'var(--text-muted)', border: 'none' }}>
             {label}
@@ -164,7 +166,7 @@ export default function TrainerForm({ gremlinId, accentColor, lang, onStatsUpdat
         <>
           <div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.06em' }}>ПЛАН НА НЕДЕЛЮ</div>
           {DAYS.map(day => {
-            const isToday = day === todayDow()
+            const isToday = day === todayDow(lang)
             const doneKey = 'plan_done_' + gremlinId
             let isDone = false
             try { const done = JSON.parse(localStorage.getItem(doneKey) || '{}'); isDone = done[todayStr()] === day } catch {}
@@ -177,7 +179,7 @@ export default function TrainerForm({ gremlinId, accentColor, lang, onStatsUpdat
                   style={{ flex: 1, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 8px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 11, outline: 'none' }}>
                   <option value="">— отдых —</option>
                   {WORKOUT_TYPES.filter(t => t.id !== 'другое').map(t => (
-                    <option key={t.id} value={t.id}>{t.label}</option>
+                    <option key={t.id} value={t.id}>{lang === 'ru' ? t.labelRu : t.labelEn}</option>
                   ))}
                 </select>
                 {isToday && plan[day] && plan[day] !== 'отдых' && (
@@ -185,7 +187,7 @@ export default function TrainerForm({ gremlinId, accentColor, lang, onStatsUpdat
                     onClick={() => markPlanDone(day)}
                     disabled={isDone}
                     style={{ background: isDone ? '#3ecf7020' : accentColor, color: isDone ? '#3ecf70' : '#000', border: isDone ? '1px solid #3ecf7040' : 'none', borderRadius: 6, padding: '5px 10px', fontSize: 10, fontWeight: 700, cursor: isDone ? 'default' : 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
-                    {isDone ? '✓ готово' : 'сделал'}
+                    {isDone ? lang === 'ru' ? '✓ готово' : '✓ done' : lang === 'ru' ? 'сделал' : 'done'}
                   </button>
                 )}
               </div>
@@ -206,12 +208,12 @@ export default function TrainerForm({ gremlinId, accentColor, lang, onStatsUpdat
             <button key={t.id} onClick={() => setWorkoutType(t.id)}
               style={{ padding: '6px 10px', borderRadius: 20, fontFamily: 'inherit', fontSize: 11, cursor: 'pointer', background: workoutType === t.id ? accentColor + '25' : 'var(--bg3)', border: '1px solid ' + (workoutType === t.id ? accentColor + '70' : 'var(--border)'), color: workoutType === t.id ? accentColor : 'var(--text-muted)', fontWeight: workoutType === t.id ? 700 : 400, display: 'flex', alignItems: 'center', gap: 4 }}>
               {WORKOUT_ICONS[t.id] && <img src={`/Icons/${WORKOUT_ICONS[t.id]}.png`} style={{ width: 13, height: 13 }} />}
-              {t.label}
+              {lang === 'ru' ? t.labelRu : t.labelEn}
             </button>
           ))}
         </div>
         {workoutType === 'другое' && (
-          <input value={customType} onChange={e => setCustomType(e.target.value)} placeholder="название тренировки..."
+          <input value={customType} onChange={e => setCustomType(e.target.value)} placeholder={lang === 'ru' ? 'название тренировки...' : 'workout name...'}
             style={{ marginTop: 6, width: '100%', boxSizing: 'border-box', background: 'var(--bg3)', border: '1px solid ' + accentColor + '40', borderRadius: 8, padding: '7px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, outline: 'none' }}
           />
         )}
@@ -219,11 +221,11 @@ export default function TrainerForm({ gremlinId, accentColor, lang, onStatsUpdat
 
       {/* Динамические поля */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {showFields.includes('duration_min') && input(duration, setDuration, '30', 'МИН')}
-        {showFields.includes('distance_km') && input(distance, setDistance, '5', 'КМ')}
-        {showFields.includes('sets') && input(sets, setSets, '3', 'ПОДХОДЫ')}
-        {showFields.includes('reps') && input(reps, setReps, '15', 'ПОВТОРЫ')}
-        {showFields.includes('weight_kg') && input(weight, setWeight, '60', 'КГ')}
+        {showFields.includes('duration_min') && input(duration, setDuration, '30', lang === 'ru' ? 'МИН' : 'MIN')}
+        {showFields.includes('distance_km') && input(distance, setDistance, '5', lang === 'ru' ? 'КМ' : 'KM')}
+        {showFields.includes('sets') && input(sets, setSets, '3', lang === 'ru' ? 'ПОДХОДЫ' : 'SETS')}
+        {showFields.includes('reps') && input(reps, setReps, '15', lang === 'ru' ? 'ПОВТОРЫ' : 'REPS')}
+        {showFields.includes('weight_kg') && input(weight, setWeight, '60', lang === 'ru' ? 'КГ' : 'KG')}
         {showFields.includes('calories') && (
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 3 }}>ККАЛ</div>
@@ -238,7 +240,7 @@ export default function TrainerForm({ gremlinId, accentColor, lang, onStatsUpdat
 
       {/* Заметка + дата */}
       <div style={{ display: 'flex', gap: 8 }}>
-        <input value={note} onChange={e => setNote(e.target.value)} placeholder="Заметка..."
+        <input value={note} onChange={e => setNote(e.target.value)} placeholder={lang === 'ru' ? 'Заметка...' : 'Note...'}
           style={{ flex: 2, background: 'var(--bg3)', border: '1px solid ' + accentColor + '20', borderRadius: 8, padding: '9px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, outline: 'none' }}
         />
         <input type="date" value={date} onChange={e => setDate(e.target.value)}
@@ -250,7 +252,7 @@ export default function TrainerForm({ gremlinId, accentColor, lang, onStatsUpdat
 
       <button onClick={handleSave} disabled={saving}
         style={{ background: accentColor, color: '#000', border: 'none', borderRadius: 10, padding: '13px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-        {saving ? '...' : 'ЗАПИСАТЬ'}
+        {saving ? '...' : lang === 'ru' ? 'ЗАПИСАТЬ' : 'LOG WORKOUT'}
       </button>
 
       <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2, letterSpacing: '0.06em' }}>ПОСЛЕДНИЕ ТРЕНИРОВКИ</div>
