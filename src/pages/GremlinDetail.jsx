@@ -475,7 +475,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
 
         {/* EDIT PANEL */}
         {editing && (
-          <div style={{ background: isFairyTheme(theme) ? 'rgba(13,15,26,0.7)' : 'var(--bg2)', borderBottom: '1px solid ' + accentColor + '30', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
+          <div style={{ background: 'var(--bg2)', borderBottom: '1px solid ' + accentColor + '30', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
             <div style={{ fontSize: 10, color: accentColor, letterSpacing: '0.1em' }}>{t(lang, 'edit')}</div>
             <input value={editName} onChange={e => setEditName(e.target.value)} placeholder={t(lang, 'namePlaceholder')}
               style={{ background: 'var(--bg3)', border: '1px solid ' + accentColor + '40', borderRadius: 6, padding: '7px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 13, outline: 'none' }} />
@@ -667,7 +667,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
 
         {/* ТАБЫ — для всех гремлинов */}
         {hasDataTab && (
-          <div style={{ display: 'flex', gap: 3, background: isFairyTheme(theme) ? 'rgba(13,15,26,0.7)' : 'var(--bg2)', padding: '4px 12px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: 3, background: 'var(--bg2)', padding: '4px 12px', flexShrink: 0 }}>
             {[
               { id: 'data', label: gremlin.role === 'accountant' ? '+ Данные' : gremlin.role === 'trainer' ? '+ Трен.' : gremlin.role === 'chef' ? '+ Еда' : '+ Задачи' },
               { id: 'chat', label: <><img src="/Icons/2.png" style={{ width: 13, height: 13, verticalAlign: 'middle', marginRight: 4 }} />{lang === 'ru' ? 'Чат' : 'Chat'}</> },
@@ -801,7 +801,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
         )}
 
         {(!hasDataTab || activeTab === 'chat') && (
-        <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8, background: isFairyTheme(theme) ? 'rgba(13,15,26,0.45)' : 'transparent' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8, background: 'transparent' }}>
           {/* АРХИВ — старые записи, хронологически */}
           {showArchive && archiveEntries.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -822,7 +822,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
                   </div>
                   {e.reply && (
                     <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-                      <div style={{ maxWidth: '80%', background: isFairyTheme(theme) ? 'rgba(19,21,42,0.45)' : 'var(--bg3)', color: 'var(--text-dim)', border: '1px solid ' + accentColor + '20', borderRadius: '10px 10px 10px 2px', padding: '7px 11px', fontSize: 13, lineHeight: 1.55 }}>
+                      <div style={{ maxWidth: '80%', background: 'var(--bg3)', color: 'var(--text-dim)', border: '1px solid ' + accentColor + '20', borderRadius: '10px 10px 10px 2px', padding: '7px 11px', fontSize: 13, lineHeight: 1.55 }}>
                         {e.reply}
                       </div>
                     </div>
@@ -851,7 +851,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
               </div>
               {e.reply && (
                 <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-                  <div style={{ maxWidth: '80%', background: isFairyTheme(theme) ? 'rgba(19,21,42,0.55)' : 'var(--bg2)', color: 'var(--text)', border: '1px solid ' + accentColor + '30', borderRadius: '12px 12px 12px 2px', padding: '9px 13px', fontSize: 14, lineHeight: 1.55 }}>
+                  <div style={{ maxWidth: '80%', background: 'var(--bg2)', color: 'var(--text)', border: '1px solid ' + accentColor + '30', borderRadius: '12px 12px 12px 2px', padding: '9px 13px', fontSize: 14, lineHeight: 1.55 }}>
                     {e.reply}
                   </div>
                 </div>
@@ -889,7 +889,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
 
         {/* INPUT — показываем всегда или только в чат-режиме */}
         {(!hasDataTab || activeTab === 'chat') && (
-        <div style={{ padding: '10px 12px', background: isFairyTheme(theme) ? 'rgba(13,15,26,0.7)' : 'var(--bg2)', borderTop: '1px solid ' + accentColor + '30', display: 'flex', gap: 8, alignItems: 'flex-end', flexShrink: 0 }}>
+        <div style={{ padding: '10px 12px', background: 'var(--bg2)', borderTop: '1px solid ' + accentColor + '30', display: 'flex', gap: 8, alignItems: 'flex-end', flexShrink: 0 }}>
           <input ref={fileRef} type="file" accept=".csv,.txt,.json,.html,.htm,.docx,.doc" onChange={handleFile} style={{ display: 'none' }} />
           <button
             onClick={() => fileRef.current?.click()}

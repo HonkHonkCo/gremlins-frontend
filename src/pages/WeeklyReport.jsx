@@ -112,8 +112,8 @@ export default function WeeklyReport({ userId, telegramId, lang }) {
   if (loading) return <div className="loading">{t(lang, 'loading')}</div>
 
   return (
-    <div style={{ padding: '12px 12px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <div style={{ background: theme === 'fairy' ? 'rgba(19,21,42,0.75)' : 'var(--bg2)', backdropFilter: theme === 'fairy' ? 'blur(12px)' : 'none', border: '1px solid var(--border)', borderLeft: '3px solid var(--gold)', borderRadius: '0 8px 8px 0', padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <div style={{ padding: '12px 12px 20px', display: 'flex', flexDirection: 'column', gap: 10, background: 'var(--bg)', minHeight: '100%' }}>
+      <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderLeft: '3px solid var(--gold)', borderRadius: '0 8px 8px 0', padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <div style={{ fontSize: 9, color: 'var(--gold)', letterSpacing: '0.1em', marginBottom: 3 }}>
             {t(lang, 'nextReport')}
@@ -177,8 +177,7 @@ export default function WeeklyReport({ userId, telegramId, lang }) {
                 <div key={r.id || i} style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${isOpen ? 'var(--gold)' : 'var(--border)'}`, transition: 'border-color 0.2s' }}>
                   {/* Заголовок — всегда виден, клик открывает/закрывает */}
                   <button onClick={() => setSelected(isOpen ? null : r)} style={{
-                    background: isOpen ? (theme === 'fairy' ? 'rgba(30,31,56,0.85)' : 'var(--bg3)') : (theme === 'fairy' ? 'rgba(19,21,42,0.75)' : 'var(--bg2)'),
-                    backdropFilter: theme === 'fairy' ? 'blur(12px)' : 'none',
+                    background: isOpen ? 'var(--bg3)' : 'var(--bg2)',
                     border: 'none', padding: '10px 12px',
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     cursor: 'pointer', fontFamily: 'inherit', width: '100%', transition: 'background 0.2s'
@@ -205,7 +204,7 @@ export default function WeeklyReport({ userId, telegramId, lang }) {
 
                   {/* Раскрытое содержимое */}
                   {isOpen && (
-                    <div style={{ padding: '0 12px 12px', display: 'flex', flexDirection: 'column', gap: 8, background: theme === 'fairy' ? 'rgba(19,21,42,0.75)' : 'var(--bg2)', backdropFilter: theme === 'fairy' ? 'blur(12px)' : 'none' }}>
+                    <div style={{ padding: '0 12px 12px', display: 'flex', flexDirection: 'column', gap: 8, background: 'var(--bg2)' }}>
                       {/* Числовые показатели */}
                       {s && Object.keys(s).length > 0 && (
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, paddingTop: 10 }}>

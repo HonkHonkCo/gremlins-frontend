@@ -12,8 +12,8 @@ const ALL_CURRENCIES = [
   { code: 'BTC', symbol: '₿' }, { code: 'USDT', symbol: '₮' },
 ]
 const SYM = Object.fromEntries(ALL_CURRENCIES.map(c => [c.code, c.symbol]))
-const DEFAULT_CATS = [lang === 'ru' ? 'еда' : 'food', lang === 'ru' ? 'кафе' : 'cafe', lang === 'ru' ? 'транспорт' : 'transport', lang === 'ru' ? 'жильё' : 'housing', lang === 'ru' ? 'здоровье' : 'health', lang === 'ru' ? 'одежда' : 'clothes', lang === 'ru' ? 'развлечения' : 'entertainment', lang === 'ru' ? 'связь' : 'telecom']
-const CAT_ICON = { lang === 'ru' ? 'еда' : 'food': 5, lang === 'ru' ? 'кафе' : 'cafe': 1, lang === 'ru' ? 'транспорт' : 'transport': 3, lang === 'ru' ? 'жильё' : 'housing': 7, lang === 'ru' ? 'здоровье' : 'health': 9, lang === 'ru' ? 'одежда' : 'clothes': 10, lang === 'ru' ? 'развлечения' : 'entertainment': 11, lang === 'ru' ? 'связь' : 'telecom': 8 }
+const DEFAULT_CATS = ['еда', 'кафе', 'транспорт', 'жильё', 'здоровье', 'одежда', 'развлечения', 'связь']
+const CAT_ICON = { 'еда': 5, 'кафе': 1, 'транспорт': 3, 'жильё': 7, 'здоровье': 9, 'одежда': 10, 'развлечения': 11, 'связь': 8 }
 
 function todayStr() { return new Date().toISOString().split('T')[0] }
 
@@ -98,9 +98,9 @@ function DeleteConfirm({ onConfirm, onCancel, label, lang }) {
 
 const ACCOUNT_TABS = [
   { id: 'expenses', labelRu: '↕ Расходы', labelEn: '↕ Expenses', color: '#fc7c6f' },
-  { id: 'invest',   labelRu: lang === 'ru' ? 'Вклады' : 'Invest',    labelEn: 'Invest',      color: '#4173a8' },
-  { id: 'accounts', labelRu: lang === 'ru' ? 'Счета' : 'Accounts',     labelEn: 'Accounts',    color: '#b09767' },
-  { id: 'debts',    labelRu: lang === 'ru' ? 'Долги' : 'Debts',     labelEn: 'Debts',       color: '#849cff' },
+  { id: 'invest',   labelRu: 'Вклады',    labelEn: 'Invest',      color: '#4173a8' },
+  { id: 'accounts', labelRu: 'Счета',     labelEn: 'Accounts',    color: '#b09767' },
+  { id: 'debts',    labelRu: 'Долги',     labelEn: 'Debts',       color: '#849cff' },
 ]
 
 export default function AccountantForm({ gremlinId, accentColor, lang, onStatsUpdate }) {
@@ -241,7 +241,7 @@ function QuickCreateAccount({ gremlinId, onCreated, lang }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <input value={name} onChange={e => setName(e.target.value)}
-        placeholder={lang === 'ru' ? lang === 'ru' ? 'Название счёта...' : 'Account name...' : 'Account name...'}
+        placeholder={lang === 'ru' ? 'Название счёта...' : 'Account name...'}
         style={{ background: 'var(--bg3)', border: '1px solid #68b28140', borderRadius: 7, padding: '9px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 13, outline: 'none' }} />
       <div style={{ display: 'flex', gap: 6 }}>
         <CurrencySelect value={currency} onChange={setCurrency} style={{ flex: 1 }} />
@@ -266,7 +266,7 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
   const [currency, setCurrency] = useState(accounts[0]?.currency || 'THB')
   const [txType, setTxType] = useState('expense')
   const [customCats, setCustomCats] = useState(() => { try { return JSON.parse(localStorage.getItem('custom_cats_' + gremlinId) || '[]') } catch { return [] } })
-  const [category, setCategory] = useState(lang === 'ru' ? 'еда' : 'food')
+  const [category, setCategory] = useState('еда')
   const [newCatInput, setNewCatInput] = useState('')
   const [showNewCat, setShowNewCat] = useState(false)
   const [note, setNote] = useState('')
@@ -367,7 +367,7 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
         <div key={tx.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg3)', borderRadius: 7, padding: '7px 10px', marginBottom: 3 }}>
           <div style={{ width: 5, height: 5, borderRadius: '50%', flexShrink: 0, background: tx.type === 'expense' ? '#fc7c6f' : '#68b281' }} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 11, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.category || (tx.type === 'income' ? (lang === 'ru' ? lang === 'ru' ? lang === 'ru' ? 'доход' : 'income' : 'income' : 'income') : tx.type)}</div>
+            <div style={{ fontSize: 11, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.category || (tx.type === 'income' ? (lang === 'ru' ? 'доход' : 'income') : tx.type)}</div>
             {tx.note && <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>{tx.note}</div>}
           </div>
           <div style={{ fontSize: 12, fontWeight: 700, color: tx.type === 'expense' ? '#fc7c6f' : '#68b281', whiteSpace: 'nowrap' }}>
@@ -453,7 +453,7 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
         )}
 
         <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-          <input value={note} onChange={e => setNote(e.target.value)} placeholder={lang === 'ru' ? lang === 'ru' ? 'Заметка...' : 'Note...' : 'Note...'}
+          <input value={note} onChange={e => setNote(e.target.value)} placeholder={lang === 'ru' ? 'Заметка...' : 'Note...'}
             style={{ flex: 2, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 7, padding: '7px 9px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, outline: 'none' }} />
           <input type="date" value={date} onChange={e => setDate(e.target.value)}
             style={{ flex: 1, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 7, padding: '7px 8px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 11, outline: 'none' }} />
@@ -612,7 +612,7 @@ function InvestForm({ gremlinId, accounts, transactions, snapshots, onAdd, onDel
         return (
           <div key={cur} style={{ background: 'var(--bg3)', borderRadius: 8, padding: '8px 10px', marginBottom: 6 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text-muted)', marginBottom: 2 }}>
-              <span>{lang === 'ru' ? lang === 'ru' ? 'Вклады' : 'Invest' : 'Investments'} {cur}</span>
+              <span>{lang === 'ru' ? 'Вклады' : 'Investments'} {cur}</span>
               <span style={{ color, fontWeight: 700 }}>{total.toLocaleString('ru-RU')} {SYM[cur] || cur}</span>
             </div>
             <MiniChartLocal data={data} color={color} />
@@ -644,7 +644,7 @@ function InvestForm({ gremlinId, accounts, transactions, snapshots, onAdd, onDel
             style={{ flex: 1, background: 'var(--bg2)', border: '1px solid #4173a840', borderRadius: 7, padding: '8px 8px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 11, outline: 'none' }} />
         </div>
         <input value={note} onChange={e => setNote(e.target.value)}
-          placeholder={lang === 'ru' ? lang === 'ru' ? 'название вклада...' : 'investment name...' : 'investment name...'}
+          placeholder={lang === 'ru' ? 'название вклада...' : 'investment name...'}
           style={{ width: '100%', boxSizing: 'border-box', marginBottom: 6, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 7, padding: '8px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, outline: 'none' }} />
         {error && <div style={{ fontSize: 11, color: '#fc7c6f', marginBottom: 5 }}>{error}</div>}
         <button onClick={handleSave} disabled={saving}
@@ -750,7 +750,7 @@ function AccountsForm({ gremlinId, accounts, transfers, onAddAccount, onDeleteAc
         {mode === 'account' ? (
           <>
             <input value={newName} onChange={e => setNewName(e.target.value)}
-              placeholder={lang === 'ru' ? lang === 'ru' ? 'Название счёта...' : 'Account name...' : 'Account name...'}
+              placeholder={lang === 'ru' ? 'Название счёта...' : 'Account name...'}
               style={{ width: '100%', boxSizing: 'border-box', marginBottom: 6, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 7, padding: '8px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 13, outline: 'none' }} />
             <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
               <CurrencySelect value={newCurrency} onChange={setNewCurrency} style={{ flex: 1 }} />
