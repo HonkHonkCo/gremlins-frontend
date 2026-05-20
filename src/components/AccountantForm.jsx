@@ -12,16 +12,19 @@ const ALL_CURRENCIES = [
   { code: 'BTC', symbol: '₿' }, { code: 'USDT', symbol: '₮' },
 ]
 const SYM = Object.fromEntries(ALL_CURRENCIES.map(c => [c.code, c.symbol]))
-const DEFAULT_CATS = ['еда', 'кафе', 'транспорт', 'жильё', 'здоровье', 'одежда', 'развлечения', 'связь']
-const CAT_ICON = { 'еда': 5, 'кафе': 1, 'транспорт': 3, 'жильё': 7, 'здоровье': 9, 'одежда': 10, 'развлечения': 11, 'связь': 8 }
+const DEFAULT_CATS_RU = ['еда','кафе','транспорт','жильё','здоровье','одежда','развлечения','связь']
+const DEFAULT_CATS_EN = ['food','cafe','transport','housing','health','clothes','entertainment','telecom']
+const getDefaultCats = (lang) => lang === 'ru' ? DEFAULT_CATS_RU : DEFAULT_CATS_EN
+const CAT_ICON = { 'еда': 5, 'кафе': 1, 'транспорт': 3, 'жильё': 7, 'здоровье': 9, 'одежда': 10, 'развлечения': 11, 'связь': 8, 'food': 5, 'cafe': 1, 'transport': 3, 'housing': 7, 'health': 9, 'clothes': 10, 'entertainment': 11, 'telecom': 8 }
 
 function todayStr() { return new Date().toISOString().split('T')[0] }
 
-function formatMonth(dateStr) {
+function formatMonth(dateStr, lang) {
   if (!dateStr) return ''
   const [y, m] = dateStr.split('-')
-  const months = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь']
-  return months[parseInt(m) - 1] + ' ' + y
+  const monthsRu = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь']
+  const monthsEn = ['january','february','march','april','may','june','july','august','september','october','november','december']
+  return (lang === 'ru' ? monthsRu : monthsEn)[parseInt(m) - 1] + ' ' + y
 }
 
 function MiniChart({ data, color }) {
@@ -336,7 +339,7 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
       if (result?.transaction) onAdd(result.transaction, result.stats)
       setAmount(''); setNote(''); setDate(todayStr())
       setCurrencyConflict(null); setConvertedAmount(null); setManualAmount(''); setConflictMode(null); setError(null)
-    } catch { setError(lang === 'ru' ? lang === 'ru' ? 'Ошибка сохранения' : 'Save error' : 'Save error') }
+    } catch { setError(lang === 'ru' ? 'Ошибка сохранения' : 'Save error') }
     setSaving(false)
   }
 
@@ -351,7 +354,7 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
       if (month && month !== lastMonth) {
         items.push(
           <div key={'m_' + month} style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.08em', padding: '10px 0 4px', borderTop: i > 0 ? '2px solid var(--border)' : 'none', marginTop: i > 0 ? 6 : 0 }}>
-            {formatMonth(tx.date).toUpperCase()}
+            {formatMonth(tx.date, lang).toUpperCase()}
           </div>
         )
         lastMonth = month; lastDay = null
@@ -389,7 +392,7 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
       <div style={{ background: 'var(--bg3)', borderRadius: 8, padding: 10, marginBottom: 10 }}>
         {/* Счёт — первый, обязателен */}
         <div style={{ marginBottom: 8 }}>
-          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4 }}>{lang === 'ru' ? lang === 'ru' ? 'СЧЁТ' : 'ACCOUNT' : 'ACCOUNT'}</div>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4 }}>{lang === 'ru' ? 'СЧЁТ' : 'ACCOUNT'}</div>
           <select value={accountId} onChange={e => handleAccountChange(e.target.value)}
             style={{ width: '100%', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 7, padding: '8px 9px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, outline: 'none' }}>
             {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}
@@ -413,7 +416,7 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
         {txType === 'expense' && (
           <div style={{ marginBottom: 6 }}>
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 4 }}>
-              {[...DEFAULT_CATS, ...customCats].map(cat => (
+              {[...getDefaultCats(lang), ...customCats].map(cat => (
                 <button key={cat} onClick={() => { setCategory(cat); setShowNewCat(false) }} style={{ padding: '4px 9px', borderRadius: 20, fontFamily: 'inherit', fontSize: 10, cursor: 'pointer', background: category === cat ? '#fc7c6f25' : 'var(--bg2)', border: '1px solid ' + (category === cat ? '#fc7c6f60' : 'var(--border)'), color: category === cat ? '#fc7c6f' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 3 }}>
                   {CAT_ICON[cat] && <img src={`/Icons/${CAT_ICON[cat]}.png`} style={{ width: 11, height: 11 }} />}
                   {cat}
@@ -597,7 +600,7 @@ function InvestForm({ gremlinId, accounts, transactions, snapshots, onAdd, onDel
       })
       if (result?.transaction) onAdd(result.transaction, result.stats)
       setAmount(''); setNote(''); setRate(''); setEndDate(''); setError(null)
-    } catch { setError(lang === 'ru' ? lang === 'ru' ? 'Ошибка сохранения' : 'Save error' : 'Save error') }
+    } catch { setError(lang === 'ru' ? 'Ошибка сохранения' : 'Save error') }
     setSaving(false)
   }
 
@@ -622,7 +625,7 @@ function InvestForm({ gremlinId, accounts, transactions, snapshots, onAdd, onDel
 
       <div style={{ background: 'var(--bg3)', borderRadius: 8, padding: 10, marginBottom: 8 }}>
         <div style={{ marginBottom: 8 }}>
-          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4 }}>{lang === 'ru' ? lang === 'ru' ? 'СЧЁТ' : 'ACCOUNT' : 'ACCOUNT'}</div>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4 }}>{lang === 'ru' ? 'СЧЁТ' : 'ACCOUNT'}</div>
           <select value={accountId} onChange={e => setAccountId(e.target.value)}
             style={{ width: '100%', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 7, padding: '8px 9px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, outline: 'none' }}>
             {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}
@@ -649,7 +652,7 @@ function InvestForm({ gremlinId, accounts, transactions, snapshots, onAdd, onDel
         {error && <div style={{ fontSize: 11, color: '#fc7c6f', marginBottom: 5 }}>{error}</div>}
         <button onClick={handleSave} disabled={saving}
           style={{ width: '100%', background: '#4173a825', border: '1px solid #4173a870', color: '#4173a8', borderRadius: 8, padding: '10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-          {saving ? '...' : (lang === 'ru' ? lang === 'ru' ? 'ДОБАВИТЬ ВКЛАД' : 'ADD INVESTMENT' : 'ADD INVESTMENT')}
+          {saving ? '...' : (lang === 'ru' ? 'ДОБАВИТЬ ВКЛАД' : 'ADD INVESTMENT')}
         </button>
       </div>
 
@@ -852,7 +855,7 @@ function DebtsForm({ gremlinId, accounts, debts, onAdd, onSettle, onDelete, lang
           ))}
         </div>
         <div style={{ marginBottom: 6 }}>
-          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4 }}>{lang === 'ru' ? lang === 'ru' ? 'СЧЁТ' : 'ACCOUNT' : 'ACCOUNT'}</div>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4 }}>{lang === 'ru' ? 'СЧЁТ' : 'ACCOUNT'}</div>
           <select value={accountId} onChange={e => setAccountId(e.target.value)}
             style={{ width: '100%', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 7, padding: '8px 9px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, outline: 'none' }}>
             {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}
