@@ -8,9 +8,9 @@ const PRIORITIES = [
 ]
 
 const REPEAT_OPTIONS = [
-  { id: 'daily',   label: 'каждый день' },
-  { id: 'weekly',  label: 'каждую неделю' },
-  { id: 'monthly', label: 'каждый месяц' },
+  { id: 'daily',   labelRu: 'каждый день',   labelEn: 'daily' },
+  { id: 'weekly',  labelRu: 'каждую неделю', labelEn: 'weekly' },
+  { id: 'monthly', labelRu: 'каждый месяц',  labelEn: 'monthly' },
 ]
 
 function daysLeft(deadline) {
@@ -197,11 +197,11 @@ export default function SecretaryForm({ gremlinId, accentColor, lang, onStatsUpd
               <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 3 }}>УВЕДОМ. ЗА</div>
               <select value={notifyBefore} onChange={e => setNotifyBefore(e.target.value)}
                 style={{ width: '100%', background: 'var(--bg3)', border: '1px solid ' + accentColor + '30', borderRadius: 8, padding: '9px 8px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, outline: 'none', cursor: 'pointer' }}>
-                <option value="0">в день</option>
+                <option value="0">{lang === 'ru' ? 'в день' : 'same day'}</option>
                 <option value="1">1 день</option>
                 <option value="2">2 дня</option>
                 <option value="3">3 дня</option>
-                <option value="7">неделю</option>
+                <option value="7">{lang === 'ru' ? 'неделю' : 'a week'}</option>
               </select>
             </div>
           </div>
@@ -279,11 +279,11 @@ export default function SecretaryForm({ gremlinId, accentColor, lang, onStatsUpd
           <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 3 }}>УВЕДОМ. ЗА</div>
           <select value={notifyBefore} onChange={e => setNotifyBefore(e.target.value)}
             style={{ width: '100%', background: 'var(--bg3)', border: '1px solid ' + accentColor + '30', borderRadius: 8, padding: '9px 8px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 12, outline: 'none', cursor: 'pointer' }}>
-            <option value="0">в день</option>
+            <option value="0">{lang === 'ru' ? 'в день' : 'same day'}</option>
             <option value="1">1 день</option>
             <option value="2">2 дня</option>
             <option value="3">3 дня</option>
-            <option value="7">неделю</option>
+            <option value="7">{lang === 'ru' ? 'неделю' : 'a week'}</option>
           </select>
         </div>
       </div>
