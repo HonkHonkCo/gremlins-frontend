@@ -2,16 +2,15 @@ import { useState, useEffect } from 'react'
 import { addTask, getTasks, updateTask, deleteTask } from '../services/api'
 
 const PRIORITIES = [
-  { id: 'high',   label: '● срочно',   bg: '#fc7c6f', text: '#fff0ee' },
-  { id: 'medium', label: '● средне',   bg: '#da934c', text: '#fff4e8' },
-  { id: 'low',    label: '● не горит', bg: '#68b281', text: '#f0fff4' },
+  { id: 'high',   labelRu: '● срочно',   labelEn: '● urgent',  bg: '#fc7c6f', text: '#fff0ee' },
+  { id: 'medium', labelRu: '● средне',   labelEn: '● medium',  bg: '#da934c', text: '#fff4e8' },
+  { id: 'low',    labelRu: '● не горит', labelEn: '● low',     bg: '#68b281', text: '#f0fff4' },
 ]
 
 const REPEAT_OPTIONS = [
-const REPEAT_OPTIONS = [
-  { id: 'daily',   labelRu: 'каждый день',   labelEn: 'daily' },
-  { id: 'weekly',  labelRu: 'каждую неделю', labelEn: 'weekly' },
-  { id: 'monthly', labelRu: 'каждый месяц',  labelEn: 'monthly' },
+  { id: 'daily',   label: 'каждый день' },
+  { id: 'weekly',  label: 'каждую неделю' },
+  { id: 'monthly', label: 'каждый месяц' },
 ]
 
 function daysLeft(deadline) {
@@ -54,7 +53,7 @@ export default function SecretaryForm({ gremlinId, accentColor, lang, onStatsUpd
 
   const handleSave = async () => {
     setError(null)
-    if (!title.trim()) { setError('Укажи задачу'); return }
+    if (!title.trim()) { setError(lang === 'ru' ? 'Укажи задачу' : 'Enter task title'); return }
     setSaving(true)
     try {
       const result = await addTask(gremlinId, {
@@ -68,7 +67,7 @@ export default function SecretaryForm({ gremlinId, accentColor, lang, onStatsUpd
       if (result?.task) setTasks(t => [result.task, ...t])
       if (result?.stats) onStatsUpdate(result.stats)
       setTitle(''); setDescription(''); setDeadline(''); setPriority('medium'); setNotifyBefore('1'); setRepeat('')
-    } catch (e) { console.error(e); setError(lang === 'ru' ? 'Ошибка сохранения' : 'Save error') }
+    } catch (e) { console.error(e); setError('Ошибка сохранения') }
     setSaving(false)
   }
 
@@ -114,7 +113,7 @@ export default function SecretaryForm({ gremlinId, accentColor, lang, onStatsUpd
 
       {/* Табы */}
       <div style={{ display: 'flex', gap: 3, background: 'var(--bg2)', borderRadius: 8, padding: 3 }}>
-        {[['tasks', `Задачи (${pending.length})`], ['regular', 'Регулярные']].map(([id, label]) => (
+        {[['tasks', lang === 'ru' ? `Задачи (${pending.length})` : `Tasks (${pending.length})`], ['regular', lang === 'ru' ? 'Регулярные' : 'Recurring']].map(([id, label]) => (
           <button key={id} onClick={() => setActiveTab(id)}
             style={{ flex: 1, padding: '7px', borderRadius: 6, fontFamily: 'inherit', fontSize: 11, fontWeight: 700, cursor: 'pointer', background: activeTab === id ? accentColor : 'transparent', color: activeTab === id ? '#000' : 'var(--text-muted)', border: 'none' }}>
             {label}
@@ -132,7 +131,7 @@ export default function SecretaryForm({ gremlinId, accentColor, lang, onStatsUpd
               const days = daysLeft(task.deadline)
               const overdue = days !== null && days < 0
               const urgent = days !== null && days <= 1 && days >= 0
-              const repeatLabel = REPEAT_OPTIONS.find(r => r.id === task.repeat)?.label || task.repeat
+              const repeatLabel = REPEAT_OPTIONS.find(r => r.id === task.repeat)?.[lang === 'ru' ? 'labelRu' : 'labelEn'] || task.repeat
               return (
                 <div key={task.id} style={{ background: 'var(--bg2)', borderRadius: 8, padding: '10px 12px', borderLeft: '3px solid ' + (priColor[task.priority] || '#888') }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
@@ -144,7 +143,7 @@ export default function SecretaryForm({ gremlinId, accentColor, lang, onStatsUpd
                           <img src="/Icons/17.png" style={{ width: 11, height: 11 }} />
                           {task.deadline}
                           <span style={{ color: overdue ? '#e24b4a' : urgent ? '#d4a017' : 'var(--text-muted)' }}>
-                            {overdue ? `просрочено ${Math.abs(days)} д.` : days === 0 ? 'сегодня!' : days === 1 ? lang === 'ru' ? 'завтра' : 'tomorrow' : `через ${days} д.`}
+                            {overdue ? `просрочено ${Math.abs(days)} д.` : days === 0 ? 'сегодня!' : days === 1 ? 'завтра' : `через ${days} д.`}
                           </span>
                         </div>
                       )}
@@ -174,7 +173,7 @@ export default function SecretaryForm({ gremlinId, accentColor, lang, onStatsUpd
             {REPEAT_OPTIONS.map(r => (
               <button key={r.id} onClick={() => setRepeat(r.id)}
                 style={{ flex: 1, padding: '8px 4px', borderRadius: 8, fontFamily: 'inherit', fontSize: 10, fontWeight: 700, cursor: 'pointer', background: repeat === r.id ? accentColor + '25' : 'var(--bg3)', border: '1px solid ' + (repeat === r.id ? accentColor + '80' : 'var(--border)'), color: repeat === r.id ? accentColor : 'var(--text-muted)' }}>
-                {lang === 'ru' ? r.labelRu : r.labelEn}
+                {r.label}
               </button>
             ))}
           </div>
@@ -183,7 +182,7 @@ export default function SecretaryForm({ gremlinId, accentColor, lang, onStatsUpd
             {PRIORITIES.map(p => (
               <button key={p.id} onClick={() => setPriority(p.id)}
                 style={{ flex: 1, padding: '8px 4px', borderRadius: 8, fontFamily: 'inherit', fontSize: 11, fontWeight: 700, cursor: 'pointer', background: priority === p.id ? p.bg + '25' : 'var(--bg3)', border: '1px solid ' + (priority === p.id ? p.bg + '80' : 'var(--border)'), color: priority === p.id ? p.bg : 'var(--text-muted)' }}>
-                {p.label}
+                {lang === 'ru' ? p.labelRu : p.labelEn}
               </button>
             ))}
           </div>
@@ -211,7 +210,7 @@ export default function SecretaryForm({ gremlinId, accentColor, lang, onStatsUpd
 
           <button onClick={handleSave} disabled={saving || !title.trim() || !repeat}
             style={{ background: (title.trim() && repeat) ? accentColor : 'var(--bg3)', color: (title.trim() && repeat) ? '#000' : 'var(--text-muted)', border: 'none', borderRadius: 10, padding: '13px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-            {saving ? '...' : 'ДОБАВИТЬ РЕГУЛЯРНУЮ'}
+            {saving ? '...' : lang === 'ru' ? 'ДОБАВИТЬ РЕГУЛЯРНУЮ' : 'ADD RECURRING'}
           </button>
         </>
       )}
@@ -223,9 +222,9 @@ export default function SecretaryForm({ gremlinId, accentColor, lang, onStatsUpd
       {pending.length > 0 && (
         <div style={{ display: 'flex', gap: 8 }}>
           {[
-            { label: 'всего', val: pending.length, color: accentColor },
-            { label: 'срочных', val: pending.filter(t => t.priority === 'high').length, color: '#e24b4a' },
-            { label: lang === 'ru' ? 'просрочено' : 'overdue', val: pending.filter(t => t.deadline && daysLeft(t.deadline) < 0).length, color: '#e24b4a' },
+            { label: lang === 'ru' ? 'всего' : 'total', val: pending.length, color: accentColor },
+            { label: lang === 'ru' ? 'срочных' : 'urgent', val: pending.filter(t => t.priority === 'high').length, color: '#e24b4a' },
+            { label: 'просрочено', val: pending.filter(t => t.deadline && daysLeft(t.deadline) < 0).length, color: '#e24b4a' },
           ].map(s => (
             <div key={s.label} style={{ flex: 1, background: 'var(--bg2)', borderRadius: 8, padding: '8px', textAlign: 'center' }}>
               <div style={{ fontSize: 18, fontWeight: 700, color: s.color }}>{s.val}</div>
@@ -263,7 +262,7 @@ export default function SecretaryForm({ gremlinId, accentColor, lang, onStatsUpd
               color: priority === p.id ? p.bg : 'var(--text-muted)',
               transition: 'all 0.15s'
             }}>
-            {p.label}
+            {lang === 'ru' ? p.labelRu : p.labelEn}
           </button>
         ))}
       </div>
@@ -293,12 +292,12 @@ export default function SecretaryForm({ gremlinId, accentColor, lang, onStatsUpd
 
       <button onClick={handleSave} disabled={saving || !title.trim()}
         style={{ background: title.trim() ? accentColor : 'var(--bg3)', color: title.trim() ? '#000' : 'var(--text-muted)', border: 'none', borderRadius: 10, padding: '13px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s' }}>
-        {saving ? '...' : lang === 'ru' ? 'ДОБАВИТЬ ЗАДАЧУ' : 'ADD TASK'}
+        {saving ? '...' : 'ДОБАВИТЬ ЗАДАЧУ'}
       </button>
 
       {/* Фильтр */}
       <div style={{ display: 'flex', gap: 4, background: 'var(--bg2)', borderRadius: 8, padding: 3 }}>
-        {[['pending', `в работе (${pending.length})`], ['done', `готово (${done.length})`]].map(([id, label]) => (
+        {[['pending', lang === 'ru' ? `в работе (${pending.length})` : `in progress (${pending.length})`], ['done', lang === 'ru' ? `готово (${done.length})` : `done (${done.length})`]].map(([id, label]) => (
           <button key={id} onClick={() => setFilter(id)}
             style={{ flex: 1, padding: '6px', borderRadius: 6, fontFamily: 'inherit', fontSize: 11, cursor: 'pointer', background: filter === id ? accentColor : 'transparent', color: filter === id ? '#000' : 'var(--text-muted)', border: 'none', fontWeight: filter === id ? 700 : 400 }}>
             {label}
