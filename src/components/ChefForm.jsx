@@ -1,12 +1,19 @@
 import { useState, useEffect } from 'react'
 import { addMeal, getMeals, deleteMeal } from '../services/api'
 
-const MEAL_TYPES = [
-  { id: lang === 'ru' ? 'завтрак' : 'breakfast', label: lang === 'ru' ? 'завтрак' : 'breakfast', icon: 13 },
-  { id: lang === 'ru' ? 'обед' : 'lunch',    label: lang === 'ru' ? 'обед' : 'lunch',    icon: 14 },
-  { id: lang === 'ru' ? 'ужин' : 'dinner',    label: lang === 'ru' ? 'ужин' : 'dinner',    icon: 15 },
-  { id: lang === 'ru' ? 'перекус' : 'snack', label: lang === 'ru' ? 'перекус' : 'snack', icon: 16 },
+const MEAL_TYPES_RU = [
+  { id: 'завтрак', label: 'завтрак', icon: 13 },
+  { id: 'обед',    label: 'обед',    icon: 14 },
+  { id: 'ужин',    label: 'ужин',    icon: 15 },
+  { id: 'перекус', label: 'перекус', icon: 16 },
 ]
+const MEAL_TYPES_EN = [
+  { id: 'breakfast', label: 'breakfast', icon: 13 },
+  { id: 'lunch',     label: 'lunch',     icon: 14 },
+  { id: 'dinner',    label: 'dinner',    icon: 15 },
+  { id: 'snack',     label: 'snack',     icon: 16 },
+]
+const getMealTypes = (lang) => lang === 'ru' ? MEAL_TYPES_RU : MEAL_TYPES_EN
 
 // Безопасная работа с localStorage — Telegram WebApp может блокировать
 function safeGet(key) {
@@ -269,7 +276,7 @@ export default function ChefForm({ gremlinId, accentColor, lang, onStatsUpdate }
 
       {/* Тип приёма */}
       <div style={{ display: 'flex', gap: 5 }}>
-        {MEAL_TYPES.map(mt => (
+        {getMealTypes(lang).map(mt => (
           <button key={mt.id} onClick={() => setMealType(mt.id)}
             style={{ flex: 1, padding: '7px 4px', borderRadius: 8, fontFamily: 'inherit', fontSize: 10, fontWeight: 700, cursor: 'pointer', background: mealType === mt.id ? accentColor + '25' : 'var(--bg3)', border: '1px solid ' + (mealType === mt.id ? accentColor + '70' : 'var(--border)'), color: mealType === mt.id ? accentColor : 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
             <img src={`/Icons/${mt.icon}.png`} style={{ width: 13, height: 13 }} />

@@ -8,9 +8,10 @@ const PRIORITIES = [
 ]
 
 const REPEAT_OPTIONS = [
-  { id: 'daily',   label: lang === 'ru' ? 'каждый день' : 'daily' },
-  { id: 'weekly',  label: lang === 'ru' ? 'каждую неделю' : 'weekly' },
-  { id: 'monthly', label: lang === 'ru' ? 'каждый месяц' : 'monthly' },
+const REPEAT_OPTIONS = [
+  { id: 'daily',   labelRu: 'каждый день',   labelEn: 'daily' },
+  { id: 'weekly',  labelRu: 'каждую неделю', labelEn: 'weekly' },
+  { id: 'monthly', labelRu: 'каждый месяц',  labelEn: 'monthly' },
 ]
 
 function daysLeft(deadline) {
@@ -173,7 +174,7 @@ export default function SecretaryForm({ gremlinId, accentColor, lang, onStatsUpd
             {REPEAT_OPTIONS.map(r => (
               <button key={r.id} onClick={() => setRepeat(r.id)}
                 style={{ flex: 1, padding: '8px 4px', borderRadius: 8, fontFamily: 'inherit', fontSize: 10, fontWeight: 700, cursor: 'pointer', background: repeat === r.id ? accentColor + '25' : 'var(--bg3)', border: '1px solid ' + (repeat === r.id ? accentColor + '80' : 'var(--border)'), color: repeat === r.id ? accentColor : 'var(--text-muted)' }}>
-                {r.label}
+                {lang === 'ru' ? r.labelRu : r.labelEn}
               </button>
             ))}
           </div>
