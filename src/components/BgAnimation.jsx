@@ -41,24 +41,27 @@ export default function BgAnimation({ theme = 'default' }) {
     lastTime.current = 0
 
     const cfg = BG_CONFIGS[theme] || BG_CONFIGS.default
-    let loaded = 0
+    let started = false
 
-    for (let i = 0; i < cfg.total; i++) {
-      const img = new Image()
-      img.src = cfg.getUrl(i)
-      img.onload = () => { loaded++; if (loaded === cfg.total) startAnimation() }
-      img.onerror = () => { loaded++; if (loaded === cfg.total) startAnimation() }
-      frames.current[i] = img
-    }
-
+    // Запускаем анимацию сразу после загрузки первого кадра
     function startAnimation() {
+      if (started) return
+      started = true
       const interval = 1000 / cfg.fps
       function draw(timestamp) {
         if (timestamp - lastTime.current >= interval) {
-          const frame = frames.current[frameIndex.current]
-          if (frame?.complete && frame.naturalWidth > 0) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height)
-            ctx.drawImage(frame, 0, 0, canvas.width, canvas.height)
+          // Ищем следующий загруженный кадр
+          let attempts = 0
+          while (attempts < cfg.total) {
+            const frame = frames.current[frameIndex.current]
+            if (frame?.complete && frame.naturalWidth > 0) {
+              ctx.clearRect(0, 0, canvas.width, canvas.height)
+              ctx.drawImage(frame, 0, 0, canvas.width, canvas.height)
+              break
+            }
+            // Кадр ещё не загружен — пропускаем
+            frameIndex.current = (frameIndex.current + 1) % cfg.total
+            attempts++
           }
           frameIndex.current = (frameIndex.current + 1) % cfg.total
           lastTime.current = timestamp
@@ -66,6 +69,17 @@ export default function BgAnimation({ theme = 'default' }) {
         animRef.current = requestAnimationFrame(draw)
       }
       animRef.current = requestAnimationFrame(draw)
+    }
+
+    for (let i = 0; i < cfg.total; i++) {
+      const img = new Image()
+      img.src = cfg.getUrl(i)
+      img.onload = () => {
+        // Стартуем как только первый кадр готов
+        if (!started) startAnimation()
+      }
+      img.onerror = () => {}
+      frames.current[i] = img
     }
 
     return () => cancelAnimationFrame(animRef.current)
