@@ -282,6 +282,7 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
   const [conflictMode, setConflictMode] = useState(null)
   const [converting, setConverting] = useState(false)
   const [convertedAmount, setConvertedAmount] = useState(null)
+  const [periodFilter, setPeriodFilter] = useState('month') // week | month | year | all
 
   const currencies = [...new Set(Object.keys(snapshots))]
 
@@ -525,6 +526,68 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
 
       {transactions.length > 0 && (
         <>
+          {/* Фильтр периода + тоталы по категориям */}
+          {(() => {
+            const now = new Date()
+            const filtered = transactions.filter(tx => {
+              if (!tx.date) return false
+              const d = new Date(tx.date)
+              if (periodFilter === 'week') {
+                const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate() - 7)
+                return d >= weekAgo
+              }
+              if (periodFilter === 'month') return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
+              if (periodFilter === 'year') return d.getFullYear() === now.getFullYear()
+              return true
+            })
+            const expFiltered = filtered.filter(t => t.type === 'expense')
+            const catTotals = {}
+            expFiltered.forEach(tx => {
+              const cat = tx.category || (lang === 'ru' ? 'прочее' : 'other')
+              if (!catTotals[cat]) catTotals[cat] = {}
+              if (!catTotals[cat][tx.currency]) catTotals[cat][tx.currency] = 0
+              catTotals[cat][tx.currency] += tx.amount
+            })
+            const totalByCur = {}
+            expFiltered.forEach(tx => {
+              if (!totalByCur[tx.currency]) totalByCur[tx.currency] = 0
+              totalByCur[tx.currency] += tx.amount
+            })
+            const PERIOD_LABELS = { week: lang === 'ru' ? 'нед' : 'wk', month: lang === 'ru' ? 'мес' : 'mo', year: lang === 'ru' ? 'год' : 'yr', all: lang === 'ru' ? 'всё' : 'all' }
+            return (
+              <>
+                <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+                  {['week','month','year','all'].map(p => (
+                    <button key={p} onClick={() => setPeriodFilter(p)} style={{ flex: 1, padding: '5px 2px', borderRadius: 6, fontFamily: 'inherit', fontSize: 10, fontWeight: 700, cursor: 'pointer', background: periodFilter === p ? '#fc7c6f25' : 'var(--bg3)', border: '1px solid ' + (periodFilter === p ? '#fc7c6f60' : 'var(--border)'), color: periodFilter === p ? '#fc7c6f' : 'var(--text-muted)' }}>
+                      {PERIOD_LABELS[p]}
+                    </button>
+                  ))}
+                </div>
+                {Object.keys(catTotals).length > 0 && (
+                  <div style={{ background: 'var(--bg3)', borderRadius: 8, padding: '8px 10px', marginBottom: 8 }}>
+                    <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: 6 }}>{lang === 'ru' ? 'РАСХОДЫ ПО КАТЕГОРИЯМ' : 'EXPENSES BY CATEGORY'}</div>
+                    {Object.entries(catTotals).sort((a, b) => Object.values(b[1])[0] - Object.values(a[1])[0]).map(([cat, byCur]) => (
+                      <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                        {CAT_ICON[cat] && <img src={`/Icons/${CAT_ICON[cat]}.png`} style={{ width: 11, height: 11 }} />}
+                        <div style={{ flex: 1, fontSize: 11, color: 'var(--text)' }}>{cat}</div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: '#fc7c6f' }}>
+                          {Object.entries(byCur).map(([cur, amt]) => `${amt.toLocaleString('ru-RU')} ${SYM[cur] || cur}`).join(' + ')}
+                        </div>
+                      </div>
+                    ))}
+                    {Object.keys(totalByCur).length > 0 && (
+                      <div style={{ borderTop: '1px solid var(--border)', marginTop: 6, paddingTop: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{lang === 'ru' ? 'Итого' : 'Total'}</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#fc7c6f' }}>
+                          {Object.entries(totalByCur).map(([cur, amt]) => `${amt.toLocaleString('ru-RU')} ${SYM[cur] || cur}`).join(' + ')}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )
+          })()}
           <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 6, letterSpacing: '0.06em' }}>
             {lang === 'ru' ? 'ПОСЛЕДНИЕ ЗАПИСИ' : 'RECENT ENTRIES'}
           </div>

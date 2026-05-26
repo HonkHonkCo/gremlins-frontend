@@ -7,7 +7,7 @@ function todayDow(lang) { return lang === 'ru' ? ['вс','пн','вт','ср','�
 const DAYS_RU = ['пн','вт','ср','чт','пт','сб','вс']
 const DAYS_EN = ['mo','tu','we','th','fr','sa','su']
 
-const WORKOUT_ICONS = { бег: 19, отжимания: 20, подтягивания: 21, велосипед: 22, плавание: 23, йога: 24, силовая: 20, ходьба: 25 }
+const WORKOUT_ICONS = { бег: 19, отжимания: 21, подтягивания: 20, велосипед: 22, плавание: 23, йога: 24, силовая: 25, ходьба: 18 }
 
 const WORKOUT_TYPES = [
   { id: 'бег',          labelRu: 'бег',        labelEn: 'run',        fields: ['distance_km', 'duration_min', 'calories'] },
@@ -30,7 +30,7 @@ const CAL_PER_MIN = {
 export default function TrainerForm({ gremlinId, accentColor, lang, onStatsUpdate }) {
   const DAYS = lang === 'ru' ? DAYS_RU : DAYS_EN
   const [activeTab, setActiveTab] = useState('log')
-  const [plan, setPlan] = useState({}) // { пн: 'бег', вт: '', ... }
+  const [plan, setPlan] = useState({}) // { пн: ['бег', 'йога'], вт: [], ... }
   const [planLoading, setPlanLoading] = useState(true)
   const [planSaving, setPlanSaving] = useState(false)
   const [workoutType, setWorkoutType] = useState('бег')
@@ -70,12 +70,13 @@ export default function TrainerForm({ gremlinId, accentColor, lang, onStatsUpdat
       const done = JSON.parse(localStorage.getItem(doneKey) || '{}')
       done[today] = day
       localStorage.setItem(doneKey, JSON.stringify(done))
-      // Автоматически записываем тренировку
-      const type = plan[day]
-      if (type && type !== 'отдых') {
-        const result = await addWorkout(gremlinId, { type, date: today, note: lang === 'ru' ? 'по плану' : 'as planned' })
-        if (result?.workout) setWorkouts(w => [result.workout, ...w])
-        if (result?.stats) onStatsUpdate(result.stats)
+      const types = Array.isArray(plan[day]) ? plan[day] : (plan[day] ? [plan[day]] : [])
+      for (const type of types) {
+        if (type && type !== 'отдых') {
+          const result = await addWorkout(gremlinId, { type, date: today, note: lang === 'ru' ? 'по плану' : 'as planned' })
+          if (result?.workout) setWorkouts(w => [result.workout, ...w])
+          if (result?.stats) onStatsUpdate(result.stats)
+        }
       }
     } catch {}
     loadWorkouts()
@@ -170,26 +171,42 @@ export default function TrainerForm({ gremlinId, accentColor, lang, onStatsUpdat
             const doneKey = 'plan_done_' + gremlinId
             let isDone = false
             try { const done = JSON.parse(localStorage.getItem(doneKey) || '{}'); isDone = done[todayStr()] === day } catch {}
+            const dayTypes = Array.isArray(plan[day]) ? plan[day] : (plan[day] ? [plan[day]] : [])
+            const toggleType = (typeId) => {
+              const current = Array.isArray(plan[day]) ? plan[day] : (plan[day] ? [plan[day]] : [])
+              const updated = current.includes(typeId) ? current.filter(t => t !== typeId) : [...current, typeId]
+              handleSavePlan({ ...plan, [day]: updated })
+            }
             return (
-              <div key={day} style={{ display: 'flex', alignItems: 'center', gap: 8, background: isToday ? accentColor + '15' : 'var(--bg2)', borderRadius: 8, padding: '8px 10px', border: isToday ? '1px solid ' + accentColor + '40' : '1px solid transparent' }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: isToday ? accentColor : 'var(--text-muted)', width: 20, flexShrink: 0 }}>{day}</div>
-                <select
-                  value={plan[day] || ''}
-                  onChange={e => handleSavePlan({ ...plan, [day]: e.target.value })}
-                  style={{ flex: 1, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 8px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 11, outline: 'none' }}>
-                  <option value="">— отдых —</option>
+              <div key={day} style={{ background: isToday ? accentColor + '15' : 'var(--bg2)', borderRadius: 8, padding: '8px 10px', border: isToday ? '1px solid ' + accentColor + '40' : '1px solid transparent' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: dayTypes.length > 0 ? 6 : 0 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: isToday ? accentColor : 'var(--text-muted)', width: 20, flexShrink: 0 }}>{day}</div>
+                  {dayTypes.length === 0 && <span style={{ fontSize: 10, color: 'var(--text-muted)', flex: 1 }}>— {lang === 'ru' ? 'отдых' : 'rest'} —</span>}
+                  {dayTypes.length > 0 && (
+                    <div style={{ flex: 1, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                      {dayTypes.map(t => {
+                        const wt = WORKOUT_TYPES.find(w => w.id === t)
+                        return <span key={t} style={{ fontSize: 10, background: accentColor + '25', color: accentColor, border: '1px solid ' + accentColor + '50', borderRadius: 12, padding: '2px 8px' }}>{lang === 'ru' ? wt?.labelRu : wt?.labelEn}</span>
+                      })}
+                    </div>
+                  )}
+                  {isToday && dayTypes.length > 0 && (
+                    <button
+                      onClick={() => markPlanDone(day)}
+                      disabled={isDone}
+                      style={{ background: isDone ? '#3ecf7020' : accentColor, color: isDone ? '#3ecf70' : '#000', border: isDone ? '1px solid #3ecf7040' : 'none', borderRadius: 6, padding: '5px 10px', fontSize: 10, fontWeight: 700, cursor: isDone ? 'default' : 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+                      {isDone ? lang === 'ru' ? '✓ готово' : '✓ done' : lang === 'ru' ? 'сделал' : 'done'}
+                    </button>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                   {WORKOUT_TYPES.filter(t => t.id !== 'другое').map(t => (
-                    <option key={t.id} value={t.id}>{lang === 'ru' ? t.labelRu : t.labelEn}</option>
+                    <button key={t.id} onClick={() => toggleType(t.id)}
+                      style={{ padding: '3px 8px', borderRadius: 12, fontFamily: 'inherit', fontSize: 10, cursor: 'pointer', background: dayTypes.includes(t.id) ? accentColor + '25' : 'var(--bg3)', border: '1px solid ' + (dayTypes.includes(t.id) ? accentColor + '60' : 'var(--border)'), color: dayTypes.includes(t.id) ? accentColor : 'var(--text-muted)', fontWeight: dayTypes.includes(t.id) ? 700 : 400 }}>
+                      {lang === 'ru' ? t.labelRu : t.labelEn}
+                    </button>
                   ))}
-                </select>
-                {isToday && plan[day] && plan[day] !== 'отдых' && (
-                  <button
-                    onClick={() => markPlanDone(day)}
-                    disabled={isDone}
-                    style={{ background: isDone ? '#3ecf7020' : accentColor, color: isDone ? '#3ecf70' : '#000', border: isDone ? '1px solid #3ecf7040' : 'none', borderRadius: 6, padding: '5px 10px', fontSize: 10, fontWeight: 700, cursor: isDone ? 'default' : 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
-                    {isDone ? lang === 'ru' ? '✓ готово' : '✓ done' : lang === 'ru' ? 'сделал' : 'done'}
-                  </button>
-                )}
+                </div>
               </div>
             )
           })}
