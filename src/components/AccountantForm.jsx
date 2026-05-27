@@ -19,6 +19,8 @@ const CAT_ICON = { 'еда': 5, 'кафе': 1, 'транспорт': 3, 'жил�
 
 const CAT_EMOJI = { 'еда': '🍱', 'кафе': '☕', 'транспорт': '🚗', 'жильё': '🏠', 'здоровье': '💊', 'одежда': '👕', 'развлечения': '🎮', 'связь': '📱', 'food': '🍱', 'cafe': '☕', 'transport': '🚗', 'housing': '🏠', 'health': '💊', 'clothes': '👕', 'entertainment': '🎮', 'telecom': '📱', 'доход': '💵', 'income': '💵' }
 
+function todayStr() { return new Date().toISOString().split('T')[0] }
+
 function formatMonth(dateStr, lang) {
   if (!dateStr) return ''
   const [y, m] = dateStr.split('-')
