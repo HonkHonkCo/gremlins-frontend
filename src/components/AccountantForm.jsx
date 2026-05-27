@@ -17,7 +17,7 @@ const DEFAULT_CATS_EN = ['food','cafe','transport','housing','health','clothes',
 const getDefaultCats = (lang) => lang === 'ru' ? DEFAULT_CATS_RU : DEFAULT_CATS_EN
 const CAT_ICON = { 'еда': 5, 'кафе': 1, 'транспорт': 3, 'жильё': 7, 'здоровье': 9, 'одежда': 10, 'развлечения': 11, 'связь': 8, 'food': 5, 'cafe': 1, 'transport': 3, 'housing': 7, 'health': 9, 'clothes': 10, 'entertainment': 11, 'telecom': 8 }
 
-function todayStr() { return new Date().toISOString().split('T')[0] }
+const CAT_EMOJI = { 'еда': '🍱', 'кафе': '☕', 'транспорт': '🚗', 'жильё': '🏠', 'здоровье': '💊', 'одежда': '👕', 'развлечения': '🎮', 'связь': '📱', 'food': '🍱', 'cafe': '☕', 'transport': '🚗', 'housing': '🏠', 'health': '💊', 'clothes': '👕', 'entertainment': '🎮', 'telecom': '📱', 'доход': '💵', 'income': '💵' }
 
 function formatMonth(dateStr, lang) {
   if (!dateStr) return ''
@@ -371,7 +371,9 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
         <div key={tx.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg3)', borderRadius: 7, padding: '7px 10px', marginBottom: 3 }}>
           <div style={{ width: 5, height: 5, borderRadius: '50%', flexShrink: 0, background: tx.type === 'expense' ? '#fc7c6f' : '#68b281' }} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 11, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.category || (tx.type === 'income' ? (lang === 'ru' ? 'доход' : 'income') : tx.type)}</div>
+            <div style={{ fontSize: 11, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {CAT_EMOJI[tx.category] || CAT_EMOJI[tx.type] || (tx.type === 'income' ? '💵' : '💸')} {tx.category || (tx.type === 'income' ? (lang === 'ru' ? 'доход' : 'income') : tx.type)}
+            </div>
             {tx.note && <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>{tx.note}</div>}
           </div>
           <div style={{ fontSize: 12, fontWeight: 700, color: tx.type === 'expense' ? '#fc7c6f' : '#68b281', whiteSpace: 'nowrap' }}>
@@ -526,68 +528,6 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
 
       {transactions.length > 0 && (
         <>
-          {/* Фильтр периода + тоталы по категориям */}
-          {(() => {
-            const now = new Date()
-            const filtered = transactions.filter(tx => {
-              if (!tx.date) return false
-              const d = new Date(tx.date)
-              if (periodFilter === 'week') {
-                const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate() - 7)
-                return d >= weekAgo
-              }
-              if (periodFilter === 'month') return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
-              if (periodFilter === 'year') return d.getFullYear() === now.getFullYear()
-              return true
-            })
-            const expFiltered = filtered.filter(t => t.type === 'expense')
-            const catTotals = {}
-            expFiltered.forEach(tx => {
-              const cat = tx.category || (lang === 'ru' ? 'прочее' : 'other')
-              if (!catTotals[cat]) catTotals[cat] = {}
-              if (!catTotals[cat][tx.currency]) catTotals[cat][tx.currency] = 0
-              catTotals[cat][tx.currency] += tx.amount
-            })
-            const totalByCur = {}
-            expFiltered.forEach(tx => {
-              if (!totalByCur[tx.currency]) totalByCur[tx.currency] = 0
-              totalByCur[tx.currency] += tx.amount
-            })
-            const PERIOD_LABELS = { week: lang === 'ru' ? 'нед' : 'wk', month: lang === 'ru' ? 'мес' : 'mo', year: lang === 'ru' ? 'год' : 'yr', all: lang === 'ru' ? 'всё' : 'all' }
-            return (
-              <>
-                <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
-                  {['week','month','year','all'].map(p => (
-                    <button key={p} onClick={() => setPeriodFilter(p)} style={{ flex: 1, padding: '5px 2px', borderRadius: 6, fontFamily: 'inherit', fontSize: 10, fontWeight: 700, cursor: 'pointer', background: periodFilter === p ? '#fc7c6f25' : 'var(--bg3)', border: '1px solid ' + (periodFilter === p ? '#fc7c6f60' : 'var(--border)'), color: periodFilter === p ? '#fc7c6f' : 'var(--text-muted)' }}>
-                      {PERIOD_LABELS[p]}
-                    </button>
-                  ))}
-                </div>
-                {Object.keys(catTotals).length > 0 && (
-                  <div style={{ background: 'var(--bg3)', borderRadius: 8, padding: '8px 10px', marginBottom: 8 }}>
-                    <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: 6 }}>{lang === 'ru' ? 'РАСХОДЫ ПО КАТЕГОРИЯМ' : 'EXPENSES BY CATEGORY'}</div>
-                    {Object.entries(catTotals).sort((a, b) => Object.values(b[1])[0] - Object.values(a[1])[0]).map(([cat, byCur]) => (
-                      <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                        {CAT_ICON[cat] && <img src={`/Icons/${CAT_ICON[cat]}.png`} style={{ width: 11, height: 11 }} />}
-                        <div style={{ flex: 1, fontSize: 11, color: 'var(--text)' }}>{cat}</div>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: '#fc7c6f' }}>
-                          {Object.entries(byCur).map(([cur, amt]) => `${amt.toLocaleString('ru-RU')} ${SYM[cur] || cur}`).join(' + ')}
-                        </div>
-                      </div>
-                    ))}
-                    {Object.keys(totalByCur).length > 0 && (
-                      <div style={{ borderTop: '1px solid var(--border)', marginTop: 6, paddingTop: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{lang === 'ru' ? 'Итого' : 'Total'}</div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: '#fc7c6f' }}>
-                          {Object.entries(totalByCur).map(([cur, amt]) => `${amt.toLocaleString('ru-RU')} ${SYM[cur] || cur}`).join(' + ')}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </>
-            )
-          })()}
           <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 6, letterSpacing: '0.06em' }}>
             {lang === 'ru' ? 'ПОСЛЕДНИЕ ЗАПИСИ' : 'RECENT ENTRIES'}
           </div>
@@ -606,33 +546,44 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
 
 // ── INVEST ────────────────────────────────────────────────────────────────────
 
-function MiniChartLocal({ data, color }) {
+function CRTBarChart({ data, color }) {
   if (!data || data.length < 2) return null
   const vals = data.map(d => d.balance)
-  const min = Math.min(...vals), max = Math.max(...vals)
+  const min = Math.min(0, ...vals), max = Math.max(...vals)
   const range = max - min || 1
-  const uid = 'mcl_' + color.replace('#', '') + '_' + Math.random().toString(36).slice(2, 6)
-  const W = 300, H = 44
-  const pts = vals.map((v, i) => [
-    (i / (vals.length - 1)) * W,
-    H - 6 - ((v - min) / range) * (H - 10)
-  ])
-  const pathD = pts.map((p, i) => (i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`)).join(' ')
-  const areaD = pathD + ` L${W},${H} L0,${H} Z`
+  const W = 300, H = 60
+  const barW = Math.max(2, Math.floor(W / vals.length) - 1)
+  const uid = 'crt_' + color.replace('#','') + '_' + Math.random().toString(36).slice(2,6)
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="44" style={{ display: 'block', marginTop: 4 }} preserveAspectRatio="none">
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} style={{ display: 'block', marginTop: 6 }} preserveAspectRatio="none">
       <defs>
-        <linearGradient id={uid} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
-        </linearGradient>
+        <filter id={uid + '_glow'}>
+          <feGaussianBlur stdDeviation="1.5" result="blur" />
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        {/* CRT scanlines */}
+        <pattern id={uid + '_scan'} x="0" y="0" width={W} height="2" patternUnits="userSpaceOnUse">
+          <rect x="0" y="0" width={W} height="1" fill="rgba(0,0,0,0.18)" />
+        </pattern>
       </defs>
-      <path d={areaD} fill={`url(#${uid})`} />
-      <path d={pathD} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <animate attributeName="stroke-dasharray"
-          from={`0 ${W * 2}`} to={`${W * 2} 0`}
-          dur="0.8s" fill="freeze" />
-      </path>
+      {/* Bars */}
+      {vals.map((v, i) => {
+        const x = i * (W / vals.length)
+        const barH = Math.max(2, ((v - min) / range) * (H - 8))
+        const y = H - barH
+        const isLast = i === vals.length - 1
+        return (
+          <g key={i} filter={`url(#${uid + '_glow'})`}>
+            <rect x={x + 1} y={y} width={barW} height={barH} fill={isLast ? color : color + '90'} rx="1" />
+            {isLast && <rect x={x + 1} y={y} width={barW} height={2} fill="#fff" opacity="0.4" rx="1" />}
+          </g>
+        )
+      })}
+      {/* CRT scanlines overlay */}
+      <rect x="0" y="0" width={W} height={H} fill={`url(#${uid + '_scan'})`} opacity="0.5" />
+      {/* Labels */}
+      <text x="2" y={H - 2} fontSize="8" fill={color} opacity="0.8">{vals[0].toLocaleString('ru-RU',{maximumFractionDigits:0})}</text>
+      <text x={W - 2} y={H - 2} fontSize="8" fill={color} textAnchor="end">{vals[vals.length-1].toLocaleString('ru-RU',{maximumFractionDigits:0})}</text>
     </svg>
   )
 }
@@ -681,7 +632,7 @@ function InvestForm({ gremlinId, accounts, transactions, snapshots, onAdd, onDel
               <span>{lang === 'ru' ? 'Вклады' : 'Investments'} {cur}</span>
               <span style={{ color, fontWeight: 700 }}>{total.toLocaleString('ru-RU')} {SYM[cur] || cur}</span>
             </div>
-            <MiniChartLocal data={data} color={color} />
+            <CRTBarChart data={data} color={color} />
           </div>
         )
       })}

@@ -208,6 +208,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
   const [activeTab, setActiveTab] = useState(hasDataTab ? 'data' : 'chat')
   const [talking, setTalking] = useState(false)
   const [snapshots, setSnapshots] = useState({})
+  const [statsPeriod, setStatsPeriod] = useState('month')
   const bottomRef = useRef(null)
   const fileRef = useRef(null)
 
@@ -710,22 +711,21 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
         {gremlin.role === 'accountant' && activeTab === 'stats' && (
           <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px' }}>
             {(() => {
+              const [periodFilter, setPeriodFilter] = [statsPeriod, setStatsPeriod]
               const currencyRows = getAccountantStatRows(stats)
               const investments = Object.entries(stats).filter(([k]) => k.startsWith('investment_'))
               const cats = stats.categories ? Object.entries(stats.categories).sort((a,b) => b[1]-a[1]) : []
-              const totalExp = Object.entries(stats).filter(([k]) => k.startsWith('expense_')).reduce((s,[,v])=>s+v,0)
+
+              const CAT_EMOJI = { 'еда': '🍱', 'кафе': '☕', 'транспорт': '🚗', 'жильё': '🏠', 'здоровье': '💊', 'одежда': '👕', 'развлечения': '🎮', 'связь': '📱', 'food': '🍱', 'cafe': '☕', 'transport': '🚗', 'housing': '🏠', 'health': '💊', 'clothes': '👕', 'entertainment': '🎮', 'telecom': '📱' }
+              const PERIOD_LABELS = { week: lang==='ru'?'нед':'wk', month: lang==='ru'?'мес':'mo', year: lang==='ru'?'год':'yr', all: lang==='ru'?'всё':'all' }
+
               return (
                 <>
                   {currencyRows.length === 0 && <div style={{textAlign:'center',color:'var(--text-muted)',fontSize:12,marginTop:20}}>{lang==='ru'?'Добавь первую запись':'Add your first entry'}</div>}
-                  {currencyRows.map(c => {
-                    const snapData = snapshots[c.code] || []
-                    const chartColor = c.bal >= 0 ? accentColor : '#e24b4a'
-                    return (
+                  {currencyRows.map(c => (
                     <div key={c.code} style={{ marginBottom: 10, background: 'var(--bg2)', borderRadius: 10, padding: '8px 10px', border: '1px solid var(--border)' }}>
-                      <div style={{ display: 'flex', gap: 5, alignItems: 'center', marginBottom: 6 }}>
-                        <div style={{ width: 32, fontSize: 12, color: 'var(--text-muted)', textAlign: 'right', flexShrink: 0 }}>
-                          {c.symbol}
-                        </div>
+                      <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+                        <div style={{ width: 32, fontSize: 12, color: 'var(--text-muted)', textAlign: 'right', flexShrink: 0 }}>{c.symbol}</div>
                         <div style={{ flex: 1, display: 'flex', gap: 4 }}>
                           {[
                             { val: c.exp, label: lang==='ru'?'расход':'expense', color: '#e24b4a' },
@@ -741,14 +741,43 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
                           ))}
                         </div>
                       </div>
-                      {snapData.length >= 2 && (
-                        <div style={{ marginTop: 4 }}>
-                          <MiniChart data={snapData} color={chartColor} height={52} />
-                        </div>
-                      )}
                     </div>
-                    )
-                  })}
+                  ))}
+
+                  {/* Период-фильтр + категории */}
+                  {cats.length > 0 && (
+                    <>
+                      <div style={{ display: 'flex', gap: 4, margin: '8px 0' }}>
+                        {['week','month','year','all'].map(p => (
+                          <button key={p} onClick={() => setPeriodFilter(p)} style={{ flex: 1, padding: '5px 2px', borderRadius: 6, fontFamily: 'inherit', fontSize: 10, fontWeight: 700, cursor: 'pointer', background: periodFilter === p ? accentColor+'25' : 'var(--bg3)', border: '1px solid ' + (periodFilter === p ? accentColor+'60' : 'var(--border)'), color: periodFilter === p ? accentColor : 'var(--text-muted)' }}>
+                            {PERIOD_LABELS[p]}
+                          </button>
+                        ))}
+                      </div>
+                      <div style={{fontSize:10,color:'var(--text-muted)',margin:'6px 0 5px',letterSpacing:'0.06em',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                        <span>{lang==='ru'?'КАТЕГОРИИ РАСХОДОВ':'EXPENSE CATEGORIES'}</span>
+                      </div>
+                      {(() => {
+                        const totalCats = cats.reduce((s,[,v])=>s+v, 0)
+                        return cats.map(([cat, val]) => {
+                          const pct = totalCats > 0 ? Math.round((val/totalCats)*100) : 0
+                          const emoji = CAT_EMOJI[cat] || '📦'
+                          return (
+                            <div key={cat} style={{display:'flex',alignItems:'center',gap:8,background:'var(--bg2)',borderRadius:8,padding:'7px 12px',marginBottom:4}}>
+                              <span style={{fontSize:14}}>{emoji}</span>
+                              <div style={{flex:1,fontSize:12,color:'var(--text)',textTransform:'capitalize'}}>{cat}</div>
+                              <div style={{width:60,height:4,background:'var(--bg3)',borderRadius:2,overflow:'hidden'}}>
+                                <div style={{width:pct+'%',height:'100%',background:accentColor,borderRadius:2,transition:'width 0.4s'}}/>
+                              </div>
+                              <div style={{fontSize:10,color:accentColor,minWidth:28,textAlign:'right'}}>{pct}%</div>
+                              <div style={{fontSize:10,color:'var(--text-muted)',minWidth:50,textAlign:'right'}}>{val.toLocaleString('ru-RU',{maximumFractionDigits:0})}</div>
+                            </div>
+                          )
+                        })
+                      })()}
+                    </>
+                  )}
+
                   {investments.length > 0 && (
                     <>
                       <div style={{fontSize:10,color:'var(--text-muted)',margin:'10px 0 5px',letterSpacing:'0.06em'}}>{lang==='ru'?'ВКЛАДЫ':'INVESTMENTS'}</div>
@@ -760,40 +789,6 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
                       ))}
                     </>
                   )}
-                  {cats.length > 0 && (() => {
-                    // БАГ 2.3: конвертируем все суммы категорий в доминирующую валюту
-                    // Курсы: 1 USD ≈ 90 RUB ≈ 33 THB; используем THB как базу
-                    const RATES_TO_THB = { THB: 1, RUB: 0.33, USD: 33, EUR: 36, GBP: 42, AED: 9, CNY: 4.5, JPY: 0.22, KRW: 0.024, SGD: 24, MYR: 7, IDR: 0.002, GEL: 12, AMD: 0.08, KZT: 0.07, TRY: 0.9, CAD: 24, AUD: 21, CHF: 37, PLN: 8, UAH: 0.8 }
-                    // Находим доминирующую валюту (по сумме расходов)
-                    const expByCur = Object.entries(stats).filter(([k]) => k.startsWith('expense_')).map(([k,v]) => [k.replace('expense_','').toUpperCase(), v])
-                    const domCur = expByCur.length ? expByCur.reduce((a,b) => a[1]>=b[1]?a:b)[0] : 'THB'
-                    const domSym = CURRENCY_SYMBOLS[domCur] || domCur
-                    const domRate = RATES_TO_THB[domCur] || 1
-                    // stats.categories хранит суммы без валюты — берём доминирующую валюту как есть
-                    // (категории всегда пишутся в валюте счёта, поэтому просто показываем с пометкой)
-                    const totalCats = cats.reduce((s,[,v])=>s+v, 0)
-                    return (
-                    <>
-                      <div style={{fontSize:10,color:'var(--text-muted)',margin:'10px 0 5px',letterSpacing:'0.06em',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                        <span>{lang==='ru'?'КАТЕГОРИИ РАСХОДОВ':'EXPENSE CATEGORIES'}</span>
-                        <span style={{opacity:0.6,fontWeight:400}}>~{domSym}</span>
-                      </div>
-                      {cats.map(([cat, val]) => {
-                        const pct = totalCats > 0 ? Math.round((val/totalCats)*100) : 0
-                        return (
-                          <div key={cat} style={{display:'flex',alignItems:'center',gap:8,background:'var(--bg2)',borderRadius:8,padding:'7px 12px',marginBottom:4}}>
-                            <div style={{flex:1,fontSize:12,color:'var(--text)',textTransform:'capitalize'}}>{cat}</div>
-                            <div style={{width:60,height:4,background:'var(--bg3)',borderRadius:2,overflow:'hidden'}}>
-                              <div style={{width:pct+'%',height:'100%',background:accentColor,borderRadius:2,transition:'width 0.4s'}}/>
-                            </div>
-                            <div style={{fontSize:10,color:accentColor,minWidth:28,textAlign:'right'}}>{pct}%</div>
-                            <div style={{fontSize:10,color:'var(--text-muted)',minWidth:50,textAlign:'right'}}>{val.toLocaleString('ru-RU',{maximumFractionDigits:0})}</div>
-                          </div>
-                        )
-                      })}
-                    </>
-                    )
-                  })()}
                 </>
               )
             })()}
