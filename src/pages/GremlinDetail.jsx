@@ -651,8 +651,24 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
             )
           })()}
 
-          {/* ТРЕНЕР и остальные — обычные плитки */}
-          {gremlin.role !== 'accountant' && gremlin.role !== 'chef' && gremlin.role !== 'secretary' && hasStats && (
+          {/* ТРЕНЕР — суммарные плашки за неделю */}
+          {gremlin.role === 'trainer' && (
+            <div style={{ display: 'flex', gap: 6, padding: '6px 12px' }}>
+              {[
+                { val: stats.week_count ?? stats.total_workouts ?? '-', label: lang === 'ru' ? 'тренировок' : 'workouts' },
+                { val: stats.week_duration_min ? stats.week_duration_min + (lang === 'ru' ? ' мин' : ' min') : (stats.total_duration_min ? stats.total_duration_min + (lang === 'ru' ? ' мин' : ' min') : '-'), label: lang === 'ru' ? 'время' : 'time' },
+                { val: stats.week_calories ? stats.week_calories + ' ккал' : (stats.total_calories ? stats.total_calories + ' ккал' : '-'), label: lang === 'ru' ? 'сожжено' : 'burned' },
+              ].map(s => (
+                <div key={s.label} style={{ flex: 1, background: accentColor + '15', border: '1px solid ' + accentColor + '30', borderRadius: 6, padding: '5px 10px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: accentColor, textShadow: '0 0 8px ' + accentColor + '80' }}>{s.val}</div>
+                  <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Остальные роли (не accountant, chef, secretary, trainer) — обычные плитки */}
+          {gremlin.role !== 'accountant' && gremlin.role !== 'chef' && gremlin.role !== 'secretary' && gremlin.role !== 'trainer' && hasStats && (
             <div style={{ display: 'flex', gap: 6, padding: '6px 12px', flexWrap: 'wrap', justifyContent: 'center' }}>
               {priorityStats.map(([k, v]) => (
                 <div key={k} style={{ background: accentColor + '15', border: '1px solid ' + accentColor + '30', borderRadius: 6, padding: '5px 10px', textAlign: 'center', minWidth: 60 }}>
