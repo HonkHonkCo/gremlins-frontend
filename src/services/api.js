@@ -41,6 +41,9 @@ export const addTransaction = (gremlin_id, data) =>
 export const deleteTransaction = (id, gremlin_id) =>
   api.delete('/transactions/' + id, { data: { gremlin_id } }).then(r => r.data)
 
+export const calcWorkoutCalories = (data) =>
+  api.post('/workouts/calc-calories', data).then(r => r.data)
+
 // Тренер
 export const getWorkouts = (gremlin_id) =>
   api.get('/workouts?gremlin_id=' + gremlin_id).then(r => r.data)
