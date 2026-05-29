@@ -599,9 +599,25 @@ function InvestForm({ gremlinId, accounts, transactions, snapshots, onAdd, onDel
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [adjustTxId, setAdjustTxId] = useState(null) // id вклада для пополнения/снятия
+  const [adjustMode, setAdjustMode] = useState('add') // 'add' | 'withdraw'
+  const [adjustAmount, setAdjustAmount] = useState('')
+  const [adjustSaving, setAdjustSaving] = useState(false)
 
   const selectedAcc = accounts.find(a => a.id === accountId)
   const currency = selectedAcc?.currency || 'RUB'
+
+  // Расчёт начисленных процентов
+  const calcInterest = (tx) => {
+    if (!tx.rate || !tx.date) return null
+    const start = new Date(tx.date)
+    const end = tx.end_date ? new Date(tx.end_date) : new Date()
+    const monthsPassed = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth())
+    if (monthsPassed <= 0) return null
+    const monthlyRate = tx.rate / 100 / 12
+    const interest = Math.round(tx.amount * monthlyRate * monthsPassed * 100) / 100
+    return { interest, months: monthsPassed }
+  }
 
   const handleSave = async () => {
     const num = parseFloat(String(amount).replace(',', '.'))
@@ -619,6 +635,33 @@ function InvestForm({ gremlinId, accounts, transactions, snapshots, onAdd, onDel
     } catch { setError(lang === 'ru' ? 'Ошибка сохранения' : 'Save error') }
     setSaving(false)
   }
+
+  const handleAdjust = async (tx) => {
+    const num = parseFloat(String(adjustAmount).replace(',', '.'))
+    if (!num || num <= 0) return
+    setAdjustSaving(true)
+    try {
+      // Добавляем отдельную транзакцию-корректировку
+      const result = await addTransaction(gremlinId, {
+        amount: num, currency: tx.currency, type: 'investment',
+        note: (adjustMode === 'add' ? '+ ' : '- ') + (tx.note || lang === 'ru' ? 'вклад' : 'investment'),
+        date: todayStr(), account_id: tx.account_id,
+        rate: tx.rate || null, end_date: tx.end_date || null,
+      })
+      if (result?.transaction) onAdd(result.transaction, result.stats)
+      setAdjustTxId(null); setAdjustAmount('')
+    } catch {}
+    setAdjustSaving(false)
+  }
+
+  // Группируем вклады по note (название)
+  const grouped = {}
+  transactions.forEach(tx => {
+    const key = tx.note || 'вклад'
+    if (!grouped[key]) grouped[key] = { ...tx, totalAmount: 0, txIds: [] }
+    grouped[key].totalAmount += tx.amount
+    grouped[key].txIds.push(tx.id)
+  })
 
   const byCurrency = {}
   transactions.forEach(tx => { if (!byCurrency[tx.currency]) byCurrency[tx.currency] = 0; byCurrency[tx.currency] += tx.amount })
@@ -672,26 +715,69 @@ function InvestForm({ gremlinId, accounts, transactions, snapshots, onAdd, onDel
         </button>
       </div>
 
-      {transactions.map(tx => (
-        <div key={tx.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg3)', borderRadius: 7, padding: '7px 10px', marginBottom: 4 }}>
-          <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#4173a8', flexShrink: 0 }} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 11, color: 'var(--text)' }}>{tx.note || (lang === 'ru' ? 'вклад' : 'investment')}</div>
-            <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>
-              {tx.rate ? tx.rate + '% ' : ''}
-              {tx.end_date ? (lang === 'ru' ? 'до ' : 'until ') + tx.end_date : (lang === 'ru' ? 'бессрочно' : 'open-ended')}
-              {tx.date ? ' · ' + tx.date : ''}
+      {transactions.map(tx => {
+        const interest = calcInterest(tx)
+        const isAdjusting = adjustTxId === tx.id
+        return (
+          <div key={tx.id} style={{ background: 'var(--bg3)', borderRadius: 8, padding: '10px', marginBottom: 6, border: '1px solid #4173a820' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#4173a8', flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, color: 'var(--text)', fontWeight: 700 }}>{tx.note || (lang === 'ru' ? 'вклад' : 'investment')}</div>
+                <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>
+                  {tx.rate ? tx.rate + '% ' : ''}
+                  {tx.end_date ? (lang === 'ru' ? 'до ' : 'until ') + tx.end_date : (lang === 'ru' ? 'бессрочно' : 'open-ended')}
+                  {tx.date ? ' · ' + tx.date : ''}
+                </div>
+                {interest && (
+                  <div style={{ fontSize: 10, color: '#4a9eff', marginTop: 2 }}>
+                    + {interest.interest.toLocaleString('ru-RU')} {SYM[tx.currency] || tx.currency} {lang === 'ru' ? `за ${interest.months} мес.` : `for ${interest.months} mo.`}
+                  </div>
+                )}
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#4173a8', whiteSpace: 'nowrap' }}>
+                {Number(tx.amount).toLocaleString('ru-RU')} {SYM[tx.currency] || tx.currency}
+              </div>
+              {deleteConfirm === tx.id
+                ? <DeleteConfirm lang={lang} onConfirm={() => { onDelete(tx.id); setDeleteConfirm(null) }} onCancel={() => setDeleteConfirm(null)} />
+                : <button onClick={() => setDeleteConfirm(tx.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 13, padding: '0 2px' }}>✕</button>
+              }
             </div>
+
+            {/* Кнопки пополнить/снять */}
+            {!isAdjusting && (
+              <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                <button onClick={() => { setAdjustTxId(tx.id); setAdjustMode('add'); setAdjustAmount('') }}
+                  style={{ flex: 1, background: '#4173a820', border: '1px solid #4173a850', color: '#4173a8', borderRadius: 6, padding: '5px', fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  + {lang === 'ru' ? 'пополнить' : 'top up'}
+                </button>
+                <button onClick={() => { setAdjustTxId(tx.id); setAdjustMode('withdraw'); setAdjustAmount('') }}
+                  style={{ flex: 1, background: '#fc7c6f15', border: '1px solid #fc7c6f40', color: '#fc7c6f', borderRadius: 6, padding: '5px', fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  − {lang === 'ru' ? 'снять' : 'withdraw'}
+                </button>
+              </div>
+            )}
+
+            {/* Форма пополнения/снятия */}
+            {isAdjusting && (
+              <div style={{ marginTop: 8, display: 'flex', gap: 6 }}>
+                <input type="text" inputMode="decimal" value={adjustAmount} onChange={e => setAdjustAmount(e.target.value)}
+                  placeholder={lang === 'ru' ? 'сумма...' : 'amount...'}
+                  autoFocus
+                  style={{ flex: 1, background: 'var(--bg2)', border: '1px solid ' + (adjustMode === 'add' ? '#4173a840' : '#fc7c6f40'), borderRadius: 7, padding: '7px 10px', color: 'var(--text)', fontFamily: 'inherit', fontSize: 13, outline: 'none' }} />
+                <button onClick={() => handleAdjust(tx)} disabled={adjustSaving || !adjustAmount}
+                  style={{ background: adjustMode === 'add' ? '#4173a8' : '#fc7c6f', color: '#000', border: 'none', borderRadius: 7, padding: '7px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  {adjustSaving ? '...' : 'OK'}
+                </button>
+                <button onClick={() => { setAdjustTxId(null); setAdjustAmount('') }}
+                  style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text-muted)', borderRadius: 7, padding: '7px 10px', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  ✕
+                </button>
+              </div>
+            )}
           </div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#4173a8', whiteSpace: 'nowrap' }}>
-            {Number(tx.amount).toLocaleString('ru-RU')} {SYM[tx.currency] || tx.currency}
-          </div>
-          {deleteConfirm === tx.id
-            ? <DeleteConfirm lang={lang} onConfirm={() => { onDelete(tx.id); setDeleteConfirm(null) }} onCancel={() => setDeleteConfirm(null)} />
-            : <button onClick={() => setDeleteConfirm(tx.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 13, padding: '0 2px' }}>✕</button>
-          }
-        </div>
-      ))}
+        )
+      })}
     </>
   )
 }
