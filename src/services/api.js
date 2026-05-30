@@ -32,8 +32,8 @@ export const getWeeklyReports = (telegram_id) =>
 
 export const getWeeklyReport = getWeeklyReports
 
-export const getTransactions = (gremlin_id) =>
-  api.get('/transactions?gremlin_id=' + gremlin_id).then(r => r.data)
+export const getTransactions = (gremlin_id, limit = 50) =>
+  api.get('/transactions?gremlin_id=' + gremlin_id + '&limit=' + limit).then(r => r.data)
 
 export const addTransaction = (gremlin_id, data) =>
   api.post('/transactions', { gremlin_id, ...data }).then(r => r.data)

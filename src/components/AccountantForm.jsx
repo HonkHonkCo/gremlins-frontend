@@ -15,9 +15,23 @@ const SYM = Object.fromEntries(ALL_CURRENCIES.map(c => [c.code, c.symbol]))
 const DEFAULT_CATS_RU = ['еда','кафе','транспорт','жильё','здоровье','одежда','развлечения','связь']
 const DEFAULT_CATS_EN = ['food','cafe','transport','housing','health','clothes','entertainment','telecom']
 const getDefaultCats = (lang) => lang === 'ru' ? DEFAULT_CATS_RU : DEFAULT_CATS_EN
-const CAT_ICON = { 'еда': 5, 'кафе': 1, 'транспорт': 3, 'жильё': 7, 'здоровье': 9, 'одежда': 10, 'развлечения': 11, 'связь': 8, 'food': 5, 'cafe': 1, 'transport': 3, 'housing': 7, 'health': 9, 'clothes': 10, 'entertainment': 11, 'telecom': 8 }
 
-const CAT_EMOJI = { 'еда': '🍱', 'кафе': '☕', 'транспорт': '🚗', 'жильё': '🏠', 'здоровье': '💊', 'одежда': '👕', 'развлечения': '🎮', 'связь': '📱', 'food': '🍱', 'cafe': '☕', 'transport': '🚗', 'housing': '🏠', 'health': '💊', 'clothes': '👕', 'entertainment': '🎮', 'telecom': '📱', 'доход': '💵', 'income': '💵' }
+// Нормализация: EN → RU (чтобы 'cafe' и 'кафе' не дублировались)
+const CAT_NORMALIZE = {
+  'food': 'еда', 'cafe': 'кафе', 'transport': 'транспорт', 'housing': 'жильё',
+  'health': 'здоровье', 'clothes': 'одежда', 'entertainment': 'развлечения', 'telecom': 'связь',
+  'кафе': 'кафе', 'еда': 'еда', 'транспорт': 'транспорт', 'жильё': 'жильё',
+  'здоровье': 'здоровье', 'одежда': 'одежда', 'развлечения': 'развлечения', 'связь': 'связь',
+}
+const normalizeCategory = (cat) => {
+  if (!cat) return 'другое'
+  const lower = cat.toLowerCase().trim()
+  return CAT_NORMALIZE[lower] || lower
+}
+
+const CAT_ICON = { 'кафе': 1, 'транспорт': 3, 'еда': 5, 'жильё': 7, 'связь': 8, 'здоровье': 9, 'одежда': 10, 'развлечения': 11 }
+const CAT_ICON_SIZE = 14
+const CAT_EMOJI = { 'доход': '💵', 'income': '💵' }
 
 function todayStr() { return new Date().toISOString().split('T')[0] }
 
@@ -373,8 +387,9 @@ function ExpenseIncomeForm({ gremlinId, accounts, transactions, snapshots, onAdd
         <div key={tx.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg3)', borderRadius: 7, padding: '7px 10px', marginBottom: 3 }}>
           <div style={{ width: 5, height: 5, borderRadius: '50%', flexShrink: 0, background: tx.type === 'expense' ? '#fc7c6f' : '#68b281' }} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 11, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {CAT_EMOJI[tx.category] || CAT_EMOJI[tx.type] || (tx.type === 'income' ? '💵' : '💸')} {tx.category || (tx.type === 'income' ? (lang === 'ru' ? 'доход' : 'income') : tx.type)}
+            <div style={{ fontSize: 11, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5 }}>
+              {(() => { const norm = normalizeCategory(tx.category); const icon = CAT_ICON[norm]; return icon ? <img src={`/Icons/${icon}.png`} style={{ width: CAT_ICON_SIZE, height: CAT_ICON_SIZE, flexShrink: 0 }} /> : <span>{tx.type === 'income' ? '💵' : '💸'}</span> })()}
+              {tx.category ? normalizeCategory(tx.category) : (tx.type === 'income' ? (lang === 'ru' ? 'доход' : 'income') : tx.type)}
             </div>
             {tx.note && <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>{tx.note}</div>}
           </div>

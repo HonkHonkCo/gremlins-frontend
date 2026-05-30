@@ -238,7 +238,7 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
     if (activeTab === 'stats') {
       loadSnapshots()
       if (gremlin.role === 'accountant') {
-        getTransactions(gremlin.id).then(data => setAllTransactions(Array.isArray(data) ? data : [])).catch(() => {})
+        getTransactions(gremlin.id, 1000).then(data => setAllTransactions(Array.isArray(data) ? data : [])).catch(() => {})
       }
     }
   }, [activeTab])
@@ -735,7 +735,11 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
             {(() => {
               const [periodFilter, setPeriodFilter] = [statsPeriod, setStatsPeriod]
 
-              // Считаем категории из реальных транзакций с фильтром по периоду
+              const CAT_NORMALIZE_GD = { 'food': 'еда', 'cafe': 'кафе', 'transport': 'транспорт', 'housing': 'жильё', 'health': 'здоровье', 'clothes': 'одежда', 'entertainment': 'развлечения', 'telecom': 'связь' }
+              const CAT_ICON_GD = { 'кафе': 1, 'транспорт': 3, 'еда': 5, 'жильё': 7, 'связь': 8, 'здоровье': 9, 'одежда': 10, 'развлечения': 11 }
+              const normalizeCat = (cat) => { const l = (cat || 'другое').toLowerCase().trim(); return CAT_NORMALIZE_GD[l] || l }
+
+              // Считаем категории из реальных транзакций с нормализацией и фильтром по периоду
               const now = new Date()
               const filteredTx = allTransactions.filter(tx => {
                 if (!tx.date || tx.type !== 'expense') return false
@@ -747,15 +751,13 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
               })
               const catMap = {}
               filteredTx.forEach(tx => {
-                const cat = (tx.category || 'другое').toLowerCase()
-                if (!catMap[cat]) catMap[cat] = 0
-                catMap[cat] = Math.round((catMap[cat] + tx.amount) * 100) / 100
+                const cat = normalizeCat(tx.category)
+                catMap[cat] = Math.round(((catMap[cat] || 0) + tx.amount) * 100) / 100
               })
               const cats = Object.entries(catMap).sort((a, b) => b[1] - a[1])
               const currencyRows = getAccountantStatRows(stats)
               const investments = Object.entries(stats).filter(([k]) => k.startsWith('investment_'))
 
-              const CAT_EMOJI = { 'еда': '🍱', 'кафе': '☕', 'транспорт': '🚗', 'жильё': '🏠', 'здоровье': '💊', 'одежда': '👕', 'развлечения': '🎮', 'связь': '📱', 'food': '🍱', 'cafe': '☕', 'transport': '🚗', 'housing': '🏠', 'health': '💊', 'clothes': '👕', 'entertainment': '🎮', 'telecom': '📱' }
               const PERIOD_LABELS = { week: lang==='ru'?'нед':'wk', month: lang==='ru'?'мес':'mo', year: lang==='ru'?'год':'yr', all: lang==='ru'?'всё':'all' }
 
               return (
@@ -803,10 +805,10 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
                         const totalCats = cats.reduce((s,[,v])=>s+v, 0)
                         return cats.map(([cat, val]) => {
                           const pct = totalCats > 0 ? Math.round((val/totalCats)*100) : 0
-                          const emoji = CAT_EMOJI[cat] || '📦'
+                          const icon = CAT_ICON_GD[cat]
                           return (
                             <div key={cat} style={{display:'flex',alignItems:'center',gap:8,background:'var(--bg2)',borderRadius:8,padding:'7px 12px',marginBottom:4}}>
-                              <span style={{fontSize:14}}>{emoji}</span>
+                              {icon ? <img src={`/Icons/${icon}.png`} style={{width:16,height:16,flexShrink:0}} /> : <div style={{width:16}}/>}
                               <div style={{flex:1,fontSize:12,color:'var(--text)',textTransform:'capitalize'}}>{cat}</div>
                               <div style={{width:60,height:4,background:'var(--bg3)',borderRadius:2,overflow:'hidden'}}>
                                 <div style={{width:pct+'%',height:'100%',background:accentColor,borderRadius:2,transition:'width 0.4s'}}/>
