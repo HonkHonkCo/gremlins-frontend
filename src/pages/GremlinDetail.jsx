@@ -189,6 +189,37 @@ function getPriorityStats(stats, role) {
 
 // CategoriesDropdown убран — категории показываются в табе Итого
 
+const GUIDE_SLIDES = {
+  accountant: [
+    { icon: '💬', title: 'Просто напиши', body: 'Скажи духу что потратил или получил — он сам распознает сумму, валюту и категорию.\n\n"Потратил 300 бат на такси"\n"Получил 50000 рублей зарплата"' },
+    { icon: '🏦', title: 'Счета', body: 'Во вкладке "Данные" → "Счета" создай счета — наличные, карта, крипто.\n\nПри добавлении расхода укажи счёт — баланс обновится автоматически.' },
+    { icon: '💸', title: 'Расходы и доходы', body: 'Вкладка "Данные" → "Расход/Доход".\n\nВыбирай категорию, валюту, сумму и счёт.' },
+    { icon: '💰', title: 'Вклады и долги', body: '"Вклад" — деньги которые ты вложил (депозит, инвестиции).\n"Долг" — ты дал или взял в долг у кого-то.' },
+    { icon: '📊', title: 'Итого', body: 'Вкладка "Итого" — расходы по категориям за неделю, месяц, год.\n\nГрафик вкладов показывает динамику баланса.' },
+  ],
+  trainer: [
+    { icon: '💬', title: 'Просто напиши', body: 'Скажи духу о тренировке — он запишет сам.\n\n"Пробежал 5 км за 30 минут"\n"Сделал 3 подхода по 15 отжиманий"' },
+    { icon: '➕', title: 'Запись тренировки', body: 'Вкладка "Запись" — выбери вид, заполни поля.\n\nНажми кнопку "ИИ" — дух рассчитает калории автоматически.' },
+    { icon: '📅', title: 'План на неделю', body: 'В "Плане" нажми на любой день — выбери тренировки с чекбоксами.\n\nВ день тренировки нажми "Готово" — запись добавится сама.' },
+    { icon: '➕', title: 'Свой вид тренировки', body: 'Нажми "+ другое" — введи название и выбери иконку.\n\nТвой вид появится в списке и в плане.' },
+    { icon: '📊', title: 'Итого', body: 'Вкладка "Итого" — выбирай период день/нед/мес/3мес/год.\n\nТаблица по видам и хронология по дням.' },
+  ],
+  chef: [
+    { icon: '💬', title: 'Просто напиши', body: 'Скажи духу что съел — он определит КБЖУ сам.\n\n"Съел овсянку с бананом на завтрак"\n"Обед: борщ 300г и хлеб"' },
+    { icon: '➕', title: 'Добавить приём пищи', body: 'Введи название блюда и нажми "ИИ" — дух подберёт калории, белки, жиры, углеводы.\n\nМожно указать вес порции для точности.' },
+    { icon: '🍽', title: 'Типы приёмов', body: 'Выбирай тип: завтрак, обед, ужин, перекус.\n\nДух учитывает время суток и даёт советы по питанию.' },
+    { icon: '📊', title: 'Статус дня', body: 'Верхние плашки показывают КБЖУ за сегодня.\n\nДух следит за балансом и скажет если ты переел.' },
+    { icon: '📅', title: 'История', body: 'Все приёмы пищи сохраняются с датой.\n\nМожно прокрутить вниз чтобы увидеть что ел раньше.' },
+  ],
+  secretary: [
+    { icon: '💬', title: 'Просто напиши', body: 'Скажи духу о задаче — он создаст её сам.\n\n"Напомни сдать отчёт до пятницы"\n"Каждый день поливать цветы"' },
+    { icon: '➕', title: 'Добавить задачу', body: 'Вкладка "Задачи" → "+" — введи название, дедлайн и приоритет.\n\nПриоритет: 🔴 высокий, 🟡 средний, 🟢 низкий.' },
+    { icon: '🔄', title: 'Регулярные задачи', body: 'При создании задачи выбери повтор — ежедневно, еженедельно, ежемесячно.\n\nДух будет напоминать о них автоматически.' },
+    { icon: '✅', title: 'Выполнение', body: 'Нажми на задачу чтобы отметить выполненной.\n\nВыполненные уходят в архив, регулярные обновляются.' },
+    { icon: '🔔', title: 'Уведомления', body: 'Дух пришлёт уведомление если дедлайн сегодня или завтра.\n\nТакже напомнит если давно не заходил.' },
+  ],
+}
+
 export default function GremlinDetail({ gremlin: initialGremlin, userId, user, lang, onBack }) {
   const [gremlin, setGremlin] = useState(initialGremlin)
   const [entries, setEntries] = useState([])
@@ -198,6 +229,8 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
   const [fileLoading, setFileLoading] = useState(false)
   const [showArchive, setShowArchive] = useState(false)
   const [editing, setEditing] = useState(false)
+  const [showGuide, setShowGuide] = useState(false)
+  const [guideSlide, setGuideSlide] = useState(0)
   const [editName, setEditName] = useState(initialGremlin.name)
   const [editDesc, setEditDesc] = useState(initialGremlin.description || '')
   const [saving, setSaving] = useState(false)
@@ -535,59 +568,6 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
         {/* PORTRAIT + STATS */}
         <div style={{ flexShrink: 0, marginTop: 5 }}>
           <GremlinAnimation role={gremlin.role} accentColor={accentColor} talking={talking} size={isFairyTheme(theme) ? 110 : 220} theme={theme} />
-
-          {/* БУХГАЛТЕР — таблица по валютам */}
-          {gremlin.role === 'accountant' && (() => {
-            const currencyRows = getAccountantStatRows(stats)
-            const totalUSD = stats.total_balance_usd
-            if (currencyRows.length === 0 && !totalUSD) return null
-            return (
-              <div style={{ padding: '6px 12px' }}>
-                {/* Итого в USD */}
-                {totalUSD !== undefined && (
-                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
-                    <div style={{ background: accentColor + '20', border: '1px solid ' + accentColor + '50', borderRadius: 8, padding: '5px 18px', textAlign: 'center' }}>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>
-                        {lang === 'ru' ? 'итого баланс' : 'total balance'}
-                      </div>
-                      <div style={{ fontSize: 16, fontWeight: 700, color: totalUSD >= 0 ? accentColor : '#ff5a5a', textShadow: '0 0 10px ' + accentColor + '60' }}>
-                        {totalUSD >= 0 ? '+' : ''}{totalUSD?.toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} $
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {/* По валютам */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {currencyRows.map(c => (
-                    <div key={c.code} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                      <div style={{ width: 32, fontSize: 11, color: 'var(--text-muted)', textAlign: 'right', flexShrink: 0 }}>{c.symbol}</div>
-                      <div style={{ flex: 1, display: 'flex', gap: 4 }}>
-                        <div style={{ flex: 1, background: '#ff5a5a15', border: '1px solid #ff5a5a30', borderRadius: 6, padding: '3px 8px', textAlign: 'center' }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: '#ff5a5a' }}>
-                            {(c.exp || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })}
-                          </div>
-                          <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>{lang === 'ru' ? 'расход' : 'expense'}</div>
-                        </div>
-                        <div style={{ flex: 1, background: accentColor + '15', border: '1px solid ' + accentColor + '30', borderRadius: 6, padding: '3px 8px', textAlign: 'center' }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: accentColor }}>
-                            {(c.inc || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })}
-                          </div>
-                          <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>{lang === 'ru' ? 'доход' : 'income'}</div>
-                        </div>
-                        <div style={{ flex: 1, background: (c.bal || 0) >= 0 ? '#3ecf7015' : '#ff5a5a15', border: '1px solid ' + ((c.bal || 0) >= 0 ? '#3ecf7030' : '#ff5a5a30'), borderRadius: 6, padding: '3px 8px', textAlign: 'center' }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: (c.bal || 0) >= 0 ? '#3ecf70' : '#ff5a5a' }}>
-                            {(c.bal || 0) >= 0 ? '+' : ''}{(c.bal || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })}
-                          </div>
-                          <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>{lang === 'ru' ? 'баланс' : 'balance'}</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {/* Категории расходов — перенесены в таб Итого */}
-              </div>
-            )
-          })()}
 
           {/* ШЕФ — окошки по дням */}
           {gremlin.role === 'chef' && (() => {
@@ -975,6 +955,50 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
           50% { opacity: 0.8; }
         }
       `}</style>
+
+      {/* GUIDE POPUP */}
+      {showGuide && (() => {
+        const slides = GUIDE_SLIDES[gremlin.role] || []
+        const slide = slides[guideSlide] || slides[0]
+        if (!slide) return null
+        return (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 300, display: 'flex', alignItems: 'flex-end' }}
+            onClick={e => { if (e.target === e.currentTarget) setShowGuide(false) }}>
+            <div style={{ width: '100%', background: 'var(--bg2)', borderRadius: '20px 20px 0 0', padding: '24px 20px 36px', boxSizing: 'border-box' }}>
+              <div style={{ display: 'flex', gap: 5, justifyContent: 'center', marginBottom: 24 }}>
+                {slides.map((_, i) => (
+                  <div key={i} onClick={() => setGuideSlide(i)} style={{ width: i === guideSlide ? 20 : 6, height: 6, borderRadius: 3, background: i === guideSlide ? accentColor : 'var(--bg3)', cursor: 'pointer', transition: 'all 0.2s' }} />
+                ))}
+              </div>
+              <div style={{ textAlign: 'center', minHeight: 180 }}>
+                <div style={{ fontSize: 48, marginBottom: 16, lineHeight: 1 }}>{slide.icon}</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: accentColor, marginBottom: 12 }}>{slide.title}</div>
+                <div style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.7, whiteSpace: 'pre-line', opacity: 0.9 }}>{slide.body}</div>
+              </div>
+              <div style={{ display: 'flex', gap: 10, marginTop: 28 }}>
+                {guideSlide > 0 ? (
+                  <button onClick={() => setGuideSlide(i => i - 1)} style={{ flex: 1, background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text-muted)', borderRadius: 10, padding: '12px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    ← {lang === 'ru' ? 'Назад' : 'Back'}
+                  </button>
+                ) : (
+                  <button onClick={() => setShowGuide(false)} style={{ flex: 1, background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text-muted)', borderRadius: 10, padding: '12px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    {lang === 'ru' ? 'Закрыть' : 'Close'}
+                  </button>
+                )}
+                {guideSlide < slides.length - 1 ? (
+                  <button onClick={() => setGuideSlide(i => i + 1)} style={{ flex: 2, background: accentColor, color: '#000', border: 'none', borderRadius: 10, padding: '12px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    {lang === 'ru' ? 'Далее' : 'Next'} →
+                  </button>
+                ) : (
+                  <button onClick={() => setShowGuide(false)} style={{ flex: 2, background: accentColor, color: '#000', border: 'none', borderRadius: 10, padding: '12px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    {lang === 'ru' ? 'Начать!' : "Let's go!"}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </>
   )
 }
