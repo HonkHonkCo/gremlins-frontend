@@ -466,6 +466,19 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
           </div>
           <div style={{ display: 'flex', gap: 6 }}>
             <button
+              onClick={() => { setShowGuide(true); setGuideSlide(0) }}
+              style={{ background: 'var(--bg3)', border: '1px solid ' + accentColor + '40', borderRadius: 6, padding: '4px 8px', fontSize: 13, color: accentColor, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }}
+            >❓</button>
+            <button
+              onClick={async () => {
+                const newVal = gremlin.stats?.push_enabled === false ? true : false
+                const updated = await updateGremlin(gremlin.id, { stats: { ...gremlin.stats, push_enabled: newVal } })
+                if (updated?.gremlin) setGremlin(updated.gremlin)
+              }}
+              title={lang === 'ru' ? 'Уведомления' : 'Notifications'}
+              style={{ background: gremlin.stats?.push_enabled === false ? '#e24b4a20' : 'var(--bg3)', border: '1px solid ' + (gremlin.stats?.push_enabled === false ? '#e24b4a40' : accentColor + '40'), borderRadius: 6, padding: '4px 8px', fontSize: 13, color: gremlin.stats?.push_enabled === false ? '#e24b4a' : accentColor, cursor: 'pointer' }}
+            >{gremlin.stats?.push_enabled === false ? '🔕' : '🔔'}</button>
+            <button
               onClick={() => { setEditing(v => !v); setEditName(gremlin.name); setEditDesc(gremlin.description || ''); setConfirmDelete(false) }}
               style={{ background: editing ? accentColor + '20' : 'var(--bg3)', border: '1px solid ' + accentColor + '40', borderRadius: 6, padding: '4px 10px', fontSize: 10, color: accentColor, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, letterSpacing: '0.03em' }}
             >{lang === 'ru' ? 'Редактировать' : 'Edit'}</button>
@@ -716,7 +729,11 @@ export default function GremlinDetail({ gremlin: initialGremlin, userId, user, l
             )}
             {gremlin.role === 'trainer' && (
               <TrainerForm gremlinId={gremlin.id} accentColor={accentColor} lang={lang}
-                onStatsUpdate={(s) => setGremlin(g => ({ ...g, stats: s }))} />
+                onStatsUpdate={(s) => setGremlin(g => ({ ...g, stats: s }))}
+                onPlanSave={async (plan) => {
+                  const updated = await updateGremlin(gremlin.id, { stats: { ...gremlin.stats, weekly_plan: plan } })
+                  if (updated?.gremlin) setGremlin(updated.gremlin)
+                }} />
             )}
             {gremlin.role === 'chef' && (
               <ChefForm gremlinId={gremlin.id} accentColor={accentColor} lang={lang}

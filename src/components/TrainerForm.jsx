@@ -114,7 +114,7 @@ function IconPickerPopup({ onSelect, onClose, accentColor, lang }) {
   )
 }
 
-export default function TrainerForm({ gremlinId, accentColor, lang, onStatsUpdate }) {
+export default function TrainerForm({ gremlinId, accentColor, lang, onStatsUpdate, onPlanSave }) {
   const DAYS = lang === 'ru' ? DAYS_RU : DAYS_EN
   const PERIOD_OPTIONS = lang === 'ru' ? PERIOD_OPTIONS_RU : PERIOD_OPTIONS_EN
 
@@ -158,6 +158,7 @@ export default function TrainerForm({ gremlinId, accentColor, lang, onStatsUpdat
   const handleSavePlan = (newPlan) => {
     setPlan(newPlan)
     try { localStorage.setItem('plan_' + gremlinId, JSON.stringify(newPlan)) } catch {}
+    if (onPlanSave) onPlanSave(newPlan)
   }
   const markPlanDone = async (day) => {
     const today = todayStr()
